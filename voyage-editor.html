@@ -123,6 +123,22 @@ html, body {
 }
 
 /* ═══════════ MAP AREA ═══════════ */
+#panel-divider {
+  width: 6px; flex-shrink: 0;
+  background: var(--border);
+  cursor: col-resize;
+  transition: background 0.15s;
+  position: relative;
+}
+#panel-divider:hover, #panel-divider.dragging {
+  background: var(--accent);
+}
+#panel-divider::after {
+  content: '⋮'; position: absolute;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: var(--muted); font-size: 10px;
+  pointer-events: none;
+}
 #search-bar {
   display: flex; gap: 6px; padding: 8px 10px;
   background: var(--panel-solid); border-bottom: 1px solid var(--border);
@@ -428,6 +444,9 @@ th .hi { margin-left: 2px; }
     </div>
   </div>
 
+  <!-- Resizable divider -->
+  <div id="panel-divider"></div>
+
   <!-- Right: map panel -->
   <div id="map-panel">
     <div id="search-bar" style="position:relative;">
@@ -537,6 +556,7 @@ let map, tileLight, tileDark, isDark = false;
 let mapLayers = {};  // chapterNum -> { line, markers[] }
 let dragMarkerLink = null; // {chNum, wptIdx} for currently dragged marker
 let ghostDragTarget = null; // currently dragged ghost midpoint marker
+let ghostDragLines = []; // temporary dashed lines during ghost drag
 
 function initMap() {
   map = L.map('map', {
@@ -735,6 +755,9 @@ function updateMapChapter(chNum) {
         this._dragging = true;
         this._insertAfter = insertAfterIdx;
         this._chNum = chNum;
+        this._prevLatLng = [a.lat, a.lon];
+        this._nextLatLng = [b.lat, b.lon];
+        this._color = color;
         this.setStyle({ opacity: 0.9, fillOpacity: 0.7, radius: 7 });
         map.dragging.disable();
         map.on('mousemove', onGhostDrag);
@@ -778,12 +801,24 @@ function onMarkerDragEnd() {
 function onGhostDrag(e) {
   if (!ghostDragTarget) return;
   ghostDragTarget.setLatLng(e.latlng);
+  // Draw/update ghost legs
+  const pos = [e.latlng.lat, e.latlng.lng];
+  const color = ghostDragTarget._color || '#888';
+  const lineOpts = { color: color, weight: 2, opacity: 0.6, dashArray: '6 4' };
+  ghostDragLines.forEach(l => map.removeLayer(l));
+  ghostDragLines = [
+    L.polyline([ghostDragTarget._prevLatLng, pos], lineOpts).addTo(map),
+    L.polyline([pos, ghostDragTarget._nextLatLng], lineOpts).addTo(map)
+  ];
 }
 
 function onGhostDragEnd(e) {
   map.dragging.enable();
   map.off('mousemove', onGhostDrag);
   map.off('mouseup', onGhostDragEnd);
+  // Remove ghost drag lines
+  ghostDragLines.forEach(l => map.removeLayer(l));
+  ghostDragLines = [];
   if (!ghostDragTarget) return;
   const chNum = ghostDragTarget._chNum;
   const insertAfter = ghostDragTarget._insertAfter;
@@ -1988,6 +2023,41 @@ document.addEventListener('click', function(e) {
   if (!e.target.closest('.dropdown')) closeDropdowns();
   if (!e.target.closest('#search-bar')) hideSearchResults();
 });
+
+/* ═══════════════════════════════════════════════════════════════
+   RESIZABLE PANEL DIVIDER
+   ═══════════════════════════════════════════════════════════════ */
+(function() {
+  const divider = document.getElementById('panel-divider');
+  const panel = document.getElementById('chapter-panel');
+  const main = document.getElementById('main');
+  let startX, startW;
+
+  divider.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    startX = e.clientX;
+    startW = panel.offsetWidth;
+    divider.classList.add('dragging');
+    document.addEventListener('mousemove', onDividerDrag);
+    document.addEventListener('mouseup', onDividerDragEnd);
+  });
+
+  function onDividerDrag(e) {
+    const dx = e.clientX - startX;
+    const newW = Math.max(240, Math.min(startW + dx, main.offsetWidth - 300));
+    panel.style.width = newW + 'px';
+    panel.style.minWidth = newW + 'px';
+    panel.style.maxWidth = newW + 'px';
+    map.invalidateSize();
+  }
+
+  function onDividerDragEnd() {
+    divider.classList.remove('dragging');
+    document.removeEventListener('mousemove', onDividerDrag);
+    document.removeEventListener('mouseup', onDividerDragEnd);
+    map.invalidateSize();
+  }
+})();
 
 /* ═══════════════════════════════════════════════════════════════
    INIT

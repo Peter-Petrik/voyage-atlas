@@ -11,6 +11,16 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.0.11] - 2026-05-28
+
+### Added
+1. Ghost legs during midpoint drag — temporary dashed lines draw from the two adjacent waypoints
+   to the ghost marker as it's dragged, showing where the new route segments will go. Lines use
+   the chapter's palette color. Removed on drop when the waypoint is inserted.
+2. Resizable split panel — a draggable divider between the chapter list and the map. Drag left
+   to expand the map, right to expand the chapter panel. Min width 240px for the panel, 300px
+   reserved for the map. Leaflet auto-resizes on drag.
+
 ## [v2.0.10] - 2026-05-28
 
 ### Added
