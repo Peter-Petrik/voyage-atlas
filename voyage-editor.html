@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voyage Route Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   THEME — matches the voyage-viewer admiralty-chart aesthetic
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:      #f4efe4;
+  --panel:   #fbf8f1;
+  --panel-solid: #f7f2e7;
+  --ink:     #1d2b3a;
+  --muted:   #6b7b8c;
+  --faint:   #9aa7b5;
+  --accent:  #9a6a2f;
+  --accent-soft: rgba(154,106,47,0.12);
+  --border:  rgba(29,43,58,0.16);
+  --border-strong: rgba(29,43,58,0.30);
+  --hazard:  #9b2d20;
+  --success: #2d7a3a;
+  --shadow:  0 4px 16px rgba(29,43,58,0.12);
+  --tile-bg: #e9e3d4;
+  --row-alt: rgba(29,43,58,0.03);
+  --row-hover: rgba(154,106,47,0.08);
+  --shaping-bg: rgba(29,43,58,0.05);
+}
+body.dark {
+  --bg:      #0b1622;
+  --panel:   rgba(15,29,44,0.94);
+  --panel-solid: #0f1d2c;
+  --ink:     #eaf0f7;
+  --muted:   #8a9bb0;
+  --faint:   #5d7186;
+  --accent:  #d8b15a;
+  --accent-soft: rgba(216,177,90,0.14);
+  --border:  rgba(216,177,90,0.22);
+  --border-strong: rgba(216,177,90,0.40);
+  --hazard:  #e2574a;
+  --success: #4caf6a;
+  --shadow:  0 4px 16px rgba(0,0,0,0.45);
+  --tile-bg: #061018;
+  --row-alt: rgba(216,177,90,0.04);
+  --row-hover: rgba(216,177,90,0.10);
+  --shaping-bg: rgba(216,177,90,0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 12px;
+  background: var(--bg); color: var(--ink);
+  display: flex; flex-direction: column;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ═══════════ HEADER ═══════════ */
+#header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px;
+  background: var(--panel-solid);
+  border-bottom: 1px solid var(--border);
+  z-index: 1200; flex-shrink: 0;
+}
+#header h1 {
+  font-family: 'Fraunces', serif; font-weight: 500;
+  font-size: 17px; color: var(--accent);
+  letter-spacing: 0.01em; white-space: nowrap;
+}
+.hdr-sub { font-size: 9.5px; color: var(--muted); letter-spacing: 0.04em; }
+.hdr-actions { display: flex; gap: 6px; margin-left: auto; align-items: center; }
+.btn {
+  font-family: inherit; font-size: 11px;
+  padding: 5px 10px; border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  background: transparent; color: var(--ink);
+  cursor: pointer; white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+.btn-accent { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.btn-accent:hover { background: var(--accent); color: var(--panel-solid); }
+.btn-sm { padding: 3px 7px; font-size: 10px; }
+.btn-danger { color: var(--hazard); border-color: var(--hazard); }
+.btn-danger:hover { background: var(--hazard); color: #fff; }
+
+/* Dropdown menus */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-menu {
+  display: none; position: absolute; top: 100%; right: 0;
+  background: var(--panel-solid); border: 1px solid var(--border-strong);
+  border-radius: 4px; box-shadow: var(--shadow);
+  z-index: 2000; min-width: 160px; margin-top: 2px;
+}
+.dropdown-menu.open { display: block; }
+.dropdown-menu button {
+  display: block; width: 100%; text-align: left;
+  padding: 7px 12px; font-family: inherit; font-size: 11px;
+  background: none; border: none; color: var(--ink); cursor: pointer;
+}
+.dropdown-menu button:hover { background: var(--accent-soft); }
+
+/* ═══════════ MAIN LAYOUT ═══════════ */
+#main {
+  display: flex; flex: 1; min-height: 0; overflow: hidden;
+}
+#chapter-panel {
+  width: 50%; min-width: 360px; max-width: 720px;
+  overflow-y: auto; padding: 10px;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+}
+#map-panel {
+  flex: 1; display: flex; flex-direction: column; min-width: 0;
+}
+
+/* ═══════════ MAP AREA ═══════════ */
+#search-bar {
+  display: flex; gap: 6px; padding: 8px 10px;
+  background: var(--panel-solid); border-bottom: 1px solid var(--border);
+}
+#search-bar input {
+  flex: 1; font-family: inherit; font-size: 11px;
+  padding: 5px 8px; border: 1px solid var(--border-strong);
+  border-radius: 3px; background: var(--bg); color: var(--ink);
+  outline: none;
+}
+#search-bar input:focus { border-color: var(--accent); }
+#search-results {
+  position: absolute; top: 100%; left: 10px; right: 10px;
+  background: var(--panel-solid); border: 1px solid var(--border-strong);
+  border-radius: 0 0 4px 4px; box-shadow: var(--shadow);
+  z-index: 2000; display: none; max-height: 200px; overflow-y: auto;
+}
+#search-results .sr-item {
+  padding: 6px 10px; cursor: pointer; font-size: 11px;
+  border-bottom: 1px solid var(--border);
+}
+#search-results .sr-item:hover { background: var(--accent-soft); }
+#search-results .sr-item .sr-name { font-weight: 600; }
+#search-results .sr-item .sr-detail { color: var(--muted); font-size: 10px; }
+#map-container { flex: 1; position: relative; }
+#map { width: 100%; height: 100%; }
+.leaflet-container { background: var(--tile-bg); font-family: 'Spline Sans Mono', monospace; }
+
+#map-status {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px; font-size: 10px; color: var(--muted);
+  background: var(--panel-solid); border-top: 1px solid var(--border);
+}
+#map-status .status-active { color: var(--accent); font-weight: 600; }
+#rapid-click-toggle {
+  font-family: inherit; font-size: 10px; padding: 2px 8px;
+  border: 1px solid var(--border-strong); border-radius: 3px;
+  background: transparent; color: var(--muted); cursor: pointer;
+}
+#rapid-click-toggle.active {
+  background: var(--success); color: #fff;
+  border-color: var(--success);
+}
+
+/* ═══════════ CHAPTER ACCORDION ═══════════ */
+.ch-item {
+  margin-bottom: 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.ch-item.active { border-color: var(--accent); }
+.ch-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; cursor: pointer;
+  user-select: none; position: relative;
+}
+.ch-header:hover { background: var(--row-hover); }
+.ch-drag { cursor: grab; color: var(--faint); font-size: 14px; flex-shrink: 0; }
+.ch-drag:active { cursor: grabbing; }
+.ch-num {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 13px; color: var(--accent); min-width: 28px;
+}
+.ch-name {
+  font-weight: 500; font-size: 11.5px;
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ch-era {
+  font-size: 9px; padding: 1px 5px; border-radius: 3px;
+  text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0;
+}
+.ch-era.past { background: var(--accent-soft); color: var(--accent); }
+.ch-era.current { background: rgba(45,122,58,0.15); color: var(--success); }
+.ch-era.future { background: rgba(107,123,140,0.12); color: var(--muted); }
+.ch-nm { font-size: 10px; color: var(--muted); flex-shrink: 0; white-space: nowrap; }
+.ch-toggles { display: flex; gap: 4px; flex-shrink: 0; }
+.ch-toggle {
+  font-size: 13px; width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: transparent; cursor: pointer; color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+}
+.ch-toggle:hover { background: var(--accent-soft); color: var(--accent); }
+.ch-toggle.open { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.ch-delete {
+  font-size: 11px; width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; cursor: pointer;
+  color: var(--faint); border-radius: 3px;
+}
+.ch-delete:hover { color: var(--hazard); background: rgba(155,45,32,0.1); }
+
+/* ═══════════ CHAPTER METADATA FORM ═══════════ */
+.ch-meta {
+  display: none; padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--row-alt);
+}
+.ch-meta.open { display: block; }
+.meta-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+}
+.meta-field { display: flex; flex-direction: column; gap: 2px; }
+.meta-field.full { grid-column: 1 / -1; }
+.meta-field label {
+  font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted);
+}
+.meta-field input, .meta-field select, .meta-field textarea {
+  font-family: inherit; font-size: 11px;
+  padding: 4px 7px; border: 1px solid var(--border);
+  border-radius: 3px; background: var(--bg); color: var(--ink);
+  outline: none; resize: vertical;
+}
+.meta-field input:focus, .meta-field select:focus, .meta-field textarea:focus {
+  border-color: var(--accent);
+}
+.meta-field textarea { min-height: 48px; }
+
+/* ═══════════ WAYPOINT TABLE ═══════════ */
+.ch-wpts {
+  display: none;
+  border-top: 1px solid var(--border);
+}
+.ch-wpts.open { display: block; }
+.wpt-toolbar {
+  display: flex; gap: 6px; padding: 6px 10px; align-items: center;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.wpt-toolbar .wpt-count { font-size: 10px; color: var(--muted); margin-left: auto; }
+.wpt-table-wrap {
+  overflow-x: auto; max-height: 400px; overflow-y: auto;
+}
+.wpt-table {
+  width: 100%; border-collapse: collapse; font-size: 11px;
+}
+.wpt-table th {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--panel-solid); text-align: left;
+  padding: 4px 6px; font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+.wpt-table td {
+  padding: 2px 4px; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.wpt-table tr:hover td { background: var(--row-hover); }
+.wpt-table tr.shaping td { background: var(--shaping-bg); }
+.wpt-table tr.shaping input[type="text"] { font-style: italic; color: var(--faint); }
+.wpt-row-drag { cursor: grab; color: var(--faint); text-align: center; width: 20px; }
+.wpt-row-drag:active { cursor: grabbing; }
+.wpt-row-num { text-align: center; width: 28px; color: var(--muted); font-size: 10px; }
+.wpt-table input[type="text"], .wpt-table input[type="number"] {
+  font-family: inherit; font-size: 11px;
+  padding: 2px 4px; border: 1px solid transparent;
+  border-radius: 2px; background: transparent; color: var(--ink);
+  width: 100%; outline: none;
+}
+.wpt-table input:focus {
+  border-color: var(--accent); background: var(--bg);
+}
+.wpt-table input[type="number"] { width: 80px; }
+.wpt-table input[type="checkbox"] {
+  width: 14px; height: 14px; cursor: pointer;
+  accent-color: var(--accent);
+}
+.wpt-table .col-name { min-width: 120px; }
+.wpt-table .col-lat, .wpt-table .col-lon { width: 85px; }
+.wpt-table .col-cb { width: 28px; text-align: center; }
+.wpt-table .col-country { min-width: 80px; }
+.wpt-table .col-notes { min-width: 100px; }
+.wpt-del {
+  width: 22px; height: 22px; border: none;
+  background: transparent; cursor: pointer; color: var(--faint);
+  border-radius: 3px; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.wpt-del:hover { color: var(--hazard); background: rgba(155,45,32,0.1); }
+
+/* Sortable ghost / chosen */
+.sortable-ghost { opacity: 0.3; }
+.sortable-chosen { background: var(--accent-soft); }
+
+/* ═══════════ FOOTER ═══════════ */
+#footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 14px; font-size: 10px; color: var(--muted);
+  background: var(--panel-solid); border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ═══════════ MODAL ═══════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45); z-index: 5000;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--panel-solid); border: 1px solid var(--border-strong);
+  border-radius: 6px; box-shadow: var(--shadow);
+  padding: 20px; max-width: 500px; width: 90%;
+  max-height: 80vh; overflow-y: auto;
+}
+.modal h2 {
+  font-family: 'Fraunces', serif; font-size: 15px;
+  color: var(--accent); margin-bottom: 12px;
+}
+.modal p { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+
+/* ═══════════ RESPONSIVE ═══════════ */
+@media (max-width: 768px) {
+  #main { flex-direction: column; }
+  #chapter-panel { width: 100%; max-width: none; min-width: 0; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--border); }
+  #map-panel { min-height: 40vh; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<div id="header">
+  <div>
+    <h1>Voyage Route Editor</h1>
+    <div class="hdr-sub">Chapter &amp; waypoint management</div>
+  </div>
+  <div class="hdr-actions">
+    <div class="dropdown">
+      <button class="btn" onclick="toggleDropdown('import-menu')">Import ▾</button>
+      <div id="import-menu" class="dropdown-menu">
+        <button onclick="importJSON()">Import JSON…</button>
+        <button onclick="importCSV()">Import CSVs (chapters + waypoints)…</button>
+      </div>
+    </div>
+    <div class="dropdown">
+      <button class="btn btn-accent" onclick="toggleDropdown('export-menu')">Export ▾</button>
+      <div id="export-menu" class="dropdown-menu">
+        <button onclick="exportJSON()">Export JSON</button>
+        <button onclick="exportChaptersCSV()">Export chapters.csv</button>
+        <button onclick="exportWaypointsCSV()">Export waypoints.csv</button>
+        <button onclick="exportKML()">Export KML</button>
+      </div>
+    </div>
+    <button class="btn" onclick="toggleTheme()" title="Toggle light/dark theme">◐</button>
+  </div>
+</div>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<div id="main">
+  <!-- Left: chapter panel -->
+  <div id="chapter-panel">
+    <div id="chapter-list"></div>
+    <div style="padding:8px 0; display:flex; gap:6px;">
+      <button class="btn btn-sm btn-accent" onclick="addChapter()">+ Add Chapter</button>
+    </div>
+  </div>
+
+  <!-- Right: map panel -->
+  <div id="map-panel">
+    <div id="search-bar" style="position:relative;">
+      <input type="text" id="nom-input" placeholder="Search places (Nominatim)…"
+             oninput="debounceNominatim()" onkeydown="nomKeydown(event)">
+      <button class="btn btn-sm" onclick="nomSearch()">Search</button>
+      <div id="search-results"></div>
+    </div>
+    <div id="map-container">
+      <div id="map"></div>
+    </div>
+    <div id="map-status">
+      <span id="status-text">No chapter selected</span>
+      <span style="flex:1"></span>
+      <button id="rapid-click-toggle" onclick="toggleRapidClick()">Rapid click: OFF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<div id="footer">
+  <span id="hero-stats">0 chapters · 0 waypoints · 0 nm</span>
+  <span>Voyage Route Editor v2.0</span>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="file-json" accept=".json" style="display:none" onchange="handleJSONFile(event)">
+<input type="file" id="file-csv-chapters" accept=".csv" style="display:none" onchange="handleCSVChaptersFile(event)">
+<input type="file" id="file-csv-waypoints" accept=".csv" style="display:none" onchange="handleCSVWaypointsFile(event)">
+
+<!-- Paste modal -->
+<div class="modal-overlay" id="paste-modal">
+  <div class="modal">
+    <h2>Paste Waypoints</h2>
+    <p>Paste tab-separated or comma-separated rows. Columns: name, lat, lon (minimum).
+       Optional extra columns: major, decision, gateway, country, notes.</p>
+    <textarea id="paste-area" style="width:100%;min-height:120px;font-family:inherit;font-size:11px;
+      padding:8px;border:1px solid var(--border-strong);border-radius:3px;
+      background:var(--bg);color:var(--ink);resize:vertical;"></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closePasteModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="doPaste()">Add Rows</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk-add modal -->
+<div class="modal-overlay" id="bulk-modal">
+  <div class="modal">
+    <h2>Add Multiple Rows</h2>
+    <p>Add empty rows to the active chapter's waypoint table.</p>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <label style="font-size:11px;">Number of rows:</label>
+      <input type="number" id="bulk-count" value="10" min="1" max="500"
+             style="width:80px;font-family:inherit;font-size:11px;padding:4px 7px;
+             border:1px solid var(--border-strong);border-radius:3px;
+             background:var(--bg);color:var(--ink);">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeBulkModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="doBulkAdd()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV import step 2 modal -->
+<div class="modal-overlay" id="csv-step2-modal">
+  <div class="modal">
+    <h2>Import Waypoints CSV</h2>
+    <p>Chapters loaded. Now select the waypoints CSV file.</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeCSVStep2()">Cancel</button>
+      <button class="btn btn-accent" onclick="document.getElementById('file-csv-waypoints').click()">Select waypoints.csv…</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════════════════════════════ */
+const TOL_PALETTE = [
+  '#332288','#88CCEE','#44AA99','#117733','#999933',
+  '#DDCC77','#CC6677','#882255','#AA4499'
+];
+
+function chapterColor(num) {
+  // Assignment matching the viewer (1-indexed, wrapping)
+  const assign = [0,0,1,2,3,4,5,6,7,8,1,5,3,6,0,4,7,2,8,5];
+  const idx = (num >= 0 && num < assign.length) ? assign[num] : ((num - 1) % TOL_PALETTE.length);
+  return TOL_PALETTE[idx] || TOL_PALETTE[0];
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════════ */
+let STATE = { chapters: [] };
+let activeChapterNum = null;  // which chapter is "selected" on the map
+let rapidClickMode = false;
+let pendingCSVChapters = null; // temp storage during 2-step CSV import
+
+/* ═══════════════════════════════════════════════════════════════
+   MAP SETUP
+   ═══════════════════════════════════════════════════════════════ */
+let map, tileLight, tileDark, isDark = false;
+let mapLayers = {};  // chapterNum -> { line, markers[] }
+let dragMarkerLink = null; // {chNum, wptIdx} for currently dragged marker
+
+function initMap() {
+  map = L.map('map', {
+    center: [20, 0], zoom: 2,
+    worldCopyJump: true,
+    zoomControl: true
+  });
+  tileLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>'
+  });
+  tileDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>'
+  });
+  tileLight.addTo(map);
+
+  map.on('click', onMapClick);
+}
+
+function onMapClick(e) {
+  if (!rapidClickMode || activeChapterNum === null) return;
+  const ch = getChapter(activeChapterNum);
+  if (!ch) return;
+  const wpt = makeWaypoint();
+  wpt.lat = Math.round(e.latlng.lat * 100000) / 100000;
+  wpt.lon = Math.round(e.latlng.lng * 100000) / 100000;
+  ch.waypoints.push(wpt);
+  renderChapterWaypoints(activeChapterNum);
+  updateMapChapter(activeChapterNum);
+  updateHeroStats();
+}
+
+function updateMapAll() {
+  // Clear all map layers
+  Object.keys(mapLayers).forEach(k => {
+    const ml = mapLayers[k];
+    if (ml.line) map.removeLayer(ml.line);
+    ml.markers.forEach(m => map.removeLayer(m));
+  });
+  mapLayers = {};
+  // Draw all chapters
+  STATE.chapters.forEach(ch => updateMapChapter(ch.num));
+}
+
+function updateMapChapter(chNum) {
+  // Remove existing layers for this chapter
+  if (mapLayers[chNum]) {
+    if (mapLayers[chNum].line) map.removeLayer(mapLayers[chNum].line);
+    mapLayers[chNum].markers.forEach(m => map.removeLayer(m));
+  }
+  const ch = getChapter(chNum);
+  if (!ch || ch.waypoints.length === 0) {
+    mapLayers[chNum] = { line: null, markers: [] };
+    return;
+  }
+
+  const isActive = chNum === activeChapterNum;
+  const color = chapterColor(chNum);
+  const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
+  const markers = [];
+
+  // Route line
+  let line = null;
+  if (coords.length >= 2) {
+    line = L.polyline(coords, {
+      color: color,
+      weight: isActive ? 3 : 1.5,
+      opacity: isActive ? 0.9 : 0.35,
+      dashArray: isActive ? null : '4 4'
+    }).addTo(map);
+  }
+
+  // Waypoint markers (only named ones, or all for active chapter)
+  ch.waypoints.forEach((w, idx) => {
+    if (!w.lat || !w.lon) return;
+    const hasName = w.name && w.name.trim() !== '';
+    // Inactive chapters: only show named waypoints as tiny dots
+    if (!isActive && !hasName) return;
+
+    let radius = hasName ? (w.major ? 6 : 4) : 2;
+    let fillColor = hasName ? color : '#888';
+    let fillOpacity = isActive ? 0.85 : 0.3;
+    let weight = 1;
+
+    // Decision/gateway markers get different styling
+    if (w.decision) {
+      weight = 2;
+      fillColor = '#e2574a'; // hazard-ish red
+    }
+    if (w.gateway) {
+      weight = 2;
+      radius = Math.max(radius, 5);
+    }
+
+    const marker = L.circleMarker([w.lat, w.lon], {
+      radius: radius,
+      fillColor: fillColor,
+      color: isActive ? '#fff' : color,
+      weight: weight,
+      opacity: isActive ? 0.9 : 0.3,
+      fillOpacity: fillOpacity
+    }).addTo(map);
+
+    // Tooltip
+    const tip = hasName ? `${w.name}${w.major ? ' ★' : ''}${w.decision ? ' ◆' : ''}${w.gateway ? ' ⚑' : ''}`
+      : `routing vertex #${idx + 1}`;
+    marker.bindTooltip(tip, { permanent: false, direction: 'top', offset: [0, -6] });
+
+    // Draggable behavior for active chapter
+    if (isActive) {
+      marker.on('mousedown', function(e) {
+        dragMarkerLink = { chNum: chNum, wptIdx: idx };
+        map.dragging.disable();
+        map.on('mousemove', onMarkerDrag);
+        map.on('mouseup', onMarkerDragEnd);
+        L.DomEvent.stopPropagation(e);
+      });
+    }
+
+    markers.push(marker);
+  });
+
+  mapLayers[chNum] = { line, markers };
+}
+
+function onMarkerDrag(e) {
+  if (!dragMarkerLink) return;
+  const { chNum, wptIdx } = dragMarkerLink;
+  const ch = getChapter(chNum);
+  if (!ch) return;
+  const w = ch.waypoints[wptIdx];
+  w.lat = Math.round(e.latlng.lat * 100000) / 100000;
+  w.lon = Math.round(e.latlng.lng * 100000) / 100000;
+  updateMapChapter(chNum);
+  // Update table inputs if visible
+  const latInput = document.querySelector(`#wpt-lat-${chNum}-${wptIdx}`);
+  const lonInput = document.querySelector(`#wpt-lon-${chNum}-${wptIdx}`);
+  if (latInput) latInput.value = w.lat;
+  if (lonInput) lonInput.value = w.lon;
+}
+
+function onMarkerDragEnd() {
+  if (dragMarkerLink) {
+    updateHeroStats();
+  }
+  dragMarkerLink = null;
+  map.dragging.enable();
+  map.off('mousemove', onMarkerDrag);
+  map.off('mouseup', onMarkerDragEnd);
+}
+
+function focusMapOnChapter(chNum) {
+  const ch = getChapter(chNum);
+  if (!ch || ch.waypoints.length === 0) return;
+  const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
+  if (coords.length === 0) return;
+  if (coords.length === 1) {
+    map.setView(coords[0], 8);
+  } else {
+    map.fitBounds(L.latLngBounds(coords).pad(0.15));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NOMINATIM SEARCH
+   ═══════════════════════════════════════════════════════════════ */
+let nomTimer = null;
+function debounceNominatim() {
+  clearTimeout(nomTimer);
+  nomTimer = setTimeout(nomSearch, 400);
+}
+
+function nomSearch() {
+  const q = document.getElementById('nom-input').value.trim();
+  if (q.length < 2) { hideSearchResults(); return; }
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1`, {
+    headers: { 'Accept-Language': 'en' }
+  })
+    .then(r => r.json())
+    .then(results => showSearchResults(results))
+    .catch(() => hideSearchResults());
+}
+
+function nomKeydown(e) {
+  if (e.key === 'Enter') { e.preventDefault(); nomSearch(); }
+  if (e.key === 'Escape') hideSearchResults();
+}
+
+function showSearchResults(results) {
+  const el = document.getElementById('search-results');
+  if (!results || results.length === 0) { hideSearchResults(); return; }
+  el.innerHTML = results.map((r, i) =>
+    `<div class="sr-item" onclick="pickSearchResult(${i})">
+       <div class="sr-name">${esc(r.display_name.split(',')[0])}</div>
+       <div class="sr-detail">${esc(r.display_name)}</div>
+     </div>`
+  ).join('');
+  el.style.display = 'block';
+  el._results = results;
+}
+
+function hideSearchResults() {
+  document.getElementById('search-results').style.display = 'none';
+}
+
+function pickSearchResult(i) {
+  const el = document.getElementById('search-results');
+  const r = el._results[i];
+  if (!r) return;
+  hideSearchResults();
+  const lat = Math.round(parseFloat(r.lat) * 100000) / 100000;
+  const lon = Math.round(parseFloat(r.lon) * 100000) / 100000;
+  const name = r.display_name.split(',')[0].trim();
+  document.getElementById('nom-input').value = '';
+
+  // Add to active chapter if one is selected
+  if (activeChapterNum !== null) {
+    const ch = getChapter(activeChapterNum);
+    if (ch) {
+      const wpt = makeWaypoint();
+      wpt.name = name;
+      wpt.lat = lat;
+      wpt.lon = lon;
+      // Try to extract country
+      if (r.address && r.address.country) wpt.country = r.address.country;
+      ch.waypoints.push(wpt);
+      renderChapterWaypoints(activeChapterNum);
+      updateMapChapter(activeChapterNum);
+      updateHeroStats();
+    }
+  }
+  map.setView([lat, lon], 10);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DATA HELPERS
+   ═══════════════════════════════════════════════════════════════ */
+function getChapter(num) {
+  return STATE.chapters.find(c => c.num === num);
+}
+
+function makeWaypoint() {
+  return { name: '', lat: null, lon: null, major: false, decision: false, gateway: false, country: '', notes: '' };
+}
+
+function makeChapter(num) {
+  return {
+    num, name: 'New Chapter', when: '', era: 'future',
+    routing: '', bailout: '', countries: '',
+    keyDestinations: '', blogUrl: '', padMultiplier: 1.20,
+    prose: '', waypoints: []
+  };
+}
+
+function renumberChapters() {
+  STATE.chapters.forEach((ch, i) => { ch.num = i + 1; });
+}
+
+function haversineNm(lat1, lon1, lat2, lon2) {
+  const R = 3440.065;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function chapterNmBase(ch) {
+  let total = 0;
+  const pts = ch.waypoints.filter(w => w.lat && w.lon);
+  for (let i = 1; i < pts.length; i++) {
+    total += haversineNm(pts[i-1].lat, pts[i-1].lon, pts[i].lat, pts[i].lon);
+  }
+  return Math.round(total);
+}
+
+function chapterNm(ch) {
+  return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1));
+}
+
+function updateHeroStats() {
+  let totalNm = 0, totalWpts = 0;
+  STATE.chapters.forEach(ch => {
+    totalNm += chapterNm(ch);
+    totalWpts += ch.waypoints.filter(w => w.name && w.name.trim()).length;
+  });
+  document.getElementById('hero-stats').textContent =
+    `${STATE.chapters.length} chapters · ${totalWpts} waypoints · ${totalNm.toLocaleString()} nm`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHAPTER LIST RENDERING
+   ═══════════════════════════════════════════════════════════════ */
+function renderAllChapters() {
+  const list = document.getElementById('chapter-list');
+  list.innerHTML = '';
+  STATE.chapters.forEach(ch => list.appendChild(createChapterElement(ch)));
+  initChapterSortable();
+  updateMapAll();
+  updateHeroStats();
+}
+
+function createChapterElement(ch) {
+  const div = document.createElement('div');
+  div.className = `ch-item${ch.num === activeChapterNum ? ' active' : ''}`;
+  div.dataset.chNum = ch.num;
+  div.id = `ch-${ch.num}`;
+
+  const nm = chapterNm(ch);
+
+  div.innerHTML = `
+    <div class="ch-header" onclick="selectChapter(${ch.num})">
+      <span class="ch-drag" title="Drag to reorder">≡</span>
+      <span class="ch-num">${ch.num}</span>
+      <span class="ch-name">${esc(ch.name)}</span>
+      <span class="ch-era ${ch.era}">${ch.era}</span>
+      <span class="ch-nm">${nm.toLocaleString()} nm</span>
+      <div class="ch-toggles" onclick="event.stopPropagation()">
+        <button class="ch-toggle" title="Chapter metadata" onclick="toggleMeta(${ch.num}, this)">📋</button>
+        <button class="ch-toggle" title="Waypoints" onclick="toggleWpts(${ch.num}, this)">📍</button>
+      </div>
+      <button class="ch-delete" title="Delete chapter" onclick="event.stopPropagation();deleteChapter(${ch.num})">✕</button>
+    </div>
+    <div class="ch-meta" id="ch-meta-${ch.num}">
+      ${renderMetaForm(ch)}
+    </div>
+    <div class="ch-wpts" id="ch-wpts-${ch.num}">
+      ${renderWaypointPanel(ch)}
+    </div>
+  `;
+  return div;
+}
+
+function renderMetaForm(ch) {
+  const countries = Array.isArray(ch.countries) ? ch.countries.join(', ') : (ch.countries || '');
+  const keyDest = Array.isArray(ch.keyDestinations) ? ch.keyDestinations.join(', ') : (ch.keyDestinations || '');
+  return `
+    <div class="meta-grid">
+      <div class="meta-field">
+        <label>Name</label>
+        <input type="text" value="${esc(ch.name)}" onchange="updateMeta(${ch.num},'name',this.value)">
+      </div>
+      <div class="meta-field">
+        <label>When</label>
+        <input type="text" value="${esc(ch.when)}" onchange="updateMeta(${ch.num},'when',this.value)">
+      </div>
+      <div class="meta-field">
+        <label>Era</label>
+        <select onchange="updateMeta(${ch.num},'era',this.value)">
+          <option value="past"${ch.era==='past'?' selected':''}>Past</option>
+          <option value="current"${ch.era==='current'?' selected':''}>Current</option>
+          <option value="future"${ch.era==='future'?' selected':''}>Future</option>
+        </select>
+      </div>
+      <div class="meta-field">
+        <label>Pad Multiplier</label>
+        <input type="number" step="0.05" min="1" value="${ch.padMultiplier}" onchange="updateMeta(${ch.num},'padMultiplier',parseFloat(this.value)||1.2)">
+      </div>
+      <div class="meta-field full">
+        <label>Routing</label>
+        <textarea onchange="updateMeta(${ch.num},'routing',this.value)">${esc(ch.routing)}</textarea>
+      </div>
+      <div class="meta-field full">
+        <label>Bail-out</label>
+        <textarea onchange="updateMeta(${ch.num},'bailout',this.value)">${esc(ch.bailout)}</textarea>
+      </div>
+      <div class="meta-field full">
+        <label>Countries (comma-separated)</label>
+        <input type="text" value="${esc(countries)}" onchange="updateMeta(${ch.num},'countries',this.value)">
+      </div>
+      <div class="meta-field full">
+        <label>Key Destinations (comma-separated)</label>
+        <input type="text" value="${esc(keyDest)}" onchange="updateMeta(${ch.num},'keyDestinations',this.value)">
+      </div>
+      <div class="meta-field">
+        <label>Blog URL</label>
+        <input type="text" value="${esc(ch.blogUrl || '')}" onchange="updateMeta(${ch.num},'blogUrl',this.value||null)">
+      </div>
+      <div class="meta-field full">
+        <label>Prose (short summary paragraph)</label>
+        <textarea onchange="updateMeta(${ch.num},'prose',this.value)">${esc(ch.prose || '')}</textarea>
+      </div>
+    </div>
+  `;
+}
+
+function updateMeta(chNum, field, value) {
+  const ch = getChapter(chNum);
+  if (!ch) return;
+  if (field === 'countries' || field === 'keyDestinations') {
+    ch[field] = typeof value === 'string' ? value.split(',').map(s => s.trim()).filter(Boolean) : value;
+  } else {
+    ch[field] = value;
+  }
+  // Update header display
+  const el = document.getElementById(`ch-${chNum}`);
+  if (el) {
+    el.querySelector('.ch-name').textContent = ch.name;
+    el.querySelector('.ch-era').textContent = ch.era;
+    el.querySelector('.ch-era').className = `ch-era ${ch.era}`;
+    el.querySelector('.ch-nm').textContent = chapterNm(ch).toLocaleString() + ' nm';
+  }
+  updateHeroStats();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WAYPOINT TABLE RENDERING
+   ═══════════════════════════════════════════════════════════════ */
+function renderWaypointPanel(ch) {
+  const namedCount = ch.waypoints.filter(w => w.name && w.name.trim()).length;
+  return `
+    <div class="wpt-toolbar">
+      <button class="btn btn-sm" onclick="addWaypoint(${ch.num})">+ Add Row</button>
+      <button class="btn btn-sm" onclick="openBulkModal(${ch.num})">+ Add N Rows</button>
+      <button class="btn btn-sm" onclick="openPasteModal(${ch.num})">Paste</button>
+      <span class="wpt-count">${ch.waypoints.length} rows · ${namedCount} named</span>
+    </div>
+    <div class="wpt-table-wrap">
+      <table class="wpt-table">
+        <thead><tr>
+          <th style="width:20px"></th>
+          <th style="width:28px">#</th>
+          <th class="col-name">Name</th>
+          <th class="col-lat">Lat</th>
+          <th class="col-lon">Lon</th>
+          <th class="col-cb" title="Major">M</th>
+          <th class="col-cb" title="Decision">D</th>
+          <th class="col-cb" title="Gateway">G</th>
+          <th class="col-country">Country</th>
+          <th class="col-notes">Notes</th>
+          <th style="width:24px"></th>
+        </tr></thead>
+        <tbody id="wpt-body-${ch.num}">
+          ${ch.waypoints.map((w, i) => renderWaypointRow(ch.num, w, i)).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderWaypointRow(chNum, w, idx) {
+  const isShaping = !w.name || w.name.trim() === '';
+  return `
+    <tr class="${isShaping ? 'shaping' : ''}" data-idx="${idx}">
+      <td class="wpt-row-drag">≡</td>
+      <td class="wpt-row-num">${idx + 1}</td>
+      <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" value="${esc(w.name)}" placeholder="(routing vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
+      <td class="col-lat"><input type="number" step="any" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="updateWpt(${chNum},${idx},'lat',parseFloat(this.value)||null)"></td>
+      <td class="col-lon"><input type="number" step="any" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="updateWpt(${chNum},${idx},'lon',parseFloat(this.value)||null)"></td>
+      <td class="col-cb"><input type="checkbox" ${w.major?'checked':''} onchange="updateWpt(${chNum},${idx},'major',this.checked)"></td>
+      <td class="col-cb"><input type="checkbox" ${w.decision?'checked':''} onchange="updateWpt(${chNum},${idx},'decision',this.checked)"></td>
+      <td class="col-cb"><input type="checkbox" ${w.gateway?'checked':''} onchange="updateWpt(${chNum},${idx},'gateway',this.checked)"></td>
+      <td class="col-country"><input type="text" value="${esc(w.country || '')}" onchange="updateWpt(${chNum},${idx},'country',this.value)"></td>
+      <td class="col-notes"><input type="text" value="${esc(w.notes || '')}" onchange="updateWpt(${chNum},${idx},'notes',this.value)"></td>
+      <td><button class="wpt-del" onclick="deleteWpt(${chNum},${idx})" title="Delete row">✕</button></td>
+    </tr>
+  `;
+}
+
+function renderChapterWaypoints(chNum) {
+  const ch = getChapter(chNum);
+  if (!ch) return;
+  const panel = document.getElementById(`ch-wpts-${chNum}`);
+  if (panel) {
+    panel.innerHTML = renderWaypointPanel(ch);
+    initWaypointSortable(chNum);
+  }
+  // Update chapter NM display
+  const el = document.getElementById(`ch-${chNum}`);
+  if (el) el.querySelector('.ch-nm').textContent = chapterNm(ch).toLocaleString() + ' nm';
+}
+
+function updateWpt(chNum, idx, field, value) {
+  const ch = getChapter(chNum);
+  if (!ch || !ch.waypoints[idx]) return;
+  ch.waypoints[idx][field] = value;
+  if (field === 'name') {
+    // Update row styling
+    const row = document.querySelector(`#wpt-body-${chNum} tr[data-idx="${idx}"]`);
+    if (row) {
+      const isShaping = !value || value.trim() === '';
+      row.className = isShaping ? 'shaping' : '';
+    }
+  }
+  if (field === 'lat' || field === 'lon') {
+    updateMapChapter(chNum);
+  }
+  if (field === 'major' || field === 'decision' || field === 'gateway') {
+    updateMapChapter(chNum);
+  }
+  updateHeroStats();
+}
+
+function addWaypoint(chNum) {
+  const ch = getChapter(chNum);
+  if (!ch) return;
+  ch.waypoints.push(makeWaypoint());
+  renderChapterWaypoints(chNum);
+  updateMapChapter(chNum);
+  updateHeroStats();
+  // Scroll to bottom of table
+  const wrap = document.querySelector(`#ch-wpts-${chNum} .wpt-table-wrap`);
+  if (wrap) setTimeout(() => wrap.scrollTop = wrap.scrollHeight, 50);
+}
+
+function deleteWpt(chNum, idx) {
+  const ch = getChapter(chNum);
+  if (!ch) return;
+  ch.waypoints.splice(idx, 1);
+  renderChapterWaypoints(chNum);
+  updateMapChapter(chNum);
+  updateHeroStats();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHAPTER ACTIONS
+   ═══════════════════════════════════════════════════════════════ */
+function selectChapter(chNum) {
+  activeChapterNum = chNum;
+  // Update active styling
+  document.querySelectorAll('.ch-item').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.chNum) === chNum);
+  });
+  // Update map
+  updateMapAll();
+  focusMapOnChapter(chNum);
+  // Update status
+  const ch = getChapter(chNum);
+  document.getElementById('status-text').innerHTML =
+    `<span class="status-active">Ch ${ch.num}: ${esc(ch.name)}</span> · ${ch.waypoints.length} waypoints · ${chapterNm(ch).toLocaleString()} nm`;
+}
+
+function toggleMeta(chNum, btn) {
+  const panel = document.getElementById(`ch-meta-${chNum}`);
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+}
+
+function toggleWpts(chNum, btn) {
+  const panel = document.getElementById(`ch-wpts-${chNum}`);
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+  if (isOpen) initWaypointSortable(chNum);
+}
+
+function addChapter() {
+  const num = STATE.chapters.length + 1;
+  STATE.chapters.push(makeChapter(num));
+  renderAllChapters();
+  selectChapter(num);
+}
+
+function deleteChapter(chNum) {
+  if (!confirm(`Delete chapter ${chNum}? This cannot be undone.`)) return;
+  STATE.chapters = STATE.chapters.filter(c => c.num !== chNum);
+  renumberChapters();
+  if (activeChapterNum === chNum) activeChapterNum = null;
+  renderAllChapters();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SORTABLE (drag-to-reorder)
+   ═══════════════════════════════════════════════════════════════ */
+function initChapterSortable() {
+  const list = document.getElementById('chapter-list');
+  if (list._sortable) list._sortable.destroy();
+  list._sortable = Sortable.create(list, {
+    handle: '.ch-drag',
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    onEnd: function(evt) {
+      // Reorder state array
+      const moved = STATE.chapters.splice(evt.oldIndex, 1)[0];
+      STATE.chapters.splice(evt.newIndex, 0, moved);
+      renumberChapters();
+      renderAllChapters();
+      if (activeChapterNum !== null) selectChapter(activeChapterNum);
+    }
+  });
+}
+
+function initWaypointSortable(chNum) {
+  const tbody = document.getElementById(`wpt-body-${chNum}`);
+  if (!tbody) return;
+  if (tbody._sortable) tbody._sortable.destroy();
+  tbody._sortable = Sortable.create(tbody, {
+    handle: '.wpt-row-drag',
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    onEnd: function(evt) {
+      const ch = getChapter(chNum);
+      if (!ch) return;
+      const moved = ch.waypoints.splice(evt.oldIndex, 1)[0];
+      ch.waypoints.splice(evt.newIndex, 0, moved);
+      renderChapterWaypoints(chNum);
+      updateMapChapter(chNum);
+      updateHeroStats();
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RAPID CLICK MODE
+   ═══════════════════════════════════════════════════════════════ */
+function toggleRapidClick() {
+  rapidClickMode = !rapidClickMode;
+  const btn = document.getElementById('rapid-click-toggle');
+  btn.textContent = `Rapid click: ${rapidClickMode ? 'ON' : 'OFF'}`;
+  btn.classList.toggle('active', rapidClickMode);
+  if (rapidClickMode) {
+    document.getElementById('map').style.cursor = 'crosshair';
+  } else {
+    document.getElementById('map').style.cursor = '';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BULK ADD & PASTE
+   ═══════════════════════════════════════════════════════════════ */
+let bulkTargetChNum = null, pasteTargetChNum = null;
+
+function openBulkModal(chNum) {
+  bulkTargetChNum = chNum;
+  document.getElementById('bulk-modal').classList.add('open');
+  document.getElementById('bulk-count').focus();
+}
+function closeBulkModal() {
+  document.getElementById('bulk-modal').classList.remove('open');
+}
+function doBulkAdd() {
+  const n = parseInt(document.getElementById('bulk-count').value) || 10;
+  const ch = getChapter(bulkTargetChNum);
+  if (!ch) return;
+  for (let i = 0; i < n; i++) ch.waypoints.push(makeWaypoint());
+  closeBulkModal();
+  renderChapterWaypoints(bulkTargetChNum);
+  updateHeroStats();
+}
+
+function openPasteModal(chNum) {
+  pasteTargetChNum = chNum;
+  document.getElementById('paste-area').value = '';
+  document.getElementById('paste-modal').classList.add('open');
+  document.getElementById('paste-area').focus();
+}
+function closePasteModal() {
+  document.getElementById('paste-modal').classList.remove('open');
+}
+function doPaste() {
+  const text = document.getElementById('paste-area').value.trim();
+  if (!text) { closePasteModal(); return; }
+  const ch = getChapter(pasteTargetChNum);
+  if (!ch) return;
+
+  const parsed = Papa.parse(text, { header: false, skipEmptyLines: true });
+  parsed.data.forEach(row => {
+    const wpt = makeWaypoint();
+    // Minimum: name, lat, lon
+    if (row.length >= 1) wpt.name = (row[0] || '').trim();
+    if (row.length >= 2) wpt.lat = parseFloat(row[1]) || null;
+    if (row.length >= 3) wpt.lon = parseFloat(row[2]) || null;
+    if (row.length >= 4) wpt.major = row[3] === 'true' || row[3] === '1' || row[3] === 'TRUE';
+    if (row.length >= 5) wpt.decision = row[4] === 'true' || row[4] === '1' || row[4] === 'TRUE';
+    if (row.length >= 6) wpt.gateway = row[5] === 'true' || row[5] === '1' || row[5] === 'TRUE';
+    if (row.length >= 7) wpt.country = (row[6] || '').trim();
+    if (row.length >= 8) wpt.notes = (row[7] || '').trim();
+    ch.waypoints.push(wpt);
+  });
+
+  closePasteModal();
+  renderChapterWaypoints(pasteTargetChNum);
+  updateMapChapter(pasteTargetChNum);
+  updateHeroStats();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   IMPORT — JSON
+   ═══════════════════════════════════════════════════════════════ */
+function importJSON() {
+  closeDropdowns();
+  document.getElementById('file-json').click();
+}
+
+function handleJSONFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      loadFromJSON(data);
+    } catch (err) {
+      alert('Error parsing JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function loadFromJSON(data) {
+  // Detect format: v2 (editor-native) vs v1 (viewer/KML-derived)
+  if (data.chapters && data.chapters.length > 0 && data.chapters[0].routes !== undefined) {
+    // v1 format — has separate routes[] and waypoints[] per chapter
+    loadFromV1JSON(data);
+  } else if (data.chapters) {
+    // v2 format — unified waypoints
+    loadFromV2JSON(data);
+  } else {
+    alert('Unrecognized JSON format. Expected a "chapters" array.');
+  }
+}
+
+function loadFromV1JSON(data) {
+  STATE.chapters = [];
+
+  data.chapters.forEach(ch => {
+    const chapter = {
+      num: ch.num,
+      name: ch.name || '',
+      when: ch.when || '',
+      era: ch.era || 'future',
+      routing: ch.routing || '',
+      bailout: ch.bailout || '',
+      countries: ch.countries || [],
+      keyDestinations: ch.keyDestinations || [],
+      blogUrl: ch.blogUrl || null,
+      padMultiplier: ch.padMultiplier || 1.2,
+      prose: ch.prose || '',
+      waypoints: []
+    };
+
+    // Merge route vertices + named waypoints into one ordered list
+    // 1. Concatenate route segments, dedup shared endpoints
+    let allVerts = [];
+    (ch.routes || []).forEach((seg, si) => {
+      seg.forEach((pt, pi) => {
+        // Skip first vertex of subsequent segments if it matches previous end
+        if (si > 0 && pi === 0 && allVerts.length > 0) {
+          const prev = allVerts[allVerts.length - 1];
+          if (Math.abs(prev[0] - pt[0]) < 0.0001 && Math.abs(prev[1] - pt[1]) < 0.0001) return;
+        }
+        allVerts.push(pt); // [lat, lon]
+      });
+    });
+
+    // 2. Match route vertices to named waypoints
+    const wpUsed = new Set();
+    const namedWpts = ch.waypoints || [];
+
+    allVerts.forEach(vert => {
+      const [lat, lon] = vert;
+      // Find closest unused named waypoint within tolerance
+      let bestIdx = -1, bestDist = 0.01; // ~1.1 km tolerance
+      namedWpts.forEach((w, i) => {
+        if (wpUsed.has(i)) return;
+        const d = Math.sqrt((w.lat - lat)**2 + (w.lon - lon)**2);
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+      });
+
+      const wpt = makeWaypoint();
+      wpt.lat = Math.round(lat * 100000) / 100000;
+      wpt.lon = Math.round(lon * 100000) / 100000;
+
+      if (bestIdx >= 0) {
+        wpUsed.add(bestIdx);
+        const nw = namedWpts[bestIdx];
+        wpt.name = nw.name || '';
+        wpt.major = nw.major || false;
+        wpt.decision = false;
+        wpt.gateway = false;
+        // routingLabel from v1 → we keep the name but no special flag
+      }
+
+      chapter.waypoints.push(wpt);
+    });
+
+    // 3. Any unmatched named waypoints get appended (edge case)
+    namedWpts.forEach((w, i) => {
+      if (wpUsed.has(i)) return;
+      const wpt = makeWaypoint();
+      wpt.name = w.name || '';
+      wpt.lat = w.lat;
+      wpt.lon = w.lon;
+      wpt.major = w.major || false;
+      chapter.waypoints.push(wpt);
+    });
+
+    STATE.chapters.push(chapter);
+  });
+
+  renderAllChapters();
+  if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
+  setTimeout(() => map.invalidateSize(), 100);
+}
+
+function loadFromV2JSON(data) {
+  STATE.chapters = data.chapters.map(ch => ({
+    num: ch.num,
+    name: ch.name || '',
+    when: ch.when || '',
+    era: ch.era || 'future',
+    routing: ch.routing || '',
+    bailout: ch.bailout || '',
+    countries: ch.countries || [],
+    keyDestinations: ch.keyDestinations || [],
+    blogUrl: ch.blogUrl || null,
+    padMultiplier: ch.padMultiplier || 1.2,
+    prose: ch.prose || '',
+    waypoints: (ch.waypoints || []).map(w => ({
+      name: w.name || '',
+      lat: w.lat ?? null,
+      lon: w.lon ?? null,
+      major: w.major || false,
+      decision: w.decision || false,
+      gateway: w.gateway || false,
+      country: w.country || '',
+      notes: w.notes || ''
+    }))
+  }));
+  renderAllChapters();
+  if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
+  setTimeout(() => map.invalidateSize(), 100);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   IMPORT — CSV
+   ═══════════════════════════════════════════════════════════════ */
+function importCSV() {
+  closeDropdowns();
+  document.getElementById('file-csv-chapters').click();
+}
+
+function handleCSVChaptersFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const parsed = Papa.parse(ev.target.result, { header: true, skipEmptyLines: true });
+    pendingCSVChapters = parsed.data;
+    document.getElementById('csv-step2-modal').classList.add('open');
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function closeCSVStep2() {
+  document.getElementById('csv-step2-modal').classList.remove('open');
+  pendingCSVChapters = null;
+}
+
+function handleCSVWaypointsFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const parsed = Papa.parse(ev.target.result, { header: true, skipEmptyLines: true });
+    mergeCSVImport(pendingCSVChapters, parsed.data);
+    closeCSVStep2();
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function mergeCSVImport(chapRows, wptRows) {
+  STATE.chapters = [];
+  const chMap = {};
+
+  (chapRows || []).forEach(r => {
+    const num = parseInt(r.num);
+    if (isNaN(num)) return;
+    const ch = {
+      num,
+      name: r.name || '',
+      when: r.when || '',
+      era: r.era || 'future',
+      routing: r.routing || '',
+      bailout: r.bailout || '',
+      countries: r.countries ? r.countries.split(',').map(s => s.trim()).filter(Boolean) : [],
+      keyDestinations: r.keyDestinations ? r.keyDestinations.split(',').map(s => s.trim()).filter(Boolean) : [],
+      blogUrl: r.blogUrl || null,
+      padMultiplier: parseFloat(r.padMultiplier) || 1.2,
+      prose: r.prose || '',
+      waypoints: []
+    };
+    STATE.chapters.push(ch);
+    chMap[num] = ch;
+  });
+
+  (wptRows || []).forEach(r => {
+    const chNum = parseInt(r.chapter);
+    if (!chMap[chNum]) return;
+    chMap[chNum].waypoints.push({
+      name: r.name || '',
+      lat: parseFloat(r.lat) || null,
+      lon: parseFloat(r.lon) || null,
+      major: r.major === 'true' || r.major === '1',
+      decision: r.decision === 'true' || r.decision === '1',
+      gateway: r.gateway === 'true' || r.gateway === '1',
+      country: r.country || '',
+      notes: r.notes || ''
+    });
+  });
+
+  // Sort waypoints by order if present
+  STATE.chapters.forEach(ch => {
+    ch.waypoints.sort((a, b) => (parseInt(a.order) || 0) - (parseInt(b.order) || 0));
+  });
+
+  STATE.chapters.sort((a, b) => a.num - b.num);
+  renderAllChapters();
+  if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT — JSON
+   ═══════════════════════════════════════════════════════════════ */
+function exportJSON() {
+  closeDropdowns();
+  let totalNm = 0, totalWpts = 0;
+  const chapters = STATE.chapters.map(ch => {
+    const nmBase = chapterNmBase(ch);
+    const nm = Math.round(nmBase * (ch.padMultiplier || 1));
+    totalNm += nm;
+    const named = ch.waypoints.filter(w => w.name && w.name.trim());
+    totalWpts += named.length;
+    return {
+      num: ch.num,
+      name: ch.name,
+      when: ch.when,
+      era: ch.era,
+      routing: ch.routing,
+      bailout: ch.bailout,
+      countries: ch.countries,
+      keyDestinations: ch.keyDestinations,
+      blogUrl: ch.blogUrl || null,
+      padMultiplier: ch.padMultiplier,
+      prose: ch.prose || '',
+      nm, nmBase,
+      waypoints: ch.waypoints.map((w, i) => ({
+        order: i + 1,
+        name: w.name,
+        lat: w.lat,
+        lon: w.lon,
+        major: w.major,
+        decision: w.decision,
+        gateway: w.gateway,
+        country: w.country || '',
+        notes: w.notes || ''
+      }))
+    };
+  });
+
+  const out = {
+    meta: {
+      title: 'Voyage Route Data',
+      version: '2.0',
+      generatedAt: new Date().toISOString(),
+      hero: {
+        nm: totalNm,
+        chapters: chapters.length,
+        waypoints: totalWpts
+      }
+    },
+    chapters
+  };
+
+  downloadFile('voyage-data.json', JSON.stringify(out, null, 2), 'application/json');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT — CSV
+   ═══════════════════════════════════════════════════════════════ */
+function exportChaptersCSV() {
+  closeDropdowns();
+  const rows = STATE.chapters.map(ch => ({
+    num: ch.num,
+    name: ch.name,
+    when: ch.when,
+    era: ch.era,
+    routing: ch.routing,
+    bailout: ch.bailout,
+    countries: Array.isArray(ch.countries) ? ch.countries.join(', ') : ch.countries,
+    keyDestinations: Array.isArray(ch.keyDestinations) ? ch.keyDestinations.join(', ') : ch.keyDestinations,
+    blogUrl: ch.blogUrl || '',
+    padMultiplier: ch.padMultiplier,
+    prose: ch.prose || ''
+  }));
+  const csv = Papa.unparse(rows);
+  downloadFile('chapters.csv', csv, 'text/csv');
+}
+
+function exportWaypointsCSV() {
+  closeDropdowns();
+  const rows = [];
+  STATE.chapters.forEach(ch => {
+    ch.waypoints.forEach((w, i) => {
+      rows.push({
+        chapter: ch.num,
+        order: i + 1,
+        name: w.name,
+        lat: w.lat,
+        lon: w.lon,
+        major: w.major,
+        decision: w.decision,
+        gateway: w.gateway,
+        country: w.country || '',
+        notes: w.notes || ''
+      });
+    });
+  });
+  const csv = Papa.unparse(rows);
+  downloadFile('waypoints.csv', csv, 'text/csv');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT — KML
+   ═══════════════════════════════════════════════════════════════ */
+function exportKML() {
+  closeDropdowns();
+  let kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+<name>Voyage Route</name>
+<description>Exported from Voyage Route Editor</description>
+`;
+
+  // Define styles
+  kml += `<Style id="waypoint"><IconStyle><scale>0.8</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/wht-circle.png</href></Icon></IconStyle></Style>
+<Style id="major"><IconStyle><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/ylw-stars.png</href></Icon></IconStyle></Style>
+<Style id="decision"><IconStyle><scale>1.0</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/red-diamond.png</href></Icon></IconStyle></Style>
+<Style id="gateway"><IconStyle><scale>1.0</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/grn-stars.png</href></Icon></IconStyle></Style>
+`;
+
+  STATE.chapters.forEach(ch => {
+    kml += `<Folder><name>Ch ${ch.num} — ${escXml(ch.name)}</name>\n`;
+
+    // Route line
+    const pts = ch.waypoints.filter(w => w.lat && w.lon);
+    if (pts.length >= 2) {
+      const coords = pts.map(w => `${w.lon},${w.lat},0`).join('\n');
+      kml += `<Placemark><name>${escXml(ch.name)} route</name>
+<Style><LineStyle><color>ff${chapterColor(ch.num).slice(1).split('').reverse().join('')}</color><width>2</width></LineStyle></Style>
+<LineString><tessellate>1</tessellate><coordinates>\n${coords}\n</coordinates></LineString></Placemark>\n`;
+    }
+
+    // Waypoint placemarks (named only)
+    ch.waypoints.forEach(w => {
+      if (!w.name || !w.name.trim() || !w.lat || !w.lon) return;
+      let styleId = 'waypoint';
+      if (w.major) styleId = 'major';
+      if (w.decision) styleId = 'decision';
+      if (w.gateway) styleId = 'gateway';
+      kml += `<Placemark><name>${escXml(w.name)}</name><styleUrl>#${styleId}</styleUrl>
+<Point><coordinates>${w.lon},${w.lat},0</coordinates></Point></Placemark>\n`;
+    });
+
+    kml += `</Folder>\n`;
+  });
+
+  kml += `</Document>\n</kml>`;
+  downloadFile('voyage-route.kml', kml, 'application/vnd.google-earth.kml+xml');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escXml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function toggleDropdown(id) {
+  closeDropdowns(id);
+  document.getElementById(id).classList.toggle('open');
+}
+
+function closeDropdowns(except) {
+  document.querySelectorAll('.dropdown-menu').forEach(el => {
+    if (el.id !== except) el.classList.remove('open');
+  });
+}
+
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.classList.toggle('dark', isDark);
+  if (isDark) {
+    map.removeLayer(tileLight);
+    tileDark.addTo(map);
+  } else {
+    map.removeLayer(tileDark);
+    tileLight.addTo(map);
+  }
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.dropdown')) closeDropdowns();
+  if (!e.target.closest('#search-bar')) hideSearchResults();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function() {
+  initMap();
+  renderAllChapters();
+  updateHeroStats();
+});
+</script>
+</body>
+</html>

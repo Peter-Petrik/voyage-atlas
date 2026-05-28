@@ -1,7 +1,72 @@
 # Changelog — Voyage Map
 
-All notable changes to the voyage map project are recorded here. Format follows
-[Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR`).
+All notable changes to the voyage map project (editor + viewer) are recorded here. Format follows
+[Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR`). The
+framework document (`global-voyage-framework.md`) carries its own separate version line.
+
+## [Unreleased]
+
+Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
+1. Help text (i) icons on all editor fields
+2. Chapter endpoint synchronization
+3. Midpoint insertion on route legs (ghost draggable points)
+4. Country auto-populate via reverse geocoding
+5. Chapter countries auto-aggregate from waypoints
+6. Month/year dropdowns for "When" field
+7. Unsaved-changes warning (beforeunload handler)
+8. Date-prefixed export filenames (YYYY-MM-DD-)
+9. Decision/Gateway visual marker styles in editor and viewer
+10. Metadata field consolidation (routing + bailout + prose → notes)
+11. Viewer refactor to runtime JSON loading
+12. GPX import and export
+
+## [v2.0] - 2026-05-28
+
+### Added — Voyage Route Editor (`voyage-editor.html`)
+1. New self-contained HTML/JS editor for managing chapters and waypoints. Replaces the prior
+   workflow of editing via Claude prompts and Python converter scripts.
+2. Accordion-style chapter list with independent metadata and waypoint expand toggles.
+3. Waypoint table per chapter: inline editing, three boolean flags (Major, Decision, Gateway),
+   drag-to-reorder via SortableJS.
+4. Embedded Leaflet map: active chapter highlighted with route line and draggable markers,
+   inactive chapters shown as muted lines.
+5. Nominatim (OpenStreetMap) place search — type a name, pick from results, waypoint added
+   with coordinates and country.
+6. Rapid-click mode — toggle ON, click the map to add waypoints in sequence.
+7. Bulk operations: add N empty rows, paste from clipboard (tab/comma-separated).
+8. Chapter reordering via drag handles, auto-renumbering.
+9. Import: v1 JSON (separate routes[] + waypoints[], auto-merged into unified model) and v2
+   JSON (unified waypoints). CSV import (chapters.csv + waypoints.csv, two-step file picker).
+10. Export: JSON (v2 schema with unified waypoints), chapters.csv, waypoints.csv, KML
+    (folders per chapter, LineStrings + Placemarks with style-mapped icons).
+11. Paul Tol "muted" palette carried forward from viewer, chapter colour assignment preserved.
+12. Light/dark theme toggle matching the viewer's admiralty-chart aesthetic (Fraunces + Spline
+    Sans Mono typography, CartoDB Positron/Dark Matter tiles).
+
+### Changed — Data model
+1. **Source of truth pivoted from KML to CSV/JSON.** The KML is archived as the one-time bootstrap
+   source. Editing now happens in the editor; KML/GPX are derived exports.
+2. **Unified waypoint model.** Route line vertices and named waypoints merged into a single ordered
+   list per chapter. No more separate `routes[]` and `waypoints[]` arrays. Blank-name rows are
+   shaping vertices (no marker); named rows are waypoints (rendered as markers).
+3. **Type flags replaced.** The v1 `major` (boolean) and `routingLabel` (boolean) fields replaced
+   by three independent checkboxes: `major`, `decision`, `gateway`. `routingLabel` concept dropped —
+   those waypoints become regular named waypoints with no flags.
+4. **Schema:** `waypoints.csv` columns: chapter, order, name, lat, lon, major, decision, gateway,
+   country, notes. `chapters.csv` columns: num, name, when, era, routing, bailout, countries,
+   keyDestinations, blogUrl, padMultiplier, prose. Full schema in `voyage-editor-schema.md`.
+
+### Fixed
+1. Editor layout — body missing `display: flex; flex-direction: column`, causing chapter panel
+   to not scroll and map to render at minimal height. Fixed by adding flex column to body.
+2. Map rendering after import — added `map.invalidateSize()` after data load so Leaflet
+   recalculates container dimensions.
+
+### Deprecated
+1. `kml-to-json.py` — retained in the repo for reference but no longer part of the build pipeline.
+   The editor replaces its functionality.
+2. `grace-voyage-framework.kml` — archived as the bootstrap source. Route editing now happens in
+   the editor; KML is a derived export.
 
 ## [v1.1] - 2026-05-21
 
