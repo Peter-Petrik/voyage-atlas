@@ -419,9 +419,8 @@ th .hi { margin-left: 2px; }
   <!-- Left: chapter panel -->
   <div id="chapter-panel">
     <div style="display:flex;gap:6px;padding:0 0 8px 0;align-items:center;">
-      <button class="btn btn-sm" onclick="expandAllMeta()" title="Expand all metadata">All 📋</button>
-      <button class="btn btn-sm" onclick="expandAllWpts()" title="Expand all waypoints">All 📍</button>
-      <button class="btn btn-sm" onclick="collapseAll()" title="Collapse all">Collapse</button>
+      <button class="btn btn-sm" id="toggle-all-meta" onclick="toggleAllMeta(this)" title="Toggle all metadata panels">📋 Expand all</button>
+      <button class="btn btn-sm" id="toggle-all-wpts" onclick="toggleAllWpts(this)" title="Toggle all waypoint tables">📍 Expand all</button>
     </div>
     <div id="chapter-list"></div>
     <div style="padding:8px 0; display:flex; gap:6px;">
@@ -1115,33 +1114,29 @@ function onWhenChange(chNum) {
 /* ═══════════════════════════════════════════════════════════════
    EXPAND / COLLAPSE ALL
    ═══════════════════════════════════════════════════════════════ */
-function expandAllMeta() {
+function toggleAllMeta(btn) {
+  const expanding = btn.textContent.includes('Expand');
   STATE.chapters.forEach(ch => {
     const panel = document.getElementById(`ch-meta-${ch.num}`);
-    const btn = document.querySelector(`#ch-${ch.num} .ch-toggle[title="Chapter metadata"]`);
-    if (panel) panel.classList.add('open');
-    if (btn) btn.classList.add('open');
+    const toggle = document.querySelector(`#ch-${ch.num} .ch-toggle[title="Chapter metadata"]`);
+    if (panel) panel.classList.toggle('open', expanding);
+    if (toggle) toggle.classList.toggle('open', expanding);
   });
+  btn.textContent = expanding ? '📋 Collapse all' : '📋 Expand all';
 }
 
-function expandAllWpts() {
+function toggleAllWpts(btn) {
+  const expanding = btn.textContent.includes('Expand');
   STATE.chapters.forEach(ch => {
     const panel = document.getElementById(`ch-wpts-${ch.num}`);
-    const btn = document.querySelector(`#ch-${ch.num} .ch-toggle[title="Waypoints"]`);
-    if (panel) { panel.classList.add('open'); initWaypointSortable(ch.num); }
-    if (btn) btn.classList.add('open');
+    const toggle = document.querySelector(`#ch-${ch.num} .ch-toggle[title="Waypoints"]`);
+    if (panel) {
+      panel.classList.toggle('open', expanding);
+      if (expanding) initWaypointSortable(ch.num);
+    }
+    if (toggle) toggle.classList.toggle('open', expanding);
   });
-}
-
-function collapseAll() {
-  STATE.chapters.forEach(ch => {
-    const meta = document.getElementById(`ch-meta-${ch.num}`);
-    const wpts = document.getElementById(`ch-wpts-${ch.num}`);
-    const btns = document.querySelectorAll(`#ch-${ch.num} .ch-toggle`);
-    if (meta) meta.classList.remove('open');
-    if (wpts) wpts.classList.remove('open');
-    btns.forEach(b => b.classList.remove('open'));
-  });
+  btn.textContent = expanding ? '📍 Collapse all' : '📍 Expand all';
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1165,7 +1160,7 @@ function createChapterElement(ch) {
   const nm = chapterNm(ch);
 
   div.innerHTML = `
-    <div class="ch-header" onclick="selectChapter(${ch.num})">
+    <div class="ch-header" onclick="selectChapter(${ch.num})" ondblclick="dblClickChapter(${ch.num})">
       <span class="ch-drag" title="Drag to reorder">≡</span>
       <span class="ch-num">${ch.num}</span>
       <span class="ch-name">${esc(ch.name)}</span>
@@ -1394,6 +1389,13 @@ function toggleMeta(chNum, btn) {
   const panel = document.getElementById(`ch-meta-${chNum}`);
   const isOpen = panel.classList.toggle('open');
   btn.classList.toggle('open', isOpen);
+}
+
+function dblClickChapter(chNum) {
+  const panel = document.getElementById(`ch-meta-${chNum}`);
+  const btn = document.querySelector(`#ch-${chNum} .ch-toggle[title="Chapter metadata"]`);
+  const isOpen = panel.classList.toggle('open');
+  if (btn) btn.classList.toggle('open', isOpen);
 }
 
 function toggleWpts(chNum, btn) {

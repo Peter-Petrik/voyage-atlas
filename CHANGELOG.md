@@ -11,6 +11,16 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.0.10] - 2026-05-28
+
+### Added
+1. Double-click chapter header opens metadata panel (single click still selects on map).
+
+### Changed
+1. Expand/collapse redesigned as two toggle buttons ("📋 Expand all" / "📋 Collapse all" and
+   "📍 Expand all" / "📍 Collapse all"). Same button toggles between states — replaces the
+   previous three-button layout.
+
 ## [v2.0.9] - 2026-05-28
 
 ### Fixed
