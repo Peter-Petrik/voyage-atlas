@@ -1,0 +1,3874 @@
+{
+  "meta": {
+    "title": "S/Y GRACE — Global Voyage Framework",
+    "frameworkVersion": "v1.4",
+    "mapVersion": "v1.1",
+    "hero": {
+      "nm": 81051,
+      "years": "10+",
+      "nations": 39,
+      "territories": 15
+    },
+    "note": "Chapter 1 (Med Eastward) is a metadata-only stub; its track arrives in Phase 2 from a NoForeignLand GPX export."
+  },
+  "paz": [
+    {
+      "zone": "Red Sea / Bab el-Mandeb / Gulf of Aden",
+      "bounds": [
+        11,
+        32,
+        30,
+        55
+      ]
+    },
+    {
+      "zone": "Somali Basin / Western Indian Ocean",
+      "bounds": [
+        -5,
+        42,
+        15,
+        65
+      ]
+    },
+    {
+      "zone": "Persian Gulf / Strait of Hormuz",
+      "bounds": [
+        24,
+        48,
+        30,
+        58
+      ]
+    },
+    {
+      "zone": "Gulf of Guinea / West African Coast",
+      "bounds": [
+        -5,
+        -5,
+        10,
+        12
+      ]
+    },
+    {
+      "zone": "Venezuela",
+      "bounds": [
+        9,
+        -72,
+        13,
+        -60
+      ]
+    },
+    {
+      "zone": "NW Pacific — Russian Far East",
+      "bounds": [
+        42,
+        135,
+        65,
+        170
+      ]
+    },
+    {
+      "zone": "NW Pacific — North Korea",
+      "bounds": [
+        38,
+        124,
+        43,
+        131
+      ]
+    },
+    {
+      "zone": "Singapore Strait",
+      "bounds": [
+        0.5,
+        103,
+        2,
+        105
+      ]
+    },
+    {
+      "zone": "Sulu Sea / Mindanao Coast",
+      "bounds": [
+        4,
+        119,
+        10,
+        126
+      ]
+    },
+    {
+      "zone": "Myanmar Coast",
+      "bounds": [
+        9,
+        92,
+        21,
+        98
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "num": 1,
+      "name": "Med Eastward",
+      "when": "Sep 2024 – Jan 2026",
+      "era": "past",
+      "routing": "The first 18 months — France and Monaco eastward through Italy, the Adriatic and Greece to the Aegean.",
+      "bailout": "Completed. Track arrives in Phase 2 from a NoForeignLand export.",
+      "countries": [
+        "France",
+        "Monaco",
+        "Italy",
+        "Croatia",
+        "Montenegro",
+        "Greece",
+        "Turkey"
+      ],
+      "keyDestinations": [
+        "French Riviera",
+        "Italy",
+        "Croatia",
+        "Montenegro",
+        "Greece",
+        "Aegean"
+      ],
+      "blogUrl": null,
+      "nm": 6000,
+      "nmBase": 6000,
+      "padMultiplier": 1.0,
+      "routes": [],
+      "waypoints": []
+    },
+    {
+      "num": 2,
+      "name": "Med Westward",
+      "when": "Feb 2026 – Dec 2026",
+      "era": "current",
+      "routing": "Westward across the central Med via Malta, Sicily, the Aeolians, Sardinia and the Balearics to Gibraltar — staging for the Atlantic.",
+      "bailout": "A dense all-weather harbour network the whole way; the Costa Brava vs direct-Valencia fork stays open.",
+      "countries": [
+        "Greece",
+        "Italy",
+        "Malta",
+        "Spain",
+        "Gibraltar (UK)"
+      ],
+      "keyDestinations": [
+        "Malta",
+        "Sicily",
+        "Aeolian Islands",
+        "Sardinia",
+        "Balearics",
+        "Gibraltar"
+      ],
+      "blogUrl": null,
+      "nm": 2882,
+      "nmBase": 2506,
+      "padMultiplier": 1.15,
+      "routes": [
+        [
+          [
+            37.028,
+            27.988
+          ],
+          [
+            37.037,
+            27.43
+          ],
+          [
+            36.895,
+            27.092
+          ],
+          [
+            36.948,
+            26.988
+          ],
+          [
+            37.317,
+            26.547
+          ],
+          [
+            36.833,
+            25.857
+          ],
+          [
+            37.105,
+            25.375
+          ],
+          [
+            37.087,
+            25.148
+          ],
+          [
+            36.975,
+            24.695
+          ],
+          [
+            37.633,
+            24.325
+          ],
+          [
+            37.65,
+            23.97
+          ],
+          [
+            37.747,
+            23.427
+          ],
+          [
+            37.935,
+            23.005
+          ],
+          [
+            37.97,
+            22.88
+          ],
+          [
+            38.378,
+            22.379
+          ],
+          [
+            38.29,
+            21.79
+          ],
+          [
+            38.365,
+            20.72
+          ],
+          [
+            38.73,
+            20.743
+          ],
+          [
+            39.198,
+            20.158
+          ],
+          [
+            39.648,
+            19.846
+          ]
+        ],
+        [
+          [
+            39.648,
+            19.846
+          ],
+          [
+            39.5,
+            18.3
+          ],
+          [
+            40.472,
+            17.24
+          ],
+          [
+            40.175,
+            16.7
+          ],
+          [
+            39.08,
+            17.128
+          ],
+          [
+            38.255,
+            15.868
+          ],
+          [
+            38.112,
+            15.647
+          ],
+          [
+            35.897,
+            14.514
+          ]
+        ],
+        [
+          [
+            35.897,
+            14.514
+          ],
+          [
+            35.842,
+            14.543
+          ],
+          [
+            36.012,
+            14.336
+          ],
+          [
+            36.047,
+            14.255
+          ],
+          [
+            35.897,
+            14.514
+          ]
+        ],
+        [
+          [
+            35.897,
+            14.514
+          ],
+          [
+            37.06,
+            15.293
+          ],
+          [
+            37.752,
+            15.28
+          ],
+          [
+            38.19,
+            15.563
+          ],
+          [
+            38.794,
+            15.213
+          ],
+          [
+            38.468,
+            14.954
+          ],
+          [
+            38.415,
+            14.965
+          ],
+          [
+            38.462,
+            14.832
+          ],
+          [
+            38.038,
+            14.023
+          ],
+          [
+            38.12,
+            13.363
+          ]
+        ],
+        [
+          [
+            38.12,
+            13.363
+          ],
+          [
+            39.932,
+            9.707
+          ],
+          [
+            40.22,
+            9.625
+          ],
+          [
+            40.92,
+            9.7
+          ],
+          [
+            41.213,
+            9.407
+          ],
+          [
+            41.388,
+            9.158
+          ],
+          [
+            39.886,
+            4.267
+          ]
+        ],
+        [
+          [
+            39.886,
+            4.267
+          ],
+          [
+            39.942,
+            3.1
+          ],
+          [
+            39.563,
+            2.637
+          ],
+          [
+            39.148,
+            2.947
+          ],
+          [
+            38.907,
+            1.438
+          ],
+          [
+            39.453,
+            -0.325
+          ]
+        ],
+        [
+          [
+            39.453,
+            -0.325
+          ],
+          [
+            38.342,
+            -0.483
+          ],
+          [
+            37.598,
+            -0.987
+          ],
+          [
+            36.725,
+            -2.19
+          ],
+          [
+            36.838,
+            -2.467
+          ],
+          [
+            36.723,
+            -3.525
+          ],
+          [
+            36.718,
+            -4.42
+          ],
+          [
+            36.427,
+            -5.148
+          ],
+          [
+            36.14,
+            -5.353
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Ören",
+          "lat": 37.028,
+          "lon": 27.988,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Bodrum",
+          "lat": 37.037,
+          "lon": 27.43,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Kos",
+          "lat": 36.895,
+          "lon": 27.092,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Kalymnos",
+          "lat": 36.948,
+          "lon": 26.988,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Patmos",
+          "lat": 37.317,
+          "lon": 26.547,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Amorgos",
+          "lat": 36.833,
+          "lon": 25.857,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Naxos",
+          "lat": 37.105,
+          "lon": 25.375,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Paros",
+          "lat": 37.087,
+          "lon": 25.148,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Sifnos",
+          "lat": 36.975,
+          "lon": 24.695,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Kea",
+          "lat": 37.633,
+          "lon": 24.325,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Cape Sounion",
+          "lat": 37.65,
+          "lon": 23.97,
+          "major": false,
+          "routingLabel": true
+        },
+        {
+          "name": "Aegina",
+          "lat": 37.747,
+          "lon": 23.427,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Corinth Canal East",
+          "lat": 37.935,
+          "lon": 23.005,
+          "major": false,
+          "routingLabel": true
+        },
+        {
+          "name": "Corinth Canal West",
+          "lat": 37.97,
+          "lon": 22.88,
+          "major": false,
+          "routingLabel": true
+        },
+        {
+          "name": "Galaxidi",
+          "lat": 38.378,
+          "lon": 22.379,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Mesolonghi",
+          "lat": 38.29,
+          "lon": 21.79,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Ithaca",
+          "lat": 38.365,
+          "lon": 20.72,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Lefkada",
+          "lat": 38.73,
+          "lon": 20.743,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Paxoi",
+          "lat": 39.198,
+          "lon": 20.158,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Corfu",
+          "lat": 39.648,
+          "lon": 19.846,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Taranto",
+          "lat": 40.472,
+          "lon": 17.24,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Policoro",
+          "lat": 40.175,
+          "lon": 16.7,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Crotone",
+          "lat": 39.08,
+          "lon": 17.128,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Scilla",
+          "lat": 38.255,
+          "lon": 15.868,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Reggio Calabria",
+          "lat": 38.112,
+          "lon": 15.647,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Valletta, Malta",
+          "lat": 35.897,
+          "lon": 14.514,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Marsaxlokk",
+          "lat": 35.842,
+          "lon": 14.543,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Comino",
+          "lat": 36.012,
+          "lon": 14.336,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Gozo (Mgarr)",
+          "lat": 36.047,
+          "lon": 14.255,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Syracuse",
+          "lat": 37.06,
+          "lon": 15.293,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Catania",
+          "lat": 37.752,
+          "lon": 15.28,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Messina",
+          "lat": 38.19,
+          "lon": 15.563,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Stromboli",
+          "lat": 38.794,
+          "lon": 15.213,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Lipari",
+          "lat": 38.468,
+          "lon": 14.954,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Vulcano",
+          "lat": 38.415,
+          "lon": 14.965,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Salina",
+          "lat": 38.462,
+          "lon": 14.832,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Cefalù",
+          "lat": 38.038,
+          "lon": 14.023,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Palermo",
+          "lat": 38.12,
+          "lon": 13.363,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Arbatax, Sardinia",
+          "lat": 39.932,
+          "lon": 9.707,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Cala Gonone",
+          "lat": 40.22,
+          "lon": 9.625,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Olbia",
+          "lat": 40.92,
+          "lon": 9.7,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "La Maddalena",
+          "lat": 41.213,
+          "lon": 9.407,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Bonifacio, Corsica",
+          "lat": 41.388,
+          "lon": 9.158,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Mahón, Menorca",
+          "lat": 39.886,
+          "lon": 4.267,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Ciutadella",
+          "lat": 39.942,
+          "lon": 3.1,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Palma de Mallorca",
+          "lat": 39.563,
+          "lon": 2.637,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Cabrera",
+          "lat": 39.148,
+          "lon": 2.947,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Ibiza",
+          "lat": 38.907,
+          "lon": 1.438,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Valencia",
+          "lat": 39.453,
+          "lon": -0.325,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Alicante",
+          "lat": 38.342,
+          "lon": -0.483,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Cartagena",
+          "lat": 37.598,
+          "lon": -0.987,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Cabo de Gata",
+          "lat": 36.725,
+          "lon": -2.19,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Almería",
+          "lat": 36.838,
+          "lon": -2.467,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Motril",
+          "lat": 36.723,
+          "lon": -3.525,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Málaga",
+          "lat": 36.718,
+          "lon": -4.42,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Estepona",
+          "lat": 36.427,
+          "lon": -5.148,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Gibraltar",
+          "lat": 36.14,
+          "lon": -5.353,
+          "major": true,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "name": "Morocco & Madeira",
+      "when": "Jan – Mar 2027",
+      "era": "future",
+      "routing": "Southbound down the Moroccan Atlantic coast, then a broad-reach hop offshore to Madeira — positioning for the Azores without fighting the Portuguese trades northbound.",
+      "bailout": "Divert to the Canaries from Agadir if the Madeira approach won't open.",
+      "countries": [
+        "Morocco",
+        "Portugal"
+      ],
+      "keyDestinations": [
+        "Rabat",
+        "Essaouira",
+        "Agadir",
+        "Funchal (Madeira)"
+      ],
+      "blogUrl": null,
+      "nm": 1018,
+      "nmBase": 848,
+      "padMultiplier": 1.2,
+      "routes": [
+        [
+          [
+            36.14,
+            -5.353
+          ],
+          [
+            35.78,
+            -5.81
+          ],
+          [
+            34.037,
+            -6.838
+          ],
+          [
+            33.257,
+            -8.5
+          ],
+          [
+            31.512,
+            -9.77
+          ],
+          [
+            30.425,
+            -9.607
+          ],
+          [
+            33.06,
+            -16.34
+          ],
+          [
+            32.643,
+            -16.912
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Gibraltar",
+          "lat": 36.14,
+          "lon": -5.353,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Tangier",
+          "lat": 35.78,
+          "lon": -5.81,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Rabat (Bouregreg Marina)",
+          "lat": 34.037,
+          "lon": -6.838,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "El Jadida",
+          "lat": 33.257,
+          "lon": -8.5,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Essaouira",
+          "lat": 31.512,
+          "lon": -9.77,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Agadir",
+          "lat": 30.425,
+          "lon": -9.607,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Porto Santo",
+          "lat": 33.06,
+          "lon": -16.34,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Funchal, Madeira",
+          "lat": 32.643,
+          "lon": -16.912,
+          "major": true,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 4,
+      "name": "Azores",
+      "when": "Mar – May 2027",
+      "era": "future",
+      "routing": "The one weather-window passage in the framework — 450nm from Madeira through the Azores High, sailed in the March chaos before the High organises and locks against you.",
+      "bailout": "The Canaries fishhook (WSW into the trades, then NNE) sails every mile if the direct window won't open — adds ~700nm.",
+      "countries": [
+        "Portugal"
+      ],
+      "keyDestinations": [
+        "Horta (Faial)",
+        "Pico",
+        "Terceira",
+        "São Miguel"
+      ],
+      "blogUrl": null,
+      "nm": 1149,
+      "nmBase": 851,
+      "padMultiplier": 1.35,
+      "routes": [
+        [
+          [
+            32.643,
+            -16.912
+          ],
+          [
+            38.533,
+            -28.628
+          ],
+          [
+            38.39,
+            -28.248
+          ],
+          [
+            38.68,
+            -28.21
+          ],
+          [
+            38.72,
+            -27.06
+          ],
+          [
+            37.738,
+            -25.668
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Funchal",
+          "lat": 32.643,
+          "lon": -16.912,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Horta, Faial",
+          "lat": 38.533,
+          "lon": -28.628,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Lajes do Pico",
+          "lat": 38.39,
+          "lon": -28.248,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Velas, São Jorge",
+          "lat": 38.68,
+          "lon": -28.21,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Angra do Heroísmo, Terceira",
+          "lat": 38.72,
+          "lon": -27.06,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Ponta Delgada, São Miguel",
+          "lat": 37.738,
+          "lon": -25.668,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 5,
+      "name": "British Isles",
+      "when": "Jun – Sep 2027",
+      "era": "future",
+      "routing": "Broad-reach ~1,200nm from the Azores to a Cornwall/Scilly landfall, then a clockwise loop — south coast, Wales, Ireland, into Scotland.",
+      "bailout": "The Caledonian Canal cuts between the coasts, saving a Cape Wrath rounding.",
+      "countries": [
+        "United Kingdom",
+        "Ireland"
+      ],
+      "keyDestinations": [
+        "Cornwall & Scilly",
+        "South Coast England",
+        "Wales",
+        "Ireland",
+        "Inner Hebrides"
+      ],
+      "blogUrl": null,
+      "nm": 2968,
+      "nmBase": 2374,
+      "padMultiplier": 1.25,
+      "routes": [
+        [
+          [
+            37.738,
+            -25.668
+          ],
+          [
+            49.913,
+            -6.315
+          ],
+          [
+            50.153,
+            -5.053
+          ],
+          [
+            50.365,
+            -4.142
+          ],
+          [
+            50.35,
+            -3.575
+          ],
+          [
+            50.71,
+            -1.81
+          ],
+          [
+            50.763,
+            -1.298
+          ],
+          [
+            50.15,
+            -3.7
+          ],
+          [
+            50.05,
+            -5.72
+          ],
+          [
+            51.703,
+            -5.04
+          ],
+          [
+            52.415,
+            -4.083
+          ],
+          [
+            53.32,
+            -4.628
+          ],
+          [
+            51.808,
+            -8.297
+          ],
+          [
+            51.77,
+            -9.5
+          ],
+          [
+            52.14,
+            -10.268
+          ],
+          [
+            53.27,
+            -9.05
+          ],
+          [
+            53.8,
+            -9.98
+          ],
+          [
+            54.27,
+            -10.06
+          ],
+          [
+            54.633,
+            -8.44
+          ],
+          [
+            55.24,
+            -6.51
+          ],
+          [
+            54.49,
+            -5.55
+          ],
+          [
+            55.45,
+            -5.66
+          ],
+          [
+            55.867,
+            -5.4
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Ponta Delgada",
+          "lat": 37.738,
+          "lon": -25.668,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Falmouth",
+          "lat": 50.153,
+          "lon": -5.053,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Plymouth",
+          "lat": 50.365,
+          "lon": -4.142,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Dartmouth",
+          "lat": 50.35,
+          "lon": -3.575,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Poole",
+          "lat": 50.71,
+          "lon": -1.81,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Cowes / Solent",
+          "lat": 50.763,
+          "lon": -1.298,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Milford Haven",
+          "lat": 51.703,
+          "lon": -5.04,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Aberystwyth",
+          "lat": 52.415,
+          "lon": -4.083,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Caernarfon",
+          "lat": 53.32,
+          "lon": -4.628,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Cork (Crosshaven)",
+          "lat": 51.808,
+          "lon": -8.297,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Glengarriff",
+          "lat": 51.77,
+          "lon": -9.5,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Dingle",
+          "lat": 52.14,
+          "lon": -10.268,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Galway",
+          "lat": 53.27,
+          "lon": -9.05,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Clew Bay",
+          "lat": 53.8,
+          "lon": -9.98,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Sligo",
+          "lat": 54.27,
+          "lon": -10.06,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Killybegs, Donegal",
+          "lat": 54.633,
+          "lon": -8.44,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Giant's Causeway coast",
+          "lat": 55.24,
+          "lon": -6.51,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Strangford Lough",
+          "lat": 54.49,
+          "lon": -5.55,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Campbeltown, Kintyre",
+          "lat": 55.45,
+          "lon": -5.66,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Tarbert, Firth of Clyde",
+          "lat": 55.867,
+          "lon": -5.4,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 6,
+      "name": "Scotland & Ireland Winter",
+      "when": "Oct 2027 – Apr 2028",
+      "era": "future",
+      "routing": "Cruise the winter instead of repositioning — Gulf-Stream-moderated sea lochs (5–9°C), sheltered anchorages behind the mountains, weekly moves, near-zero other boats.",
+      "bailout": "Hundreds of deep, protected lochs and sounds — shelter is always to hand when the SW gales come through.",
+      "countries": [
+        "United Kingdom",
+        "Ireland"
+      ],
+      "keyDestinations": [
+        "Scottish sea lochs",
+        "Inner & Outer Hebrides",
+        "Orkney",
+        "Irish west coast"
+      ],
+      "blogUrl": null,
+      "nm": 1365,
+      "nmBase": 455,
+      "padMultiplier": 3.0,
+      "routes": [
+        [
+          [
+            55.867,
+            -5.4
+          ],
+          [
+            56.415,
+            -5.475
+          ],
+          [
+            57.81,
+            -8.57
+          ],
+          [
+            58.6,
+            -7.0
+          ],
+          [
+            58.44,
+            -5.05
+          ],
+          [
+            58.963,
+            -3.295
+          ],
+          [
+            60.155,
+            -1.145
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Tarbert",
+          "lat": 55.867,
+          "lon": -5.4,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Oban",
+          "lat": 56.415,
+          "lon": -5.475,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "St Kilda",
+          "lat": 57.81,
+          "lon": -8.57,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Stromness, Orkney",
+          "lat": 58.963,
+          "lon": -3.295,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Lerwick, Shetland",
+          "lat": 60.155,
+          "lon": -1.145,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 7,
+      "name": "Nordic & Svalbard",
+      "when": "May – Sep 2028",
+      "era": "future",
+      "routing": "A 300nm downwind hop from Scotland to Bergen, then north up the sheltered leads to Lofoten and Tromsø, with a July out-and-back to Svalbard.",
+      "bailout": "Norway's inner leads give all-weather routing behind the island chain; the Svalbard side-trip is weather-window and abortable at Tromsø.",
+      "countries": [
+        "Norway",
+        "Sweden"
+      ],
+      "keyDestinations": [
+        "Bergen",
+        "The fjords",
+        "Lofoten",
+        "Tromsø",
+        "Svalbard"
+      ],
+      "blogUrl": null,
+      "nm": 3929,
+      "nmBase": 3143,
+      "padMultiplier": 1.25,
+      "routes": [
+        [
+          [
+            60.155,
+            -1.145
+          ],
+          [
+            60.393,
+            5.322
+          ],
+          [
+            61.2,
+            6.85
+          ],
+          [
+            62.1,
+            5.15
+          ],
+          [
+            62.472,
+            6.152
+          ],
+          [
+            63.11,
+            7.73
+          ],
+          [
+            63.43,
+            10.4
+          ],
+          [
+            64.86,
+            11.42
+          ],
+          [
+            66.19,
+            12.05
+          ],
+          [
+            66.5,
+            12.083
+          ],
+          [
+            67.27,
+            14.45
+          ],
+          [
+            67.932,
+            13.09
+          ],
+          [
+            68.15,
+            14.23
+          ],
+          [
+            68.233,
+            14.568
+          ],
+          [
+            68.69,
+            15.41
+          ],
+          [
+            69.648,
+            18.955
+          ],
+          [
+            74.0,
+            16.0
+          ],
+          [
+            78.223,
+            15.633
+          ],
+          [
+            78.92,
+            11.93
+          ],
+          [
+            78.93,
+            12.0
+          ],
+          [
+            74.0,
+            16.0
+          ],
+          [
+            69.648,
+            18.955
+          ],
+          [
+            68.44,
+            16.44
+          ],
+          [
+            66.5,
+            12.083
+          ],
+          [
+            64.86,
+            11.42
+          ],
+          [
+            63.43,
+            10.4
+          ],
+          [
+            63.0,
+            7.0
+          ],
+          [
+            62.3,
+            5.5
+          ],
+          [
+            60.393,
+            5.322
+          ],
+          [
+            58.97,
+            5.733
+          ],
+          [
+            57.99,
+            7.47
+          ],
+          [
+            57.708,
+            11.968
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Lerwick, Shetland",
+          "lat": 60.155,
+          "lon": -1.145,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Bergen",
+          "lat": 60.393,
+          "lon": 5.322,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Sognefjorden",
+          "lat": 61.2,
+          "lon": 6.85,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Florø",
+          "lat": 62.1,
+          "lon": 5.15,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Ålesund",
+          "lat": 62.472,
+          "lon": 6.152,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Kristiansund",
+          "lat": 63.11,
+          "lon": 7.73,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Trondheim",
+          "lat": 63.43,
+          "lon": 10.4,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Rørvik",
+          "lat": 64.86,
+          "lon": 11.42,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Sandnessjøen",
+          "lat": 66.19,
+          "lon": 12.05,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Træna",
+          "lat": 66.5,
+          "lon": 12.083,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Bodø",
+          "lat": 67.27,
+          "lon": 14.45,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Reine, Lofoten",
+          "lat": 67.932,
+          "lon": 13.09,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Henningsvær, Lofoten",
+          "lat": 68.15,
+          "lon": 14.23,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Svolvær, Lofoten",
+          "lat": 68.233,
+          "lon": 14.568,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Sortland, Vesterålen",
+          "lat": 68.69,
+          "lon": 15.41,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Tromsø",
+          "lat": 69.648,
+          "lon": 18.955,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Bear Island approach",
+          "lat": 74.0,
+          "lon": 16.0,
+          "major": false,
+          "routingLabel": true
+        },
+        {
+          "name": "Longyearbyen, Svalbard",
+          "lat": 78.223,
+          "lon": 15.633,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Harstad",
+          "lat": 68.44,
+          "lon": 16.44,
+          "major": false,
+          "routingLabel": true
+        },
+        {
+          "name": "Stavanger",
+          "lat": 58.97,
+          "lon": 5.733,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Kristiansand",
+          "lat": 57.99,
+          "lon": 7.47,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Gothenburg",
+          "lat": 57.708,
+          "lon": 11.968,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 8,
+      "name": "Southbound & Staging",
+      "when": "Sep 2028 – Feb 2029",
+      "era": "future",
+      "routing": "All downhill in the prevailing winds — Scandinavia, the Kiel Canal, Biscay, the Galician rías, Portugal, the Canaries, to Cape Verde. No motoring.",
+      "bailout": "Biscay is a weather-window crossing, not a calendar commitment; the chapter has five months of slack to wait out weather.",
+      "countries": [
+        "Denmark",
+        "Germany",
+        "Netherlands",
+        "Belgium",
+        "Spain",
+        "Portugal",
+        "Cape Verde"
+      ],
+      "keyDestinations": [
+        "Galician rías",
+        "Portugal",
+        "Canary Islands",
+        "Mindelo (Cape Verde)"
+      ],
+      "blogUrl": null,
+      "nm": 4235,
+      "nmBase": 3529,
+      "padMultiplier": 1.2,
+      "routes": [
+        [
+          [
+            57.708,
+            11.968
+          ],
+          [
+            57.72,
+            10.59
+          ],
+          [
+            56.7,
+            11.5
+          ],
+          [
+            55.677,
+            12.58
+          ],
+          [
+            54.5,
+            10.135
+          ],
+          [
+            53.88,
+            9.13
+          ],
+          [
+            53.54,
+            6.84
+          ],
+          [
+            52.95,
+            4.75
+          ],
+          [
+            52.378,
+            4.9
+          ],
+          [
+            51.35,
+            3.2
+          ],
+          [
+            49.8,
+            -1.5
+          ],
+          [
+            48.383,
+            -4.5
+          ],
+          [
+            46.15,
+            -1.167
+          ],
+          [
+            43.363,
+            -8.395
+          ],
+          [
+            42.237,
+            -8.713
+          ],
+          [
+            41.148,
+            -8.677
+          ],
+          [
+            38.692,
+            -9.138
+          ],
+          [
+            37.102,
+            -8.672
+          ],
+          [
+            28.963,
+            -13.63
+          ],
+          [
+            28.1,
+            -15.42
+          ],
+          [
+            28.47,
+            -16.25
+          ],
+          [
+            28.1,
+            -17.35
+          ],
+          [
+            28.683,
+            -17.767
+          ],
+          [
+            27.75,
+            -18.0
+          ],
+          [
+            16.883,
+            -24.985
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Gothenburg",
+          "lat": 57.708,
+          "lon": 11.968,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Skagen, Denmark",
+          "lat": 57.72,
+          "lon": 10.59,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Copenhagen",
+          "lat": 55.677,
+          "lon": 12.58,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Kiel Canal East",
+          "lat": 54.5,
+          "lon": 10.135,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Kiel Canal West / Brunsbüttel",
+          "lat": 53.88,
+          "lon": 9.13,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Borkum / E Frisians",
+          "lat": 53.54,
+          "lon": 6.84,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Den Helder",
+          "lat": 52.95,
+          "lon": 4.75,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Amsterdam",
+          "lat": 52.378,
+          "lon": 4.9,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Zeebrugge / Bruges",
+          "lat": 51.35,
+          "lon": 3.2,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Brest",
+          "lat": 48.383,
+          "lon": -4.5,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "La Rochelle",
+          "lat": 46.15,
+          "lon": -1.167,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "A Coruña",
+          "lat": 43.363,
+          "lon": -8.395,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Vigo / Rías Baixas",
+          "lat": 42.237,
+          "lon": -8.713,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Porto",
+          "lat": 41.148,
+          "lon": -8.677,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Lisbon",
+          "lat": 38.692,
+          "lon": -9.138,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Lagos, Algarve",
+          "lat": 37.102,
+          "lon": -8.672,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Arrecife, Lanzarote",
+          "lat": 28.963,
+          "lon": -13.63,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Las Palmas, Gran Canaria",
+          "lat": 28.1,
+          "lon": -15.42,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Santa Cruz de Tenerife",
+          "lat": 28.47,
+          "lon": -16.25,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "San Sebastián, La Gomera",
+          "lat": 28.1,
+          "lon": -17.35,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Santa Cruz de La Palma",
+          "lat": 28.683,
+          "lon": -17.767,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "El Hierro",
+          "lat": 27.75,
+          "lon": -18.0,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Mindelo, Cape Verde",
+          "lat": 16.883,
+          "lon": -24.985,
+          "major": true,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 9,
+      "name": "Atlantic Crossing",
+      "when": "Feb – Mar 2029",
+      "era": "future",
+      "routing": "Cape Verde to NE Brazil on a ~200° run in the NE trades — ~1,700nm in 12–14 days, with an unavoidable day or two of ITCZ motoring near 3–5°N.",
+      "bailout": "Fernando de Noronha sits directly on the rhumb line as a natural mid-ocean landfall and rest stop.",
+      "countries": [
+        "Brazil"
+      ],
+      "keyDestinations": [
+        "Fernando de Noronha",
+        "Recife / Olinda"
+      ],
+      "blogUrl": null,
+      "nm": 1694,
+      "nmBase": 1613,
+      "padMultiplier": 1.05,
+      "routes": [
+        [
+          [
+            16.883,
+            -24.985
+          ],
+          [
+            -3.855,
+            -32.423
+          ],
+          [
+            -8.063,
+            -34.87
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Mindelo",
+          "lat": 16.883,
+          "lon": -24.985,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Fernando de Noronha",
+          "lat": -3.855,
+          "lon": -32.423,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Recife",
+          "lat": -8.063,
+          "lon": -34.87,
+          "major": true,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 10,
+      "name": "Brazil",
+      "when": "Mar – Aug 2029",
+      "era": "future",
+      "routing": "Down the NE Brazilian coast in the SE trades — beam-to-broad reach to ~25°S, then variable as cold fronts replace the trades. Bay-hopping throughout.",
+      "bailout": "The sheltered anchorages of Baía de Todos os Santos and Ilha Grande give cover as the southern fronts pick up.",
+      "countries": [
+        "Brazil"
+      ],
+      "keyDestinations": [
+        "Salvador",
+        "Abrolhos",
+        "Rio de Janeiro",
+        "Ilha Grande",
+        "Paraty"
+      ],
+      "blogUrl": null,
+      "nm": 2996,
+      "nmBase": 1498,
+      "padMultiplier": 2.0,
+      "routes": [
+        [
+          [
+            -8.063,
+            -34.87
+          ],
+          [
+            -9.67,
+            -35.735
+          ],
+          [
+            -12.972,
+            -38.512
+          ],
+          [
+            -13.9,
+            -38.9
+          ],
+          [
+            -17.96,
+            -38.697
+          ],
+          [
+            -20.318,
+            -40.289
+          ],
+          [
+            -22.898,
+            -43.173
+          ],
+          [
+            -23.152,
+            -44.227
+          ],
+          [
+            -23.218,
+            -44.714
+          ],
+          [
+            -23.95,
+            -46.33
+          ],
+          [
+            -27.595,
+            -48.548
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Recife",
+          "lat": -8.063,
+          "lon": -34.87,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Maceió",
+          "lat": -9.67,
+          "lon": -35.735,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Salvador da Bahia",
+          "lat": -12.972,
+          "lon": -38.512,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Baía de Todos os Santos (south)",
+          "lat": -13.9,
+          "lon": -38.9,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Abrolhos Archipelago",
+          "lat": -17.96,
+          "lon": -38.697,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Vitória",
+          "lat": -20.318,
+          "lon": -40.289,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Rio de Janeiro",
+          "lat": -22.898,
+          "lon": -43.173,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Ilha Grande",
+          "lat": -23.152,
+          "lon": -44.227,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Paraty",
+          "lat": -23.218,
+          "lon": -44.714,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "São Sebastião / Ilhabela",
+          "lat": -23.95,
+          "lon": -46.33,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Florianópolis",
+          "lat": -27.595,
+          "lon": -48.548,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 11,
+      "name": "River Plate to Patagonia",
+      "when": "Sep – Nov 2029",
+      "era": "future",
+      "routing": "Subtropical-to-Southern-Ocean transition; wind backs from E to WNW past 35°S, putting the Patagonian coast on a beam reach southbound.",
+      "bailout": "The Falklands detour (~500nm) is decided at the time on conditions; Ushuaia/Puerto Williams is the full-service staging port before the channels.",
+      "countries": [
+        "Uruguay",
+        "Argentina"
+      ],
+      "keyDestinations": [
+        "Buenos Aires",
+        "Patagonian coast",
+        "Falklands (optional)",
+        "Ushuaia"
+      ],
+      "blogUrl": null,
+      "nm": 3159,
+      "nmBase": 2527,
+      "padMultiplier": 1.25,
+      "routes": [
+        [
+          [
+            -27.595,
+            -48.548
+          ],
+          [
+            -34.96,
+            -54.95
+          ],
+          [
+            -34.59,
+            -56.17
+          ],
+          [
+            -34.608,
+            -58.363
+          ],
+          [
+            -38.05,
+            -57.54
+          ],
+          [
+            -42.773,
+            -65.037
+          ],
+          [
+            -45.87,
+            -67.48
+          ],
+          [
+            -51.7,
+            -57.852
+          ],
+          [
+            -54.808,
+            -68.313
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Florianópolis",
+          "lat": -27.595,
+          "lon": -48.548,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Punta del Este",
+          "lat": -34.96,
+          "lon": -54.95,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Montevideo",
+          "lat": -34.59,
+          "lon": -56.17,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Buenos Aires",
+          "lat": -34.608,
+          "lon": -58.363,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Mar del Plata",
+          "lat": -38.05,
+          "lon": -57.54,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Puerto Madryn",
+          "lat": -42.773,
+          "lon": -65.037,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Comodoro Rivadavia",
+          "lat": -45.87,
+          "lon": -67.48,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Stanley, Falkland Islands",
+          "lat": -51.7,
+          "lon": -57.852,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Ushuaia",
+          "lat": -54.808,
+          "lon": -68.313,
+          "major": true,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 12,
+      "name": "Patagonia & Channels",
+      "when": "Dec 2029 – Feb 2030",
+      "era": "future",
+      "routing": "The southern-summer window through the Beagle Channel and Chilean fjords — williwaws, multi-line anchoring, weeks of demanding cold cruising. The 'hard passages first' chapter.",
+      "bailout": "The Drake/Antarctica attempt is strictly weather-window from Ushuaia, not a planned passage; the channels themselves shelter throughout.",
+      "countries": [
+        "Argentina",
+        "Chile"
+      ],
+      "keyDestinations": [
+        "Beagle Channel",
+        "Chilean channels",
+        "Drake attempt"
+      ],
+      "blogUrl": null,
+      "nm": 4138,
+      "nmBase": 1655,
+      "padMultiplier": 2.5,
+      "routes": [
+        [
+          [
+            -54.808,
+            -68.313
+          ],
+          [
+            -54.935,
+            -67.616
+          ],
+          [
+            -56.5,
+            -66.5
+          ],
+          [
+            -62.97,
+            -60.65
+          ],
+          [
+            -64.83,
+            -63.5
+          ],
+          [
+            -62.0,
+            -60.0
+          ],
+          [
+            -54.9,
+            -69.5
+          ],
+          [
+            -54.65,
+            -71.6
+          ],
+          [
+            -53.6,
+            -72.2
+          ],
+          [
+            -51.73,
+            -72.5
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Ushuaia",
+          "lat": -54.808,
+          "lon": -68.313,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Puerto Williams",
+          "lat": -54.935,
+          "lon": -67.616,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Canal Cockburn",
+          "lat": -54.65,
+          "lon": -71.6,
+          "major": false,
+          "routingLabel": true
+        },
+        {
+          "name": "Puerto Natales",
+          "lat": -51.73,
+          "lon": -72.5,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 13,
+      "name": "Chilean Coast North",
+      "when": "Mar – Sep 2030",
+      "era": "future",
+      "routing": "North out of the channels with the S/SW winds and Humboldt Current both assisting — working a positioning hold until the South Pacific cyclone season ends.",
+      "bailout": "How far north you run — Chiloé, Valparaíso, Juan Fernández, even Peru/Ecuador — flexes with the wait for the French Polynesia window.",
+      "countries": [
+        "Chile"
+      ],
+      "keyDestinations": [
+        "Chiloé",
+        "Valparaíso",
+        "Juan Fernández"
+      ],
+      "blogUrl": null,
+      "nm": 2155,
+      "nmBase": 1539,
+      "padMultiplier": 1.4,
+      "routes": [
+        [
+          [
+            -51.73,
+            -72.5
+          ],
+          [
+            -49.0,
+            -74.4
+          ],
+          [
+            -46.5,
+            -75.0
+          ],
+          [
+            -43.9,
+            -73.6
+          ],
+          [
+            -42.483,
+            -73.767
+          ],
+          [
+            -41.467,
+            -72.933
+          ],
+          [
+            -39.883,
+            -73.417
+          ],
+          [
+            -36.72,
+            -73.13
+          ],
+          [
+            -33.037,
+            -71.627
+          ],
+          [
+            -33.637,
+            -78.83
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Puerto Natales",
+          "lat": -51.73,
+          "lon": -72.5,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Golfo de Penas",
+          "lat": -49.0,
+          "lon": -74.4,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Chonos Archipelago",
+          "lat": -46.5,
+          "lon": -75.0,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Quellón, Chiloé",
+          "lat": -43.9,
+          "lon": -73.6,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Castro, Chiloé",
+          "lat": -42.483,
+          "lon": -73.767,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Puerto Montt",
+          "lat": -41.467,
+          "lon": -72.933,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Valdivia",
+          "lat": -39.883,
+          "lon": -73.417,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Talcahuano / Concepción",
+          "lat": -36.72,
+          "lon": -73.13,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Valparaíso",
+          "lat": -33.037,
+          "lon": -71.627,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Juan Fernández Islands",
+          "lat": -33.637,
+          "lon": -78.83,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 14,
+      "name": "Easter Island & Pitcairn",
+      "when": "Oct 2030 – Feb 2031",
+      "era": "future",
+      "routing": "West into the open Pacific on the SE trades at 27°S, below the cyclone belt — Rapa Nui, Pitcairn, then Gambier for French Polynesia entry. Three of the world's most remote island groups.",
+      "bailout": "Stage through the southern summer at Easter Island and depart as the season ends; Pitcairn landings need island-council permission arranged ahead.",
+      "countries": [
+        "Chile",
+        "France"
+      ],
+      "keyDestinations": [
+        "Rapa Nui",
+        "Pitcairn",
+        "Gambier"
+      ],
+      "blogUrl": null,
+      "nm": 3494,
+      "nmBase": 3038,
+      "padMultiplier": 1.15,
+      "routes": [
+        [
+          [
+            -33.637,
+            -78.83
+          ],
+          [
+            -27.117,
+            -109.35
+          ],
+          [
+            -25.067,
+            -130.1
+          ],
+          [
+            -23.117,
+            -134.967
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Juan Fernández",
+          "lat": -33.637,
+          "lon": -78.83,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Easter Island (Rapa Nui)",
+          "lat": -27.117,
+          "lon": -109.35,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Pitcairn Island",
+          "lat": -25.067,
+          "lon": -130.1,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Mangareva, Gambier Islands",
+          "lat": -23.117,
+          "lon": -134.967,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 15,
+      "name": "French Polynesia & Coconut Milk Run",
+      "when": "Mar – Oct 2031",
+      "era": "future",
+      "routing": "Gambier through the Marquesas, Tuamotus and Society Islands and west along the chains in steady SE trades — arrive by May, cruise to October, then south before cyclone season.",
+      "bailout": "Seven months of slack across well-documented island groups; head south to NZ before the Nov–Apr cyclone season.",
+      "countries": [
+        "France",
+        "Cook Islands",
+        "Tonga",
+        "Fiji"
+      ],
+      "keyDestinations": [
+        "Marquesas",
+        "Tuamotus",
+        "Tahiti",
+        "Cook Islands",
+        "Tonga",
+        "Fiji"
+      ],
+      "blogUrl": null,
+      "nm": 4676,
+      "nmBase": 3225,
+      "padMultiplier": 1.45,
+      "routes": [
+        [
+          [
+            -23.117,
+            -134.967
+          ],
+          [
+            -16.05,
+            -145.65
+          ],
+          [
+            -15.117,
+            -147.65
+          ],
+          [
+            -17.533,
+            -149.567
+          ],
+          [
+            -17.49,
+            -149.83
+          ],
+          [
+            -16.733,
+            -151.5
+          ],
+          [
+            -16.5,
+            -151.75
+          ],
+          [
+            -18.85,
+            -159.783
+          ],
+          [
+            -21.233,
+            -159.783
+          ],
+          [
+            -19.8,
+            -163.0
+          ],
+          [
+            -19.05,
+            -169.92
+          ],
+          [
+            -18.65,
+            -173.983
+          ],
+          [
+            -16.783,
+            179.34
+          ],
+          [
+            -17.678,
+            177.115
+          ],
+          [
+            -17.775,
+            177.952
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Gambier",
+          "lat": -23.117,
+          "lon": -134.967,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Fakarava, Tuamotus",
+          "lat": -16.05,
+          "lon": -145.65,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Rangiroa, Tuamotus",
+          "lat": -15.117,
+          "lon": -147.65,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Papeete, Tahiti",
+          "lat": -17.533,
+          "lon": -149.567,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Moorea",
+          "lat": -17.49,
+          "lon": -149.83,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Raiatea",
+          "lat": -16.733,
+          "lon": -151.5,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Bora Bora",
+          "lat": -16.5,
+          "lon": -151.75,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Aitutaki, Cook Islands",
+          "lat": -18.85,
+          "lon": -159.783,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Rarotonga",
+          "lat": -21.233,
+          "lon": -159.783,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Palmerston Atoll",
+          "lat": -19.8,
+          "lon": -163.0,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Niue",
+          "lat": -19.05,
+          "lon": -169.92,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Vava'u, Tonga",
+          "lat": -18.65,
+          "lon": -173.983,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Savusavu, Fiji",
+          "lat": -16.783,
+          "lon": 179.34,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Yasawa Islands, Fiji",
+          "lat": -17.678,
+          "lon": 177.115,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Suva, Fiji",
+          "lat": -17.775,
+          "lon": 177.952,
+          "major": true,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 16,
+      "name": "New Zealand",
+      "when": "Nov 2031 – Apr 2032",
+      "era": "future",
+      "routing": "South from Fiji on a ~200° beam reach ahead of cyclone season; North Island is cruisable year-round and hosts the major refit (HO3).",
+      "bailout": "NZ North Island is all-season cruising, not wintering; Fiordland is an optional committed side-trip if conditions allow.",
+      "countries": [
+        "New Zealand"
+      ],
+      "keyDestinations": [
+        "Bay of Islands",
+        "Hauraki Gulf",
+        "Fiordland"
+      ],
+      "blogUrl": null,
+      "nm": 3993,
+      "nmBase": 2852,
+      "padMultiplier": 1.4,
+      "routes": [
+        [
+          [
+            -17.775,
+            177.952
+          ],
+          [
+            -25.0,
+            177.0
+          ],
+          [
+            -35.312,
+            174.122
+          ],
+          [
+            -35.727,
+            174.323
+          ],
+          [
+            -36.842,
+            174.748
+          ],
+          [
+            -36.76,
+            175.5
+          ],
+          [
+            -36.833,
+            175.1
+          ],
+          [
+            -41.283,
+            174.777
+          ],
+          [
+            -41.517,
+            173.95
+          ],
+          [
+            -46.9,
+            168.12
+          ],
+          [
+            -45.75,
+            166.5
+          ],
+          [
+            -44.635,
+            167.9
+          ],
+          [
+            -41.283,
+            174.777
+          ],
+          [
+            -35.312,
+            174.122
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Suva, Fiji",
+          "lat": -17.775,
+          "lon": 177.952,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "South toward NZ",
+          "lat": -25.0,
+          "lon": 177.0,
+          "major": false,
+          "routingLabel": true
+        },
+        {
+          "name": "Opua, Bay of Islands",
+          "lat": -35.312,
+          "lon": 174.122,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Whangarei",
+          "lat": -35.727,
+          "lon": 174.323,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Auckland",
+          "lat": -36.842,
+          "lon": 174.748,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Coromandel Peninsula",
+          "lat": -36.76,
+          "lon": 175.5,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Great Barrier Island",
+          "lat": -36.833,
+          "lon": 175.1,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Wellington",
+          "lat": -41.283,
+          "lon": 174.777,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Marlborough Sounds",
+          "lat": -41.517,
+          "lon": 173.95,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Stewart Island / Rakiura",
+          "lat": -46.9,
+          "lon": 168.12,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Dusky Sound, Fiordland",
+          "lat": -45.75,
+          "lon": 166.5,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Milford Sound",
+          "lat": -44.635,
+          "lon": 167.9,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 17,
+      "name": "NZ → Japan",
+      "when": "2032 – 33",
+      "era": "future",
+      "routing": "North through the tropical Pacific island nations, timing arrival in Japan for spring ahead of the Jun–Nov typhoon peak.",
+      "bailout": "Multiple island-nation stops (Vanuatu, Solomons, Micronesia) give staging flexibility on the long northward haul. Broad projection — refine before commit.",
+      "countries": [
+        "Vanuatu",
+        "Solomon Islands",
+        "Marshall Islands",
+        "Federated States of Micronesia",
+        "Japan"
+      ],
+      "keyDestinations": [
+        "Pacific island nations",
+        "Saipan",
+        "Ogasawara",
+        "Japan"
+      ],
+      "blogUrl": null,
+      "nm": 9053,
+      "nmBase": 7544,
+      "padMultiplier": 1.2,
+      "routes": [
+        [
+          [
+            -35.312,
+            174.122
+          ],
+          [
+            -29.033,
+            168.0
+          ],
+          [
+            -22.27,
+            166.44
+          ],
+          [
+            -17.735,
+            168.312
+          ],
+          [
+            -9.45,
+            160.02
+          ],
+          [
+            7.1,
+            171.38
+          ],
+          [
+            6.9,
+            158.21
+          ],
+          [
+            7.45,
+            151.85
+          ],
+          [
+            15.2,
+            145.75
+          ],
+          [
+            27.095,
+            142.192
+          ],
+          [
+            35.45,
+            139.65
+          ],
+          [
+            35.0,
+            138.5
+          ],
+          [
+            33.43,
+            135.75
+          ],
+          [
+            34.66,
+            135.43
+          ],
+          [
+            34.33,
+            134.18
+          ],
+          [
+            33.95,
+            130.9
+          ],
+          [
+            35.47,
+            132.75
+          ],
+          [
+            39.7,
+            139.9
+          ],
+          [
+            45.42,
+            141.68
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Bay of Islands",
+          "lat": -35.312,
+          "lon": 174.122,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Norfolk Island",
+          "lat": -29.033,
+          "lon": 168.0,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Nouméa, New Caledonia",
+          "lat": -22.27,
+          "lon": 166.44,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Port Vila, Vanuatu",
+          "lat": -17.735,
+          "lon": 168.312,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Honiara, Solomon Islands",
+          "lat": -9.45,
+          "lon": 160.02,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Majuro, Marshall Islands",
+          "lat": 7.1,
+          "lon": 171.38,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Pohnpei, Micronesia",
+          "lat": 6.9,
+          "lon": 158.21,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Chuuk Lagoon",
+          "lat": 7.45,
+          "lon": 151.85,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Saipan, Marianas",
+          "lat": 15.2,
+          "lon": 145.75,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Ogasawara (Bonin Islands)",
+          "lat": 27.095,
+          "lon": 142.192,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Yokohama",
+          "lat": 35.45,
+          "lon": 139.65,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Osaka",
+          "lat": 34.66,
+          "lon": 135.43,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Inland Sea (Naoshima)",
+          "lat": 34.33,
+          "lon": 134.18,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Izumo",
+          "lat": 35.47,
+          "lon": 132.75,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Akita",
+          "lat": 39.7,
+          "lon": 139.9,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Wakkanai (N Hokkaido)",
+          "lat": 45.42,
+          "lon": 141.68,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 18,
+      "name": "Japan → Alaska",
+      "when": "2033 – 34",
+      "era": "future",
+      "routing": "Japan's Inland Sea and Hokkaido in the May–Jun window, then the Jun–Jul light-wind gap to the Aleutians and Alaska — summer-only expedition territory.",
+      "bailout": "Tightly weather- and season-gated; the Aleutian corridor stays east of Russian waters (see avoidance zones). Broad projection — refine before commit.",
+      "countries": [
+        "Japan",
+        "United States",
+        "Canada"
+      ],
+      "keyDestinations": [
+        "Inland Sea",
+        "Hokkaido",
+        "Aleutians",
+        "Alaska",
+        "British Columbia"
+      ],
+      "blogUrl": null,
+      "nm": 5400,
+      "nmBase": 4154,
+      "padMultiplier": 1.3,
+      "routes": [
+        [
+          [
+            45.42,
+            141.68
+          ],
+          [
+            43.38,
+            145.81
+          ],
+          [
+            45.0,
+            150.0
+          ],
+          [
+            52.2,
+            -176.0
+          ],
+          [
+            53.89,
+            -166.532
+          ],
+          [
+            57.79,
+            -152.407
+          ],
+          [
+            59.0,
+            -151.5
+          ],
+          [
+            60.1,
+            -149.44
+          ],
+          [
+            59.5,
+            -141.0
+          ],
+          [
+            58.67,
+            -136.07
+          ],
+          [
+            57.05,
+            -135.33
+          ],
+          [
+            55.34,
+            -131.64
+          ],
+          [
+            54.25,
+            -133.05
+          ],
+          [
+            50.67,
+            -128.35
+          ],
+          [
+            49.152,
+            -125.907
+          ],
+          [
+            48.79,
+            -125.17
+          ],
+          [
+            48.417,
+            -123.37
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Wakkanai",
+          "lat": 45.42,
+          "lon": 141.68,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Kuril Islands approach",
+          "lat": 45.0,
+          "lon": 150.0,
+          "major": false,
+          "routingLabel": true
+        },
+        {
+          "name": "Attu area",
+          "lat": 52.2,
+          "lon": -176.0,
+          "major": false,
+          "routingLabel": true
+        },
+        {
+          "name": "Dutch Harbor, Unalaska",
+          "lat": 53.89,
+          "lon": -166.532,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Kodiak",
+          "lat": 57.79,
+          "lon": -152.407,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Seward",
+          "lat": 60.1,
+          "lon": -149.44,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Glacier Bay",
+          "lat": 58.67,
+          "lon": -136.07,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Sitka",
+          "lat": 57.05,
+          "lon": -135.33,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Ketchikan",
+          "lat": 55.34,
+          "lon": -131.64,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Haida Gwaii",
+          "lat": 54.25,
+          "lon": -133.05,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Port Hardy, Vancouver Island",
+          "lat": 50.67,
+          "lon": -128.35,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Tofino",
+          "lat": 49.152,
+          "lon": -125.907,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Bamfield",
+          "lat": 48.79,
+          "lon": -125.17,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Victoria, BC",
+          "lat": 48.417,
+          "lon": -123.37,
+          "major": false,
+          "routingLabel": false
+        }
+      ]
+    },
+    {
+      "num": 19,
+      "name": "Pacific Coast South & Return",
+      "when": "2034 – 35",
+      "era": "future",
+      "routing": "Down the Pacific coast in the NW prevailing — California, Mexico, Central America, Ecuador, Galápagos — then a second South Pacific pass collecting the Marquesas and islands missed earlier, closing in Sydney.",
+      "bailout": "The circumnavigation closes wherever it closes — a Panama return remains an alternative to the second Pacific pass. Broad projection — refine before commit.",
+      "countries": [
+        "United States",
+        "Mexico",
+        "El Salvador",
+        "Costa Rica",
+        "Panama",
+        "Ecuador",
+        "Tonga",
+        "Fiji",
+        "France",
+        "Australia"
+      ],
+      "keyDestinations": [
+        "California",
+        "Mexico",
+        "Galápagos",
+        "Marquesas (2nd pass)",
+        "Fiji",
+        "New Caledonia",
+        "Sydney"
+      ],
+      "blogUrl": null,
+      "nm": 16747,
+      "nmBase": 13956,
+      "padMultiplier": 1.2,
+      "routes": [
+        [
+          [
+            48.417,
+            -123.37
+          ],
+          [
+            48.53,
+            -123.01
+          ],
+          [
+            47.6,
+            -122.34
+          ],
+          [
+            48.37,
+            -124.62
+          ],
+          [
+            46.19,
+            -123.87
+          ],
+          [
+            45.63,
+            -121.94
+          ],
+          [
+            46.19,
+            -123.87
+          ],
+          [
+            44.63,
+            -124.05
+          ],
+          [
+            40.8,
+            -124.16
+          ],
+          [
+            38.33,
+            -123.05
+          ],
+          [
+            37.808,
+            -122.41
+          ],
+          [
+            36.62,
+            -121.9
+          ],
+          [
+            34.017,
+            -118.5
+          ],
+          [
+            33.46,
+            -118.51
+          ],
+          [
+            32.718,
+            -117.17
+          ],
+          [
+            31.85,
+            -116.62
+          ],
+          [
+            27.92,
+            -114.1
+          ],
+          [
+            24.16,
+            -110.31
+          ],
+          [
+            24.47,
+            -110.35
+          ],
+          [
+            26.76,
+            -111.88
+          ],
+          [
+            28.95,
+            -113.56
+          ],
+          [
+            22.89,
+            -109.905
+          ],
+          [
+            18.79,
+            -110.96
+          ],
+          [
+            15.668,
+            -96.49
+          ],
+          [
+            13.17,
+            -88.3
+          ],
+          [
+            10.63,
+            -85.85
+          ],
+          [
+            8.64,
+            -83.165
+          ],
+          [
+            8.95,
+            -79.53
+          ],
+          [
+            8.4,
+            -79.05
+          ],
+          [
+            1.25,
+            -80.93
+          ],
+          [
+            -2.2,
+            -80.96
+          ],
+          [
+            -0.745,
+            -90.313
+          ],
+          [
+            -9.93,
+            -138.85
+          ],
+          [
+            -16.73,
+            -151.0
+          ],
+          [
+            -14.28,
+            -170.7
+          ],
+          [
+            -19.8,
+            -174.3
+          ],
+          [
+            -17.78,
+            -178.95
+          ],
+          [
+            -22.62,
+            167.48
+          ],
+          [
+            -27.47,
+            153.03
+          ],
+          [
+            -33.86,
+            151.21
+          ]
+        ]
+      ],
+      "waypoints": [
+        {
+          "name": "Victoria",
+          "lat": 48.417,
+          "lon": -123.37,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "San Juan Islands",
+          "lat": 48.53,
+          "lon": -123.01,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Seattle",
+          "lat": 47.6,
+          "lon": -122.34,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Neah Bay",
+          "lat": 48.37,
+          "lon": -124.62,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Astoria",
+          "lat": 46.19,
+          "lon": -123.87,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Newport, OR",
+          "lat": 44.63,
+          "lon": -124.05,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Eureka, CA",
+          "lat": 40.8,
+          "lon": -124.16,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Bodega Bay",
+          "lat": 38.33,
+          "lon": -123.05,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "San Francisco",
+          "lat": 37.808,
+          "lon": -122.41,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Monterey",
+          "lat": 36.62,
+          "lon": -121.9,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Santa Monica / LA",
+          "lat": 34.017,
+          "lon": -118.5,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Catalina Island",
+          "lat": 33.46,
+          "lon": -118.51,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "San Diego",
+          "lat": 32.718,
+          "lon": -117.17,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Ensenada, Mexico",
+          "lat": 31.85,
+          "lon": -116.62,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Bahía Tortugas",
+          "lat": 27.92,
+          "lon": -114.1,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "La Paz",
+          "lat": 24.16,
+          "lon": -110.31,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Isla Espíritu Santo",
+          "lat": 24.47,
+          "lon": -110.35,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Cabo San Lucas",
+          "lat": 22.89,
+          "lon": -109.905,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Revillagigedo (Socorro)",
+          "lat": 18.79,
+          "lon": -110.96,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Huatulco",
+          "lat": 15.668,
+          "lon": -96.49,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "El Salvador coast",
+          "lat": 13.17,
+          "lon": -88.3,
+          "major": false,
+          "routingLabel": true
+        },
+        {
+          "name": "Papagayo, Costa Rica",
+          "lat": 10.63,
+          "lon": -85.85,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Golfito, Costa Rica",
+          "lat": 8.64,
+          "lon": -83.165,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Panama City (Balboa)",
+          "lat": 8.95,
+          "lon": -79.53,
+          "major": true,
+          "routingLabel": false
+        },
+        {
+          "name": "Las Perlas, Panama",
+          "lat": 8.4,
+          "lon": -79.05,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Bahía de Caráquez, Ecuador",
+          "lat": 1.25,
+          "lon": -80.93,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Salinas, Ecuador",
+          "lat": -2.2,
+          "lon": -80.96,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Galápagos Islands",
+          "lat": -0.745,
+          "lon": -90.313,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Fatu Hiva, Marquesas",
+          "lat": -9.93,
+          "lon": -138.85,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Huahine",
+          "lat": -16.73,
+          "lon": -151.0,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Pago Pago, American Samoa",
+          "lat": -14.28,
+          "lon": -170.7,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Ha'apai, Tonga",
+          "lat": -19.8,
+          "lon": -174.3,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Lau Group, Fiji",
+          "lat": -17.78,
+          "lon": -178.95,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Île des Pins, New Caledonia",
+          "lat": -22.62,
+          "lon": 167.48,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Brisbane",
+          "lat": -27.47,
+          "lon": 153.03,
+          "major": false,
+          "routingLabel": false
+        },
+        {
+          "name": "Sydney",
+          "lat": -33.86,
+          "lon": 151.21,
+          "major": true,
+          "routingLabel": false
+        }
+      ]
+    }
+  ]
+}

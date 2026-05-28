@@ -1,0 +1,419 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.1" creator="S/Y GRACE Route Planning" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+
+  <metadata>
+    <name>S/Y GRACE — Global Voyage Plan</name>
+    <desc>Planned route from Ören, Turkey through the Mediterranean and around the world. Generated from cruising profile and global voyage framework, April 2026. Waypoints are representative — not for navigation. Route segments grouped by chapter.</desc>
+    <author><name>S/Y GRACE</name></author>
+    <time>2026-04-14T00:00:00Z</time>
+  </metadata>
+
+  
+  
+  
+  <rte>
+    <name>0 — Aegean to Ionian</name>
+    <desc>Ören through Dodecanese and Cyclades, Corinth Canal, to Corfu. Summer 2026.</desc>
+    <rtept lat="37.028" lon="27.988"><name>Ören</name></rtept>
+    <rtept lat="37.037" lon="27.430"><name>Bodrum</name></rtept>
+    <rtept lat="36.895" lon="27.092"><name>Kos</name></rtept>
+    <rtept lat="36.948" lon="26.988"><name>Kalymnos</name></rtept>
+    <rtept lat="37.317" lon="26.547"><name>Patmos</name></rtept>
+    <rtept lat="36.833" lon="25.857"><name>Amorgos</name></rtept>
+    <rtept lat="37.105" lon="25.375"><name>Naxos</name></rtept>
+    <rtept lat="37.087" lon="25.148"><name>Paros</name></rtept>
+    <rtept lat="36.975" lon="24.695"><name>Sifnos</name></rtept>
+    <rtept lat="37.633" lon="24.325"><name>Kea</name></rtept>
+    <rtept lat="37.650" lon="23.970"><name>Cape Sounion</name></rtept>
+    <rtept lat="37.747" lon="23.427"><name>Aegina</name></rtept>
+    <rtept lat="37.935" lon="23.005"><name>Corinth Canal East</name></rtept>
+    <rtept lat="37.970" lon="22.880"><name>Corinth Canal West</name></rtept>
+    <rtept lat="38.378" lon="22.379"><name>Galaxidi</name></rtept>
+    <rtept lat="38.290" lon="21.790"><name>Mesolonghi</name></rtept>
+    <rtept lat="38.365" lon="20.720"><name>Ithaca</name></rtept>
+    <rtept lat="38.730" lon="20.743"><name>Lefkada</name></rtept>
+    <rtept lat="39.198" lon="20.158"><name>Paxoi</name></rtept>
+    <rtept lat="39.648" lon="19.846"><name>Corfu</name></rtept>
+  </rte>
+
+  
+  
+  
+  
+  <rte>
+    <name>Med A — Ionian to Malta</name>
+    <desc>Corfu across to Gulf of Taranto, down the boot sole, to Malta. Late Jul–Mid Aug.</desc>
+    <rtept lat="39.648" lon="19.846"><name>Corfu</name></rtept>
+    <rtept lat="39.500" lon="18.300"><name>Offshore Puglia</name></rtept><rtept lat="40.472" lon="17.240"><name>Taranto</name></rtept>
+    <rtept lat="40.175" lon="16.700"><name>Policoro</name></rtept>
+    <rtept lat="39.080" lon="17.128"><name>Crotone</name></rtept>
+    <rtept lat="38.255" lon="15.868"><name>Scilla</name></rtept>
+    <rtept lat="38.112" lon="15.647"><name>Reggio Calabria</name></rtept>
+    <rtept lat="35.897" lon="14.514"><name>Valletta, Malta</name></rtept>
+  </rte>
+
+  
+  
+  
+  
+  <rte>
+    <name>Med B — Malta</name>
+    <desc>Malta, Gozo, Comino. Late Aug–Early Sep.</desc>
+    <rtept lat="35.897" lon="14.514"><name>Valletta</name></rtept>
+    <rtept lat="35.842" lon="14.543"><name>Marsaxlokk</name></rtept>
+    <rtept lat="36.012" lon="14.336"><name>Comino</name></rtept>
+    <rtept lat="36.047" lon="14.255"><name>Gozo (Mgarr)</name></rtept>
+    <rtept lat="35.897" lon="14.514"><name>Valletta</name></rtept>
+  </rte>
+
+  
+  
+  
+  
+  <rte>
+    <name>Med C — Malta to NW Sicily</name>
+    <desc>Malta north to Syracuse, Messina Strait, Aeolian Islands, Cefalù, Palermo. Mid–Late Sep.</desc>
+    <rtept lat="35.897" lon="14.514"><name>Valletta</name></rtept>
+    <rtept lat="37.060" lon="15.293"><name>Syracuse</name></rtept>
+    <rtept lat="37.752" lon="15.280"><name>Catania</name></rtept>
+    <rtept lat="38.190" lon="15.563"><name>Messina</name></rtept>
+    <rtept lat="38.794" lon="15.213"><name>Stromboli</name></rtept>
+    <rtept lat="38.468" lon="14.954"><name>Lipari</name></rtept>
+    <rtept lat="38.415" lon="14.965"><name>Vulcano</name></rtept>
+    <rtept lat="38.462" lon="14.832"><name>Salina</name></rtept>
+    <rtept lat="38.038" lon="14.023"><name>Cefalù</name></rtept>
+    <rtept lat="38.120" lon="13.363"><name>Palermo</name></rtept>
+  </rte>
+
+  
+  
+  
+  
+  <rte>
+    <name>Med D — Sicily to Balearics</name>
+    <desc>Open crossing to Sardinia, up east coast, Bonifacio, crossing to Menorca. Late Sep–Late Oct.</desc>
+    <rtept lat="38.120" lon="13.363"><name>Palermo</name></rtept>
+    <rtept lat="39.932" lon="9.707"><name>Arbatax, Sardinia</name></rtept>
+    <rtept lat="40.220" lon="9.625"><name>Cala Gonone</name></rtept>
+    <rtept lat="40.920" lon="9.700"><name>Olbia</name></rtept>
+    <rtept lat="41.213" lon="9.407"><name>La Maddalena</name></rtept>
+    <rtept lat="41.388" lon="9.158"><name>Bonifacio, Corsica</name></rtept>
+    <rtept lat="39.886" lon="4.267"><name>Mahón, Menorca</name></rtept>
+  </rte>
+
+  
+  
+  
+  
+  <rte>
+    <name>Med E — Balearics to Valencia</name>
+    <desc>Inter-island Balearics, then crossing to mainland. Late Oct.</desc>
+    <rtept lat="39.886" lon="4.267"><name>Mahón</name></rtept>
+    <rtept lat="39.942" lon="3.100"><name>Ciutadella</name></rtept>
+    <rtept lat="39.563" lon="2.637"><name>Palma de Mallorca</name></rtept>
+    <rtept lat="39.148" lon="2.947"><name>Cabrera</name></rtept>
+    <rtept lat="38.907" lon="1.438"><name>Ibiza</name></rtept>
+    <rtept lat="39.453" lon="-0.325"><name>Valencia</name></rtept>
+  </rte>
+
+  
+  
+  
+  
+  <rte>
+    <name>Med F — Valencia to Gibraltar</name>
+    <desc>Spanish coast to Strait of Gibraltar. Nov–Mid Dec.</desc>
+    <rtept lat="39.453" lon="-0.325"><name>Valencia</name></rtept>
+    <rtept lat="38.342" lon="-0.483"><name>Alicante</name></rtept>
+    <rtept lat="37.598" lon="-0.987"><name>Cartagena</name></rtept>
+    <rtept lat="36.725" lon="-2.190"><name>Cabo de Gata</name></rtept>
+    <rtept lat="36.838" lon="-2.467"><name>Almería</name></rtept>
+    <rtept lat="36.723" lon="-3.525"><name>Motril</name></rtept>
+    <rtept lat="36.718" lon="-4.420"><name>Málaga</name></rtept>
+    <rtept lat="36.427" lon="-5.148"><name>Estepona</name></rtept>
+    <rtept lat="36.140" lon="-5.353"><name>Gibraltar</name></rtept>
+  </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 1 — Morocco and Madeira</name>
+    <desc>Atlantic Morocco coast south, then west to Madeira. Jan–Mar 2027.</desc>
+    <rtept lat="36.140" lon="-5.353"><name>Gibraltar</name></rtept>
+    <rtept lat="35.780" lon="-5.810"><name>Tangier</name></rtept>
+    <rtept lat="34.037" lon="-6.838"><name>Rabat (Bouregreg Marina)</name></rtept>
+    <rtept lat="33.257" lon="-8.500"><name>El Jadida</name></rtept>
+    <rtept lat="31.512" lon="-9.770"><name>Essaouira</name></rtept>
+    <rtept lat="30.425" lon="-9.607"><name>Agadir</name></rtept>
+    <rtept lat="33.060" lon="-16.340"><name>Porto Santo</name></rtept><rtept lat="32.643" lon="-16.912"><name>Funchal, Madeira</name></rtept>
+    </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 2 — Azores</name>
+    <desc>Madeira to Azores (weather-window passage), then inter-island cruising. Mar–May 2027.</desc>
+    <rtept lat="32.643" lon="-16.912"><name>Funchal</name></rtept><rtept lat="35.000" lon="-22.000"><name>Mid-ocean (direction hint)</name></rtept><rtept lat="38.533" lon="-28.628"><name>Horta, Faial</name></rtept><rtept lat="38.390" lon="-28.248"><name>Lajes do Pico</name></rtept><rtept lat="38.680" lon="-28.210"><name>Velas, São Jorge</name></rtept><rtept lat="38.720" lon="-27.060"><name>Angra do Heroísmo, Terceira</name></rtept><rtept lat="37.738" lon="-25.668"><name>Ponta Delgada, São Miguel</name></rtept></rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 3 — British Isles</name>
+    <desc>Azores to England, clockwise around UK and Ireland. Jun–Sep 2027.</desc>
+    <rtept lat="37.738" lon="-25.668"><name>Ponta Delgada</name></rtept>
+    <rtept lat="49.913" lon="-6.315"><name>Isles of Scilly</name></rtept>
+    <rtept lat="50.153" lon="-5.053"><name>Falmouth</name></rtept>
+    <rtept lat="50.365" lon="-4.142"><name>Plymouth</name></rtept>
+    <rtept lat="50.350" lon="-3.575"><name>Dartmouth</name></rtept>
+    <rtept lat="50.710" lon="-1.810"><name>Poole</name></rtept>
+    <rtept lat="50.763" lon="-1.298"><name>Cowes / Solent</name></rtept>
+    <rtept lat="50.150" lon="-3.700"><name>Off Start Point</name></rtept><rtept lat="50.050" lon="-5.720"><name>Off Land's End</name></rtept><rtept lat="51.703" lon="-5.040"><name>Milford Haven</name></rtept>
+    <rtept lat="52.415" lon="-4.083"><name>Aberystwyth</name></rtept>
+    <rtept lat="53.320" lon="-4.628"><name>Caernarfon</name></rtept>
+    <rtept lat="51.808" lon="-8.297"><name>Cork (Crosshaven)</name></rtept>
+    <rtept lat="51.770" lon="-9.500"><name>Glengarriff</name></rtept>
+    <rtept lat="52.140" lon="-10.268"><name>Dingle</name></rtept>
+    <rtept lat="53.270" lon="-9.050"><name>Galway</name></rtept>
+    <rtept lat="53.800" lon="-9.980"><name>Clew Bay</name></rtept>
+    <rtept lat="54.270" lon="-10.060"><name>Sligo</name></rtept>
+    <rtept lat="54.633" lon="-8.440"><name>Killybegs, Donegal</name></rtept>
+    <rtept lat="55.240" lon="-6.510"><name>Giant's Causeway coast</name></rtept>
+    <rtept lat="54.490" lon="-5.550"><name>Strangford Lough</name></rtept>
+    <rtept lat="55.450" lon="-5.660"><name>Campbeltown, Kintyre</name></rtept>
+    <rtept lat="55.867" lon="-5.400"><name>Tarbert, Firth of Clyde</name></rtept>
+  </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 4 — Scotland and Ireland Winter</name>
+    <desc>Winter cruising in Scottish lochs, Hebrides, Orkney, Irish west coast. Oct 2027–Apr 2028.</desc>
+    <rtept lat="55.867" lon="-5.400"><name>Tarbert</name></rtept><rtept lat="56.415" lon="-5.475"><name>Oban</name></rtept><rtept lat="57.810" lon="-8.570"><name>St Kilda</name></rtept><rtept lat="58.600" lon="-7.000"><name>North of Lewis</name></rtept><rtept lat="58.440" lon="-5.050"><name>Loch Eriboll</name></rtept><rtept lat="58.963" lon="-3.295"><name>Stromness, Orkney</name></rtept><rtept lat="60.155" lon="-1.145"><name>Lerwick, Shetland</name></rtept></rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 5 — Nordic and Svalbard</name>
+    <desc>Scotland to Norway, coast north to Svalbard, return south to Gothenburg. May–Sep 2028.</desc>
+    <rtept lat="60.155" lon="-1.145"><name>Lerwick, Shetland</name></rtept><rtept lat="60.393" lon="5.322"><name>Bergen</name></rtept>
+    <rtept lat="61.200" lon="6.850"><name>Sognefjorden</name></rtept>
+    <rtept lat="62.100" lon="5.150"><name>Florø</name></rtept>
+    <rtept lat="62.472" lon="6.152"><name>Ålesund</name></rtept>
+    <rtept lat="63.110" lon="7.730"><name>Kristiansund</name></rtept>
+    <rtept lat="63.430" lon="10.400"><name>Trondheim</name></rtept>
+    <rtept lat="64.860" lon="11.420"><name>Rørvik</name></rtept>
+    <rtept lat="66.190" lon="12.050"><name>Sandnessjøen</name></rtept>
+    <rtept lat="66.500" lon="12.083"><name>Træna</name></rtept>
+    <rtept lat="67.270" lon="14.450"><name>Bodø</name></rtept>
+    <rtept lat="67.932" lon="13.090"><name>Reine, Lofoten</name></rtept>
+    <rtept lat="68.150" lon="14.230"><name>Henningsvær, Lofoten</name></rtept>
+    <rtept lat="68.233" lon="14.568"><name>Svolvær, Lofoten</name></rtept>
+    <rtept lat="68.690" lon="15.410"><name>Sortland, Vesterålen</name></rtept>
+    <rtept lat="69.648" lon="18.955"><name>Tromsø</name></rtept>
+    <rtept lat="74.000" lon="16.000"><name>Bear Island approach</name></rtept>
+    <rtept lat="78.223" lon="15.633"><name>Longyearbyen, Svalbard</name></rtept>
+    <rtept lat="78.920" lon="11.930"><name>Magdalenefjorden</name></rtept><rtept lat="78.930" lon="12.000"><name>NW Svalbard</name></rtept><rtept lat="74.000" lon="16.000"><name>Southbound</name></rtept>
+    <rtept lat="69.648" lon="18.955"><name>Tromsø (return)</name></rtept>
+    <rtept lat="68.440" lon="16.440"><name>Harstad</name></rtept>
+    <rtept lat="66.500" lon="12.083"><name>Helgeland (southbound)</name></rtept>
+    <rtept lat="64.860" lon="11.420"><name>Rørvik (southbound)</name></rtept><rtept lat="63.430" lon="10.400"><name>Trondheim (southbound)</name></rtept>
+    <rtept lat="63.000" lon="7.000"><name>Offshore Kristiansund</name></rtept><rtept lat="62.300" lon="5.500"><name>Offshore Ålesund</name></rtept><rtept lat="60.393" lon="5.322"><name>Bergen (southbound)</name></rtept>
+    <rtept lat="58.970" lon="5.733"><name>Stavanger</name></rtept>
+    <rtept lat="57.990" lon="7.470"><name>Kristiansand</name></rtept>
+    <rtept lat="57.708" lon="11.968"><name>Gothenburg</name></rtept>
+  </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 6 — Southbound and Staging</name>
+    <desc>Scandinavia through North Sea, Biscay, Iberia, Canaries, Cape Verde. Sep 2028–Feb 2029.</desc>
+    <rtept lat="57.708" lon="11.968"><name>Gothenburg</name></rtept>
+    <rtept lat="57.720" lon="10.590"><name>Skagen, Denmark</name></rtept>
+    <rtept lat="56.700" lon="11.500"><name>Kattegat</name></rtept><rtept lat="55.677" lon="12.580"><name>Copenhagen</name></rtept>
+    <rtept lat="54.500" lon="10.135"><name>Kiel Canal East</name></rtept>
+    <rtept lat="53.880" lon="9.130"><name>Kiel Canal West / Brunsbüttel</name></rtept>
+    <rtept lat="53.540" lon="6.840"><name>Borkum / E Frisians</name></rtept>
+    <rtept lat="52.950" lon="4.750"><name>Den Helder</name></rtept>
+    <rtept lat="52.378" lon="4.900"><name>Amsterdam</name></rtept>
+    <rtept lat="51.350" lon="3.200"><name>Zeebrugge / Bruges</name></rtept>
+    <rtept lat="49.800" lon="-1.500"><name>Off Cherbourg</name></rtept><rtept lat="48.383" lon="-4.500"><name>Brest</name></rtept>
+    <rtept lat="46.150" lon="-1.167"><name>La Rochelle</name></rtept>
+    <rtept lat="43.363" lon="-8.395"><name>A Coruña</name></rtept>
+    <rtept lat="42.237" lon="-8.713"><name>Vigo / Rías Baixas</name></rtept>
+    <rtept lat="41.148" lon="-8.677"><name>Porto</name></rtept>
+    <rtept lat="38.692" lon="-9.138"><name>Lisbon</name></rtept>
+    <rtept lat="37.102" lon="-8.672"><name>Lagos, Algarve</name></rtept>
+    <rtept lat="28.963" lon="-13.630"><name>Arrecife, Lanzarote</name></rtept>
+    <rtept lat="28.100" lon="-15.420"><name>Las Palmas, Gran Canaria</name></rtept>
+    <rtept lat="28.470" lon="-16.250"><name>Santa Cruz de Tenerife</name></rtept>
+    <rtept lat="28.100" lon="-17.350"><name>San Sebastián, La Gomera</name></rtept>
+    <rtept lat="28.683" lon="-17.767"><name>Santa Cruz de La Palma</name></rtept>
+    <rtept lat="27.750" lon="-18.000"><name>El Hierro</name></rtept>
+    <rtept lat="16.883" lon="-24.985"><name>Mindelo, Cape Verde</name></rtept>
+  </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 7 — Atlantic Crossing</name>
+    <desc>Cape Verde to NE Brazil via Fernando de Noronha. Trade wind passage. Feb–Mar 2029.</desc>
+    <rtept lat="16.883" lon="-24.985"><name>Mindelo</name></rtept>
+    <rtept lat="-3.855" lon="-32.423"><name>Fernando de Noronha</name></rtept>
+    <rtept lat="-8.063" lon="-34.870"><name>Recife</name></rtept>
+  </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 8 — Brazil</name>
+    <desc>NE Brazil southbound to Florianópolis. Mar–Aug 2029.</desc>
+    <rtept lat="-8.063" lon="-34.870"><name>Recife</name></rtept>
+    <rtept lat="-9.670" lon="-35.735"><name>Maceió</name></rtept>
+    <rtept lat="-12.972" lon="-38.512"><name>Salvador da Bahia</name></rtept>
+    <rtept lat="-13.900" lon="-38.900"><name>Baía de Todos os Santos (south)</name></rtept>
+    <rtept lat="-17.960" lon="-38.697"><name>Abrolhos Archipelago</name></rtept>
+    <rtept lat="-20.318" lon="-40.289"><name>Vitória</name></rtept>
+    <rtept lat="-22.898" lon="-43.173"><name>Rio de Janeiro</name></rtept>
+    <rtept lat="-23.152" lon="-44.227"><name>Ilha Grande</name></rtept>
+    <rtept lat="-23.218" lon="-44.714"><name>Paraty</name></rtept>
+    <rtept lat="-23.950" lon="-46.330"><name>São Sebastião / Ilhabela</name></rtept>
+    <rtept lat="-27.595" lon="-48.548"><name>Florianópolis</name></rtept>
+  </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 9 — River Plate to Patagonia</name>
+    <desc>Uruguay, Buenos Aires, Patagonian coast, Falklands, Ushuaia. Sep–Nov 2029.</desc>
+    <rtept lat="-27.595" lon="-48.548"><name>Florianópolis</name></rtept>
+    <rtept lat="-34.960" lon="-54.950"><name>Punta del Este</name></rtept>
+    <rtept lat="-34.590" lon="-56.170"><name>Montevideo</name></rtept>
+    <rtept lat="-34.608" lon="-58.363"><name>Buenos Aires</name></rtept>
+    <rtept lat="-38.050" lon="-57.540"><name>Mar del Plata</name></rtept>
+    <rtept lat="-42.773" lon="-65.037"><name>Puerto Madryn</name></rtept>
+    <rtept lat="-45.870" lon="-67.480"><name>Comodoro Rivadavia</name></rtept>
+    <rtept lat="-51.700" lon="-57.852"><name>Stanley, Falkland Islands</name></rtept>
+    <rtept lat="-54.808" lon="-68.313"><name>Ushuaia</name></rtept>
+  </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 10 — Patagonia and Channels</name>
+    <desc>Beagle Channel, Chilean channels, Drake attempt. Southern summer. Dec 2029–Feb 2030.</desc>
+    <rtept lat="-54.808" lon="-68.313"><name>Ushuaia</name></rtept><rtept lat="-54.935" lon="-67.616"><name>Puerto Williams</name></rtept><rtept lat="-56.500" lon="-66.500"><name>Drake Passage</name></rtept><rtept lat="-62.970" lon="-60.650"><name>Deception Island</name></rtept><rtept lat="-64.830" lon="-63.500"><name>Port Lockroy</name></rtept><rtept lat="-62.000" lon="-60.000"><name>Antarctic Peninsula (return)</name></rtept><rtept lat="-54.900" lon="-69.500"><name>Beagle Channel west</name></rtept><rtept lat="-54.650" lon="-71.600"><name>Canal Cockburn</name></rtept><rtept lat="-53.600" lon="-72.200"><name>Strait of Magellan</name></rtept><rtept lat="-51.730" lon="-72.500"><name>Puerto Natales</name></rtept></rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 11 — Chilean Coast North</name>
+    <desc>Channels north through Chiloé, Valparaíso, Juan Fernández. Mar–Sep 2030.</desc>
+    <rtept lat="-51.730" lon="-72.500"><name>Puerto Natales</name></rtept><rtept lat="-49.000" lon="-74.400"><name>Golfo de Penas</name></rtept><rtept lat="-46.500" lon="-75.000"><name>Chonos Archipelago</name></rtept><rtept lat="-43.900" lon="-73.600"><name>Quellón, Chiloé</name></rtept><rtept lat="-42.483" lon="-73.767"><name>Castro, Chiloé</name></rtept><rtept lat="-41.467" lon="-72.933"><name>Puerto Montt</name></rtept><rtept lat="-39.883" lon="-73.417"><name>Valdivia</name></rtept><rtept lat="-36.720" lon="-73.130"><name>Talcahuano / Concepción</name></rtept><rtept lat="-33.037" lon="-71.627"><name>Valparaíso</name></rtept><rtept lat="-33.637" lon="-78.830"><name>Juan Fernández Islands</name></rtept></rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 12 — Easter Island and Pitcairn</name>
+    <desc>West into the Pacific. Easter Island, Pitcairn, Gambier. Oct 2030–Feb 2031.</desc>
+    <rtept lat="-33.637" lon="-78.830"><name>Juan Fernández</name></rtept>
+    <rtept lat="-27.117" lon="-109.350"><name>Easter Island (Rapa Nui)</name></rtept>
+    <rtept lat="-25.067" lon="-130.100"><name>Pitcairn Island</name></rtept>
+    <rtept lat="-23.117" lon="-134.967"><name>Mangareva, Gambier Islands</name></rtept>
+  </rte>
+
+  
+  
+  
+  
+  <rte>
+    <name>Ch 13 — French Polynesia and Coconut Milk Run</name>
+    <desc>Marquesas, Tuamotus, Tahiti, Cooks, Tonga, Fiji. Mar–Oct 2031.</desc>
+    <rtept lat="-23.117" lon="-134.967"><name>Gambier</name></rtept>
+    <rtept lat="-16.050" lon="-145.650"><name>Fakarava, Tuamotus</name></rtept>
+    <rtept lat="-15.117" lon="-147.650"><name>Rangiroa, Tuamotus</name></rtept>
+    <rtept lat="-17.533" lon="-149.567"><name>Papeete, Tahiti</name></rtept>
+    <rtept lat="-17.490" lon="-149.830"><name>Moorea</name></rtept>
+    <rtept lat="-16.733" lon="-151.500"><name>Raiatea</name></rtept>
+    <rtept lat="-16.500" lon="-151.750"><name>Bora Bora</name></rtept>
+    <rtept lat="-18.850" lon="-159.783"><name>Aitutaki, Cook Islands</name></rtept>
+    <rtept lat="-21.233" lon="-159.783"><name>Rarotonga</name></rtept>
+    <rtept lat="-19.800" lon="-163.000"><name>Palmerston Atoll</name></rtept>
+    <rtept lat="-19.050" lon="-169.920"><name>Niue</name></rtept>
+    <rtept lat="-18.650" lon="-173.983"><name>Vava'u, Tonga</name></rtept>
+    <rtept lat="-16.783" lon="179.340"><name>Savusavu, Fiji</name></rtept>
+    <rtept lat="-17.678" lon="177.115"><name>Yasawa Islands, Fiji</name></rtept>
+    <rtept lat="-17.775" lon="177.952"><name>Suva, Fiji</name></rtept>
+  </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 14 — New Zealand</name>
+    <desc>Fiji south to NZ. Bay of Islands, Hauraki Gulf, Fiordland. Nov 2031–Apr 2032.</desc>
+    <rtept lat="-17.775" lon="177.952"><name>Suva, Fiji</name></rtept>
+    <rtept lat="-25.000" lon="177.000"><name>South toward NZ</name></rtept>
+    <rtept lat="-35.312" lon="174.122"><name>Opua, Bay of Islands</name></rtept>
+    <rtept lat="-35.727" lon="174.323"><name>Whangarei</name></rtept>
+    <rtept lat="-36.842" lon="174.748"><name>Auckland</name></rtept>
+    <rtept lat="-36.760" lon="175.500"><name>Coromandel Peninsula</name></rtept>
+    <rtept lat="-36.833" lon="175.100"><name>Great Barrier Island</name></rtept>
+    <rtept lat="-41.283" lon="174.777"><name>Wellington</name></rtept>
+    <rtept lat="-41.517" lon="173.950"><name>Marlborough Sounds</name></rtept>
+    <rtept lat="-46.900" lon="168.120"><name>Stewart Island / Rakiura</name></rtept><rtept lat="-45.750" lon="166.500"><name>Dusky Sound, Fiordland</name></rtept>
+    <rtept lat="-44.635" lon="167.900"><name>Milford Sound</name></rtept>
+    <rtept lat="-41.283" lon="174.777"><name>Wellington (return)</name></rtept>
+    <rtept lat="-35.312" lon="174.122"><name>Bay of Islands (refit)</name></rtept>
+  </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 15a — NZ to Japan</name>
+    <desc>North through Pacific islands to Japan. 2032.</desc>
+    <rtept lat="-35.312" lon="174.122"><name>Bay of Islands</name></rtept><rtept lat="-29.033" lon="168.000"><name>Norfolk Island</name></rtept><rtept lat="-22.270" lon="166.440"><name>Nouméa, New Caledonia</name></rtept><rtept lat="-17.735" lon="168.312"><name>Port Vila, Vanuatu</name></rtept><rtept lat="-9.450" lon="160.020"><name>Honiara, Solomon Islands</name></rtept><rtept lat="7.100" lon="171.380"><name>Majuro, Marshall Islands</name></rtept><rtept lat="6.900" lon="158.210"><name>Pohnpei, Micronesia</name></rtept><rtept lat="7.450" lon="151.850"><name>Chuuk Lagoon</name></rtept><rtept lat="15.200" lon="145.750"><name>Saipan, Marianas</name></rtept><rtept lat="27.095" lon="142.192"><name>Ogasawara (Bonin Islands)</name></rtept><rtept lat="35.450" lon="139.650"><name>Yokohama</name></rtept><rtept lat="35.000" lon="138.500"><name>Suruga Bay</name></rtept><rtept lat="33.430" lon="135.750"><name>Cape Shiono-misaki</name></rtept><rtept lat="34.660" lon="135.430"><name>Osaka</name></rtept><rtept lat="34.330" lon="134.180"><name>Inland Sea (Naoshima)</name></rtept><rtept lat="33.950" lon="130.900"><name>Kanmon Strait</name></rtept><rtept lat="35.470" lon="132.750"><name>Izumo</name></rtept><rtept lat="39.700" lon="139.900"><name>Akita</name></rtept><rtept lat="45.420" lon="141.680"><name>Wakkanai (N Hokkaido)</name></rtept></rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 15b — Japan to Alaska</name>
+    <desc>Aleutian crossing, Alaska, BC. 2033.</desc>
+    <rtept lat="45.420" lon="141.680"><name>Wakkanai</name></rtept><rtept lat="43.380" lon="145.810"><name>Cape Nosappu</name></rtept><rtept lat="45.000" lon="150.000"><name>Kuril Islands approach</name></rtept>
+    <rtept lat="52.200" lon="-176.000"><name>Attu area</name></rtept>
+    <rtept lat="53.890" lon="-166.532"><name>Dutch Harbor, Unalaska</name></rtept>
+    <rtept lat="57.790" lon="-152.407"><name>Kodiak</name></rtept>
+    <rtept lat="59.000" lon="-151.500"><name>Gulf of Alaska</name></rtept><rtept lat="60.100" lon="-149.440"><name>Seward</name></rtept>
+    <rtept lat="59.500" lon="-141.000"><name>Yakutat Bay</name></rtept><rtept lat="58.670" lon="-136.070"><name>Glacier Bay</name></rtept>
+    <rtept lat="57.050" lon="-135.330"><name>Sitka</name></rtept>
+    <rtept lat="55.340" lon="-131.640"><name>Ketchikan</name></rtept>
+    <rtept lat="54.250" lon="-133.050"><name>Haida Gwaii</name></rtept>
+    <rtept lat="50.670" lon="-128.350"><name>Port Hardy, Vancouver Island</name></rtept>
+    <rtept lat="49.152" lon="-125.907"><name>Tofino</name></rtept>
+    <rtept lat="48.790" lon="-125.170"><name>Bamfield</name></rtept>
+    <rtept lat="48.417" lon="-123.370"><name>Victoria, BC</name></rtept>
+  </rte>
+
+  
+  
+  
+  <rte>
+    <name>Ch 16 — Pacific Coast South and Return</name>
+    <desc>California, Mexico, Central America, Galapagos, South Pacific, Australia. 2034-2036.</desc>
+    <rtept lat="48.417" lon="-123.370"><name>Victoria</name></rtept><rtept lat="48.530" lon="-123.010"><name>San Juan Islands</name></rtept><rtept lat="47.600" lon="-122.340"><name>Seattle</name></rtept><rtept lat="48.370" lon="-124.620"><name>Neah Bay</name></rtept><rtept lat="46.190" lon="-123.870"><name>Astoria</name></rtept><rtept lat="45.630" lon="-121.940"><name>Bonneville Dam</name></rtept><rtept lat="46.190" lon="-123.870"><name>Astoria (return)</name></rtept><rtept lat="44.630" lon="-124.050"><name>Newport, OR</name></rtept><rtept lat="40.800" lon="-124.160"><name>Eureka, CA</name></rtept><rtept lat="38.330" lon="-123.050"><name>Bodega Bay</name></rtept><rtept lat="37.808" lon="-122.410"><name>San Francisco</name></rtept><rtept lat="36.620" lon="-121.900"><name>Monterey</name></rtept><rtept lat="34.017" lon="-118.500"><name>Santa Monica / LA</name></rtept><rtept lat="33.460" lon="-118.510"><name>Catalina Island</name></rtept><rtept lat="32.718" lon="-117.170"><name>San Diego</name></rtept><rtept lat="31.850" lon="-116.620"><name>Ensenada, Mexico</name></rtept><rtept lat="27.920" lon="-114.100"><name>Bahía Tortugas</name></rtept><rtept lat="24.160" lon="-110.310"><name>La Paz</name></rtept><rtept lat="24.470" lon="-110.350"><name>Isla Espíritu Santo</name></rtept><rtept lat="26.760" lon="-111.880"><name>Bahía Concepción</name></rtept><rtept lat="28.950" lon="-113.560"><name>Bahía de los Ángeles</name></rtept><rtept lat="22.890" lon="-109.905"><name>Cabo San Lucas</name></rtept><rtept lat="18.790" lon="-110.960"><name>Revillagigedo (Socorro)</name></rtept><rtept lat="15.668" lon="-96.490"><name>Huatulco</name></rtept><rtept lat="13.170" lon="-88.300"><name>El Salvador coast</name></rtept><rtept lat="10.630" lon="-85.850"><name>Papagayo, Costa Rica</name></rtept><rtept lat="8.640" lon="-83.165"><name>Golfito, Costa Rica</name></rtept><rtept lat="1.250" lon="-80.930"><name>Bahía de Caráquez, Ecuador</name></rtept><rtept lat="-2.200" lon="-80.960"><name>Salinas, Ecuador</name></rtept><rtept lat="-0.745" lon="-90.313"><name>Galápagos Islands</name></rtept><rtept lat="-9.930" lon="-138.850"><name>Fatu Hiva, Marquesas</name></rtept><rtept lat="-16.730" lon="-151.000"><name>Huahine</name></rtept><rtept lat="-14.280" lon="-170.700"><name>Pago Pago, American Samoa</name></rtept><rtept lat="-19.800" lon="-174.300"><name>Ha'apai, Tonga</name></rtept><rtept lat="-17.780" lon="-178.950"><name>Lau Group, Fiji</name></rtept><rtept lat="-22.620" lon="167.480"><name>Île des Pins, New Caledonia</name></rtept><rtept lat="-27.470" lon="153.030"><name>Brisbane</name></rtept><rtept lat="-33.860" lon="151.210"><name>Sydney</name></rtept></rte>
+
+</gpx>
