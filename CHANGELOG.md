@@ -7,10 +7,16 @@ framework document (`global-voyage-framework.md`) carries its own separate versi
 ## [Unreleased]
 
 Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
-1. Help text (i) icons on all editor fields
-2. Chapter endpoint synchronization
-3. Viewer refactor to runtime JSON loading
-4. GPX import and export
+1. Chapter endpoint synchronization
+2. Viewer refactor to runtime JSON loading
+3. GPX import and export
+
+## [v2.0.7] - 2026-05-28
+
+### Added
+1. Help text (i) icons on all chapter metadata fields and waypoint table column headers. Hover to
+   see contextual guidance: field purpose, expected format, how it affects the viewer. Styled as
+   small circled-i buttons matching the admiralty-chart aesthetic.
 
 ## [v2.0.6] - 2026-05-28
 

@@ -324,6 +324,38 @@ html, body {
   flex-shrink: 0;
 }
 
+/* ═══════════ HELP TIPS ═══════════ */
+.hi {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 13px; height: 13px; border-radius: 50%;
+  font-size: 9px; font-style: italic; font-weight: 600;
+  color: var(--faint); border: 1px solid var(--border);
+  cursor: help; position: relative; margin-left: 3px;
+  vertical-align: middle; flex-shrink: 0;
+  font-family: 'Fraunces', serif;
+}
+.hi:hover { color: var(--accent); border-color: var(--accent); }
+.hi:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%); margin-bottom: 6px;
+  background: var(--panel-solid); color: var(--ink);
+  border: 1px solid var(--border-strong); border-radius: 4px;
+  box-shadow: var(--shadow); padding: 6px 9px;
+  font-size: 10px; font-style: normal; font-weight: 400;
+  font-family: 'Spline Sans Mono', monospace;
+  line-height: 1.4; width: 220px; white-space: normal;
+  z-index: 3000; pointer-events: none;
+}
+.hi:hover::before {
+  content: ''; position: absolute; bottom: 100%;
+  left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--border-strong);
+  margin-bottom: -4px; z-index: 3001;
+}
+th .hi { margin-left: 2px; }
+
 /* ═══════════ MODAL ═══════════ */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
@@ -1159,11 +1191,11 @@ function renderMetaForm(ch) {
   return `
     <div class="meta-grid">
       <div class="meta-field">
-        <label>Name</label>
+        <label>Name <span class="hi" data-tip="Display name for this chapter. Appears in the viewer drawer, legend, and info panel.">i</span></label>
         <input type="text" value="${esc(ch.name)}" onchange="updateMeta(${ch.num},'name',this.value)">
       </div>
       <div class="meta-field full">
-        <label>When</label>
+        <label>When <span class="hi" data-tip="Seasonal window for this chapter. Select start and end month/year. Drives timeline ordering and seasonal context in the viewer.">i</span></label>
         <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
           <select id="when-sm-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${monthOptions(parseWhen(ch.when).sm)}</select>
           <select id="when-sy-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${yearOptions(parseWhen(ch.when).sy)}</select>
@@ -1173,7 +1205,7 @@ function renderMetaForm(ch) {
         </div>
       </div>
       <div class="meta-field">
-        <label>Era</label>
+        <label>Era <span class="hi" data-tip="Past = sailed. Current = in progress. Future = planned. Controls visual styling in the viewer.">i</span></label>
         <select onchange="updateMeta(${ch.num},'era',this.value)">
           <option value="past"${ch.era==='past'?' selected':''}>Past</option>
           <option value="current"${ch.era==='current'?' selected':''}>Current</option>
@@ -1181,23 +1213,23 @@ function renderMetaForm(ch) {
         </select>
       </div>
       <div class="meta-field">
-        <label>Pad Multiplier</label>
+        <label>Pad Multiplier <span class="hi" data-tip="Distance adjustment factor. Multiplied against the great-circle base NM to account for cruising-ground exploration. Default 1.20 (20%). Range: 1.05 (ocean crossing) to 3.00 (dense cruising ground like Scottish lochs).">i</span></label>
         <input type="number" step="0.05" min="1" value="${ch.padMultiplier}" onchange="updateMeta(${ch.num},'padMultiplier',parseFloat(this.value)||1.2)">
       </div>
       <div class="meta-field full">
-        <label>Notes</label>
+        <label>Notes <span class="hi" data-tip="Free-form chapter notes. Use for routing strategy, bail-out alternatives, seasonal considerations, or any planning context.">i</span></label>
         <textarea style="min-height:80px;" onchange="updateMeta(${ch.num},'notes',this.value)">${esc(ch.notes || '')}</textarea>
       </div>
       <div class="meta-field full">
-        <label>Countries (comma-separated)</label>
+        <label>Countries <span class="hi" data-tip="Countries and territories in this chapter. Auto-populated from waypoint countries (first-appearance order along the route). Editable.">i</span></label>
         <input type="text" value="${esc(countries)}" onchange="updateMeta(${ch.num},'countries',this.value)">
       </div>
       <div class="meta-field full">
-        <label>Key Destinations (comma-separated)</label>
+        <label>Key Destinations <span class="hi" data-tip="Highlight destinations for this chapter (comma-separated). Shown in the viewer drawer and summary displays.">i</span></label>
         <input type="text" value="${esc(keyDest)}" onchange="updateMeta(${ch.num},'keyDestinations',this.value)">
       </div>
       <div class="meta-field">
-        <label>Blog URL</label>
+        <label>Blog URL <span class="hi" data-tip="Link to blog posts covering this chapter. Enables a Read posts link in the viewer info panel. Can point to a year archive, tag page, or custom URL.">i</span></label>
         <input type="text" value="${esc(ch.blogUrl || '')}" onchange="updateMeta(${ch.num},'blogUrl',this.value||null)">
       </div>
     </div>
@@ -1240,14 +1272,14 @@ function renderWaypointPanel(ch) {
       <table class="wpt-table">
         <thead><tr>
           <th style="width:20px"></th>
-          <th style="width:28px">#</th>
-          <th class="col-name">Name</th>
-          <th class="col-lat">Lat</th>
-          <th class="col-lon">Lon</th>
-          <th class="col-cb" title="Major">M</th>
-          <th class="col-cb" title="Decision">D</th>
-          <th class="col-cb" title="Gateway">G</th>
-          <th class="col-country">Country</th>
+          <th style="width:28px"># <span class="hi" data-tip="Position in route sequence. Drag ≡ to reorder.">i</span></th>
+          <th class="col-name">Name <span class="hi" data-tip="Waypoint name. Leave empty for a shaping vertex (route geometry only, no marker on map).">i</span></th>
+          <th class="col-lat">Lat <span class="hi" data-tip="Latitude in decimal degrees. Set via search, map click, or manual entry. Drag map markers to adjust.">i</span></th>
+          <th class="col-lon">Lon <span class="hi" data-tip="Longitude in decimal degrees.">i</span></th>
+          <th class="col-cb" title="Major">M <span class="hi" data-tip="Major: provisioning hub, spares, repairs, or extended stay. Larger circle marker on map.">i</span></th>
+          <th class="col-cb" title="Decision">D <span class="hi" data-tip="Decision: routing fork or go/no-go point. Diamond marker on map.">i</span></th>
+          <th class="col-cb" title="Gateway">G <span class="hi" data-tip="Gateway: customs entry or strategic staging port. Star marker on map.">i</span></th>
+          <th class="col-country">Country <span class="hi" data-tip="Auto-populated via reverse geocoding. Editable. Feeds the chapter-level countries list.">i</span></th>
           <th class="col-notes">Notes</th>
           <th style="width:24px"></th>
         </tr></thead>
