@@ -384,6 +384,11 @@ html, body {
 <div id="main">
   <!-- Left: chapter panel -->
   <div id="chapter-panel">
+    <div style="display:flex;gap:6px;padding:0 0 8px 0;align-items:center;">
+      <button class="btn btn-sm" onclick="expandAllMeta()" title="Expand all metadata">All 📋</button>
+      <button class="btn btn-sm" onclick="expandAllWpts()" title="Expand all waypoints">All 📍</button>
+      <button class="btn btn-sm" onclick="collapseAll()" title="Collapse all">Collapse</button>
+    </div>
     <div id="chapter-list"></div>
     <div style="padding:8px 0; display:flex; gap:6px;">
       <button class="btn btn-sm btn-accent" onclick="addChapter()">+ Add Chapter</button>
@@ -734,6 +739,96 @@ function pickSearchResult(i) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   REVERSE GEOCODING (country auto-populate)
+   ═══════════════════════════════════════════════════════════════ */
+let revGeoQueue = [];
+let revGeoRunning = false;
+
+function reverseGeocode(lat, lon, callback) {
+  revGeoQueue.push({ lat, lon, callback });
+  processRevGeoQueue();
+}
+
+function processRevGeoQueue() {
+  if (revGeoRunning || revGeoQueue.length === 0) return;
+  revGeoRunning = true;
+  const { lat, lon, callback } = revGeoQueue.shift();
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=5&addressdetails=1`, {
+    headers: { 'Accept-Language': 'en' }
+  })
+    .then(r => r.json())
+    .then(data => {
+      const country = (data.address && data.address.country) || '';
+      callback(country);
+    })
+    .catch(() => callback(''))
+    .finally(() => {
+      revGeoRunning = false;
+      if (revGeoQueue.length > 0) {
+        setTimeout(processRevGeoQueue, 1100); // Nominatim 1 req/sec
+      }
+    });
+}
+
+function reverseGeocodeWaypoint(chNum, idx) {
+  const ch = getChapter(chNum);
+  if (!ch || !ch.waypoints[idx]) return;
+  const w = ch.waypoints[idx];
+  if (!w.lat || !w.lon) return;
+  reverseGeocode(w.lat, w.lon, function(country) {
+    if (country) {
+      w.country = country;
+      const input = document.querySelector(`#wpt-country-${chNum}-${idx}`);
+      if (input) input.value = country;
+      updateChapterCountries(chNum);
+    }
+  });
+}
+
+function fillChapterCountries(chNum) {
+  const ch = getChapter(chNum);
+  if (!ch) return;
+  let count = 0;
+  ch.waypoints.forEach((w, idx) => {
+    if (w.lat && w.lon && (!w.country || w.country.trim() === '')) {
+      count++;
+      reverseGeocode(w.lat, w.lon, function(country) {
+        if (country) {
+          w.country = country;
+          const input = document.querySelector(`#wpt-country-${chNum}-${idx}`);
+          if (input) input.value = country;
+        }
+        count--;
+        if (count === 0) updateChapterCountries(chNum);
+      });
+    }
+  });
+  if (count === 0) updateChapterCountries(chNum);
+  else {
+    const statusEl = document.getElementById('status-text');
+    if (statusEl) statusEl.innerHTML = `<span class="status-active">Geocoding ${count} waypoints…</span> (1/sec rate limit)`;
+  }
+}
+
+function updateChapterCountries(chNum) {
+  const ch = getChapter(chNum);
+  if (!ch) return;
+  const countries = [...new Set(
+    ch.waypoints
+      .filter(w => w.country && w.country.trim())
+      .map(w => w.country.trim())
+  )];
+  ch.countries = countries;
+  // Update metadata form if visible
+  const metaPanel = document.getElementById(`ch-meta-${chNum}`);
+  if (metaPanel && metaPanel.classList.contains('open')) {
+    const input = metaPanel.querySelector('input[onchange*="countries"]');
+    if (input) input.value = countries.join(', ');
+  }
+  updateHeroStats();
+}
+
+/* ═══════════════════════════════════════════════════════════════
    DATA HELPERS
    ═══════════════════════════════════════════════════════════════ */
 function getChapter(num) {
@@ -790,6 +885,116 @@ function updateHeroStats() {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   WHEN FIELD — parser/composer for month/year dropdowns
+   ═══════════════════════════════════════════════════════════════ */
+const MONTHS = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function parseWhen(when) {
+  if (!when) return { sm: '', sy: '', em: '', ey: '' };
+  // Patterns: "Mon YYYY – Mon YYYY", "Mon – Mon YYYY", "YYYY – YY", "YYYY – YYYY"
+  const parts = when.split(/\s*[–—-]\s*/);
+  let sm = '', sy = '', em = '', ey = '';
+  if (parts.length >= 2) {
+    const startTokens = parts[0].trim().split(/\s+/);
+    const endTokens = parts[1].trim().split(/\s+/);
+    // Start
+    if (startTokens.length >= 2 && MONTHS.includes(startTokens[0])) {
+      sm = startTokens[0]; sy = startTokens[1];
+    } else if (startTokens.length === 1 && MONTHS.includes(startTokens[0])) {
+      sm = startTokens[0];
+    } else if (startTokens.length >= 1) {
+      sy = startTokens[startTokens.length - 1];
+    }
+    // End
+    if (endTokens.length >= 2 && MONTHS.includes(endTokens[0])) {
+      em = endTokens[0]; ey = endTokens[1];
+    } else if (endTokens.length === 1 && MONTHS.includes(endTokens[0])) {
+      em = endTokens[0];
+    } else if (endTokens.length >= 1) {
+      ey = endTokens[endTokens.length - 1];
+    }
+    // Fix 2-digit years
+    if (ey && ey.length === 2) ey = '20' + ey;
+    if (sy && sy.length === 2) sy = '20' + sy;
+    // If start has month but no year, inherit end year
+    if (sm && !sy && ey) sy = ey;
+  } else {
+    // Single value
+    const tokens = parts[0].trim().split(/\s+/);
+    if (tokens.length >= 2 && MONTHS.includes(tokens[0])) {
+      sm = tokens[0]; sy = tokens[1];
+    } else if (tokens.length >= 1) {
+      sy = tokens[0];
+    }
+  }
+  return { sm, sy: sy || '', em, ey: ey || '' };
+}
+
+function composeWhen(sm, sy, em, ey) {
+  const start = [sm, sy].filter(Boolean).join(' ');
+  const end = [em, ey].filter(Boolean).join(' ');
+  if (start && end) return `${start} – ${end}`;
+  if (start) return start;
+  if (end) return end;
+  return '';
+}
+
+function monthOptions(selected) {
+  return MONTHS.map(m =>
+    `<option value="${m}"${m === selected ? ' selected' : ''}>${m || '—'}</option>`
+  ).join('');
+}
+
+function yearOptions(selected) {
+  let html = `<option value="">—</option>`;
+  for (let y = 2024; y <= 2040; y++) {
+    html += `<option value="${y}"${String(y) === String(selected) ? ' selected' : ''}>${y}</option>`;
+  }
+  return html;
+}
+
+function onWhenChange(chNum) {
+  const sm = document.getElementById(`when-sm-${chNum}`).value;
+  const sy = document.getElementById(`when-sy-${chNum}`).value;
+  const em = document.getElementById(`when-em-${chNum}`).value;
+  const ey = document.getElementById(`when-ey-${chNum}`).value;
+  const when = composeWhen(sm, sy, em, ey);
+  updateMeta(chNum, 'when', when);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPAND / COLLAPSE ALL
+   ═══════════════════════════════════════════════════════════════ */
+function expandAllMeta() {
+  STATE.chapters.forEach(ch => {
+    const panel = document.getElementById(`ch-meta-${ch.num}`);
+    const btn = document.querySelector(`#ch-${ch.num} .ch-toggle[title="Chapter metadata"]`);
+    if (panel) panel.classList.add('open');
+    if (btn) btn.classList.add('open');
+  });
+}
+
+function expandAllWpts() {
+  STATE.chapters.forEach(ch => {
+    const panel = document.getElementById(`ch-wpts-${ch.num}`);
+    const btn = document.querySelector(`#ch-${ch.num} .ch-toggle[title="Waypoints"]`);
+    if (panel) { panel.classList.add('open'); initWaypointSortable(ch.num); }
+    if (btn) btn.classList.add('open');
+  });
+}
+
+function collapseAll() {
+  STATE.chapters.forEach(ch => {
+    const meta = document.getElementById(`ch-meta-${ch.num}`);
+    const wpts = document.getElementById(`ch-wpts-${ch.num}`);
+    const btns = document.querySelectorAll(`#ch-${ch.num} .ch-toggle`);
+    if (meta) meta.classList.remove('open');
+    if (wpts) wpts.classList.remove('open');
+    btns.forEach(b => b.classList.remove('open'));
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
    CHAPTER LIST RENDERING
    ═══════════════════════════════════════════════════════════════ */
 function renderAllChapters() {
@@ -841,9 +1046,15 @@ function renderMetaForm(ch) {
         <label>Name</label>
         <input type="text" value="${esc(ch.name)}" onchange="updateMeta(${ch.num},'name',this.value)">
       </div>
-      <div class="meta-field">
+      <div class="meta-field full">
         <label>When</label>
-        <input type="text" value="${esc(ch.when)}" onchange="updateMeta(${ch.num},'when',this.value)">
+        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+          <select id="when-sm-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${monthOptions(parseWhen(ch.when).sm)}</select>
+          <select id="when-sy-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${yearOptions(parseWhen(ch.when).sy)}</select>
+          <span style="color:var(--muted);font-size:10px;">to</span>
+          <select id="when-em-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${monthOptions(parseWhen(ch.when).em)}</select>
+          <select id="when-ey-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${yearOptions(parseWhen(ch.when).ey)}</select>
+        </div>
       </div>
       <div class="meta-field">
         <label>Era</label>
@@ -906,6 +1117,7 @@ function renderWaypointPanel(ch) {
       <button class="btn btn-sm" onclick="addWaypoint(${ch.num})">+ Add Row</button>
       <button class="btn btn-sm" onclick="openBulkModal(${ch.num})">+ Add N Rows</button>
       <button class="btn btn-sm" onclick="openPasteModal(${ch.num})">Paste</button>
+      <button class="btn btn-sm" onclick="fillChapterCountries(${ch.num})" title="Auto-fill empty country fields via reverse geocoding">Fill countries</button>
       <span class="wpt-count">${ch.waypoints.length} rows · ${namedCount} named</span>
     </div>
     <div class="wpt-table-wrap">
@@ -943,7 +1155,7 @@ function renderWaypointRow(chNum, w, idx) {
       <td class="col-cb"><input type="checkbox" ${w.major?'checked':''} onchange="updateWpt(${chNum},${idx},'major',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.decision?'checked':''} onchange="updateWpt(${chNum},${idx},'decision',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.gateway?'checked':''} onchange="updateWpt(${chNum},${idx},'gateway',this.checked)"></td>
-      <td class="col-country"><input type="text" value="${esc(w.country || '')}" onchange="updateWpt(${chNum},${idx},'country',this.value)"></td>
+      <td class="col-country"><input type="text" id="wpt-country-${chNum}-${idx}" value="${esc(w.country || '')}" onchange="updateWpt(${chNum},${idx},'country',this.value)"></td>
       <td class="col-notes"><input type="text" value="${esc(w.notes || '')}" onchange="updateWpt(${chNum},${idx},'notes',this.value)"></td>
       <td><button class="wpt-del" onclick="deleteWpt(${chNum},${idx})" title="Delete row">✕</button></td>
     </tr>
@@ -977,6 +1189,11 @@ function updateWpt(chNum, idx, field, value) {
   }
   if (field === 'lat' || field === 'lon') {
     updateMapChapter(chNum);
+    // Auto-populate country if empty and both coords present
+    const w = ch.waypoints[idx];
+    if (w.lat && w.lon && (!w.country || w.country.trim() === '')) {
+      reverseGeocodeWaypoint(chNum, idx);
+    }
   }
   if (field === 'major' || field === 'decision' || field === 'gateway') {
     updateMapChapter(chNum);

@@ -10,12 +10,27 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 1. Help text (i) icons on all editor fields
 2. Chapter endpoint synchronization
 3. Midpoint insertion on route legs (ghost draggable points)
-4. Country auto-populate via reverse geocoding
-5. Chapter countries auto-aggregate from waypoints
-6. Month/year dropdowns for "When" field
-7. Decision/Gateway visual marker styles in editor and viewer
-8. Viewer refactor to runtime JSON loading
-9. GPX import and export
+4. Decision/Gateway visual marker styles in editor and viewer
+5. Viewer refactor to runtime JSON loading
+6. GPX import and export
+
+## [v2.0.4] - 2026-05-28
+
+### Added
+1. Month/year dropdowns for "When" field — replaces free-text input with structured start/end
+   month + year selects. 3-letter month abbreviations. Parses existing free-text values on import
+   (handles "Feb 2026 – Dec 2026", "2032 – 33", "Jan – Mar 2027" formats). Composes back to
+   "Mon YYYY – Mon YYYY" string for storage.
+2. Expand/collapse all — three buttons above the chapter list: "All 📋" (expand all metadata),
+   "All 📍" (expand all waypoints), "Collapse" (collapse everything).
+
+## [v2.0.3] - 2026-05-28
+
+### Added
+1. Country auto-populate — reverse geocoding via Nominatim when waypoint coordinates are set and
+   country field is empty. Rate-limited queue (1 req/sec per Nominatim policy).
+2. "Fill countries" button on waypoint toolbar — batches all empty-country rows for the chapter.
+3. Chapter-level countries auto-aggregate from distinct waypoint countries, updating dynamically.
 
 ## [v2.0.2] - 2026-05-28
 
