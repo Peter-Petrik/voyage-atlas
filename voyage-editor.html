@@ -337,22 +337,23 @@ html, body {
 .hi:hover { color: var(--accent); border-color: var(--accent); }
 .hi:hover::after {
   content: attr(data-tip);
-  position: absolute; bottom: 100%; left: 50%;
-  transform: translateX(-50%); margin-bottom: 6px;
+  position: absolute; top: 100%; left: 0;
+  margin-top: 6px;
   background: var(--panel-solid); color: var(--ink);
   border: 1px solid var(--border-strong); border-radius: 4px;
   box-shadow: var(--shadow); padding: 6px 9px;
   font-size: 10px; font-style: normal; font-weight: 400;
   font-family: 'Spline Sans Mono', monospace;
+  text-transform: none;
   line-height: 1.4; width: 220px; white-space: normal;
   z-index: 3000; pointer-events: none;
 }
 .hi:hover::before {
-  content: ''; position: absolute; bottom: 100%;
-  left: 50%; transform: translateX(-50%);
+  content: ''; position: absolute; top: 100%;
+  left: 8px;
   border: 5px solid transparent;
-  border-top-color: var(--border-strong);
-  margin-bottom: -4px; z-index: 3001;
+  border-bottom-color: var(--border-strong);
+  margin-top: -4px; z-index: 3001;
 }
 th .hi { margin-left: 2px; }
 
@@ -731,6 +732,7 @@ function updateMapChapter(chNum) {
       // Click or drag to insert
       ghost.on('mousedown', function(e) {
         L.DomEvent.stopPropagation(e);
+        this.closeTooltip();
         this._dragging = true;
         this._insertAfter = insertAfterIdx;
         this._chNum = chNum;
@@ -1945,7 +1947,7 @@ function escXml(s) {
 
 function downloadFile(filename, content, mimeType) {
   const d = new Date();
-  const prefix = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-`;
+  const prefix = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-${String(d.getHours()).padStart(2,'0')}-${String(d.getMinutes()).padStart(2,'0')}-`;
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

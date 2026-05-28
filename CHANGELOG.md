@@ -11,6 +11,15 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.0.9] - 2026-05-28
+
+### Fixed
+1. Help text tooltips now display below the icon (prevents off-screen overflow at top of viewport)
+   and use sentence case (inherits from label's uppercase was making them hard to read).
+2. Ghost midpoint tooltip clears on mousedown so it doesn't obscure waypoint placement during drag.
+3. Export filenames now include HH-MM: `YYYY-MM-DD-HH-MM-filename.ext` to differentiate iterative
+   saves within the same day.
+
 ## [v2.0.8] - 2026-05-28
 
 ### Fixed
