@@ -11,6 +11,17 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.0.8] - 2026-05-28
+
+### Fixed
+1. CSV import now clears isDirty flag — no more false unsaved-changes warning after importing CSVs.
+2. CSV and KML exports now clear isDirty flag — all export paths treated as save events.
+3. Chapter reorder now tracks the active chapter object through renumbering — previously selected
+   the wrong chapter after drag-to-reorder.
+4. Removed duplicate Era dropdown that appeared in the metadata form after the When field layout
+   change. Reorganized form: Name + Era share row 1, When (full-width dropdowns) on row 2.
+5. Footer version updated from v2.0 to v2.0.8.
+
 ## [v2.0.7] - 2026-05-28
 
 ### Added

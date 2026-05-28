@@ -450,7 +450,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 waypoints · 0 nm</span>
-  <span>Voyage Route Editor v2.0</span>
+  <span>Voyage Route Editor v2.0.8</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1194,6 +1194,14 @@ function renderMetaForm(ch) {
         <label>Name <span class="hi" data-tip="Display name for this chapter. Appears in the viewer drawer, legend, and info panel.">i</span></label>
         <input type="text" value="${esc(ch.name)}" onchange="updateMeta(${ch.num},'name',this.value)">
       </div>
+      <div class="meta-field">
+        <label>Era <span class="hi" data-tip="Past = sailed. Current = in progress. Future = planned. Controls visual styling in the viewer.">i</span></label>
+        <select onchange="updateMeta(${ch.num},'era',this.value)">
+          <option value="past"${ch.era==='past'?' selected':''}>Past</option>
+          <option value="current"${ch.era==='current'?' selected':''}>Current</option>
+          <option value="future"${ch.era==='future'?' selected':''}>Future</option>
+        </select>
+      </div>
       <div class="meta-field full">
         <label>When <span class="hi" data-tip="Seasonal window for this chapter. Select start and end month/year. Drives timeline ordering and seasonal context in the viewer.">i</span></label>
         <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
@@ -1203,14 +1211,6 @@ function renderMetaForm(ch) {
           <select id="when-em-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${monthOptions(parseWhen(ch.when).em)}</select>
           <select id="when-ey-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${yearOptions(parseWhen(ch.when).ey)}</select>
         </div>
-      </div>
-      <div class="meta-field">
-        <label>Era <span class="hi" data-tip="Past = sailed. Current = in progress. Future = planned. Controls visual styling in the viewer.">i</span></label>
-        <select onchange="updateMeta(${ch.num},'era',this.value)">
-          <option value="past"${ch.era==='past'?' selected':''}>Past</option>
-          <option value="current"${ch.era==='current'?' selected':''}>Current</option>
-          <option value="future"${ch.era==='future'?' selected':''}>Future</option>
-        </select>
       </div>
       <div class="meta-field">
         <label>Pad Multiplier <span class="hi" data-tip="Distance adjustment factor. Multiplied against the great-circle base NM to account for cruising-ground exploration. Default 1.20 (20%). Range: 1.05 (ocean crossing) to 3.00 (dense cruising ground like Scottish lochs).">i</span></label>
@@ -1428,12 +1428,14 @@ function initChapterSortable() {
     ghostClass: 'sortable-ghost',
     chosenClass: 'sortable-chosen',
     onEnd: function(evt) {
+      // Track the active chapter object before renumbering
+      const activeCh = activeChapterNum !== null ? getChapter(activeChapterNum) : null;
       // Reorder state array
       const moved = STATE.chapters.splice(evt.oldIndex, 1)[0];
       STATE.chapters.splice(evt.newIndex, 0, moved);
       renumberChapters();
       renderAllChapters();
-      if (activeChapterNum !== null) selectChapter(activeChapterNum);
+      if (activeCh) selectChapter(activeCh.num); // use the object's new num
     }
   });
 }
@@ -1776,6 +1778,7 @@ function mergeCSVImport(chapRows, wptRows) {
   STATE.chapters.sort((a, b) => a.num - b.num);
   renderAllChapters();
   if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
+  isDirty = false;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1851,6 +1854,7 @@ function exportChaptersCSV() {
   }));
   const csv = Papa.unparse(rows);
   downloadFile('chapters.csv', csv, 'text/csv');
+  isDirty = false;
 }
 
 function exportWaypointsCSV() {
@@ -1874,6 +1878,7 @@ function exportWaypointsCSV() {
   });
   const csv = Papa.unparse(rows);
   downloadFile('waypoints.csv', csv, 'text/csv');
+  isDirty = false;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1923,6 +1928,7 @@ function exportKML() {
 
   kml += `</Document>\n</kml>`;
   downloadFile('voyage-route.kml', kml, 'application/vnd.google-earth.kml+xml');
+  isDirty = false;
 }
 
 /* ═══════════════════════════════════════════════════════════════
