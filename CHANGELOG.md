@@ -9,10 +9,17 @@ framework document (`global-voyage-framework.md`) carries its own separate versi
 Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 1. Help text (i) icons on all editor fields
 2. Chapter endpoint synchronization
-3. Midpoint insertion on route legs (ghost draggable points)
-4. Decision/Gateway visual marker styles in editor and viewer
-5. Viewer refactor to runtime JSON loading
-6. GPX import and export
+3. Decision/Gateway visual marker styles in editor and viewer
+4. Viewer refactor to runtime JSON loading
+5. GPX import and export
+
+## [v2.0.5] - 2026-05-28
+
+### Added
+1. Midpoint insertion on route legs — ghost markers appear at the midpoint of each leg between
+   consecutive waypoints for the active chapter. Hover to highlight, click or drag to insert a new
+   waypoint at that position. Dragging allows precise placement before the waypoint is committed.
+   Ghost markers automatically update when waypoints are added, removed, or reordered.
 
 ## [v2.0.4] - 2026-05-28
 

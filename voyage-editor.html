@@ -314,6 +314,7 @@ html, body {
 /* Sortable ghost / chosen */
 .sortable-ghost { opacity: 0.3; }
 .sortable-chosen { background: var(--accent-soft); }
+.ghost-midpoint { cursor: pointer; }
 
 /* ═══════════ FOOTER ═══════════ */
 #footer {
@@ -503,6 +504,7 @@ let isDirty = false; // unsaved changes flag
 let map, tileLight, tileDark, isDark = false;
 let mapLayers = {};  // chapterNum -> { line, markers[] }
 let dragMarkerLink = null; // {chNum, wptIdx} for currently dragged marker
+let ghostDragTarget = null; // currently dragged ghost midpoint marker
 
 function initMap() {
   map = L.map('map', {
@@ -553,10 +555,11 @@ function updateMapChapter(chNum) {
   if (mapLayers[chNum]) {
     if (mapLayers[chNum].line) map.removeLayer(mapLayers[chNum].line);
     mapLayers[chNum].markers.forEach(m => map.removeLayer(m));
+    if (mapLayers[chNum].ghosts) mapLayers[chNum].ghosts.forEach(m => map.removeLayer(m));
   }
   const ch = getChapter(chNum);
   if (!ch || ch.waypoints.length === 0) {
-    mapLayers[chNum] = { line: null, markers: [] };
+    mapLayers[chNum] = { line: null, markers: [], ghosts: [] };
     return;
   }
 
@@ -626,7 +629,57 @@ function updateMapChapter(chNum) {
     markers.push(marker);
   });
 
-  mapLayers[chNum] = { line, markers };
+  // Ghost midpoint markers (active chapter only)
+  const ghosts = [];
+  if (isActive) {
+    const validPts = [];
+    ch.waypoints.forEach((w, idx) => {
+      if (w.lat && w.lon) validPts.push({ lat: w.lat, lon: w.lon, idx });
+    });
+    for (let i = 0; i < validPts.length - 1; i++) {
+      const a = validPts[i], b = validPts[i + 1];
+      const midLat = (a.lat + b.lat) / 2;
+      const midLon = (a.lon + b.lon) / 2;
+      const insertAfterIdx = a.idx; // insert after this waypoint index
+
+      const ghost = L.circleMarker([midLat, midLon], {
+        radius: 5,
+        fillColor: color,
+        color: color,
+        weight: 1,
+        opacity: 0.3,
+        fillOpacity: 0.15,
+        className: 'ghost-midpoint'
+      }).addTo(map);
+
+      ghost.bindTooltip('Click to add waypoint', { permanent: false, direction: 'top', offset: [0, -6] });
+
+      // Hover effect
+      ghost.on('mouseover', function() {
+        this.setStyle({ opacity: 0.8, fillOpacity: 0.5, radius: 7 });
+      });
+      ghost.on('mouseout', function() {
+        if (!this._dragging) this.setStyle({ opacity: 0.3, fillOpacity: 0.15, radius: 5 });
+      });
+
+      // Click or drag to insert
+      ghost.on('mousedown', function(e) {
+        L.DomEvent.stopPropagation(e);
+        this._dragging = true;
+        this._insertAfter = insertAfterIdx;
+        this._chNum = chNum;
+        this.setStyle({ opacity: 0.9, fillOpacity: 0.7, radius: 7 });
+        map.dragging.disable();
+        map.on('mousemove', onGhostDrag);
+        map.on('mouseup', onGhostDragEnd);
+        ghostDragTarget = this;
+      });
+
+      ghosts.push(ghost);
+    }
+  }
+
+  mapLayers[chNum] = { line, markers, ghosts };
 }
 
 function onMarkerDrag(e) {
@@ -653,6 +706,35 @@ function onMarkerDragEnd() {
   map.dragging.enable();
   map.off('mousemove', onMarkerDrag);
   map.off('mouseup', onMarkerDragEnd);
+}
+
+function onGhostDrag(e) {
+  if (!ghostDragTarget) return;
+  ghostDragTarget.setLatLng(e.latlng);
+}
+
+function onGhostDragEnd(e) {
+  map.dragging.enable();
+  map.off('mousemove', onGhostDrag);
+  map.off('mouseup', onGhostDragEnd);
+  if (!ghostDragTarget) return;
+  const chNum = ghostDragTarget._chNum;
+  const insertAfter = ghostDragTarget._insertAfter;
+  const pos = ghostDragTarget.getLatLng();
+  ghostDragTarget._dragging = false;
+  ghostDragTarget = null;
+
+  const ch = getChapter(chNum);
+  if (!ch) return;
+
+  const wpt = makeWaypoint();
+  wpt.lat = Math.round(pos.lat * 100000) / 100000;
+  wpt.lon = Math.round(pos.lng * 100000) / 100000;
+  ch.waypoints.splice(insertAfter + 1, 0, wpt);
+
+  renderChapterWaypoints(chNum);
+  updateMapChapter(chNum);
+  updateHeroStats();
 }
 
 function focusMapOnChapter(chNum) {
