@@ -9,9 +9,17 @@ framework document (`global-voyage-framework.md`) carries its own separate versi
 Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 1. Help text (i) icons on all editor fields
 2. Chapter endpoint synchronization
-3. Decision/Gateway visual marker styles in editor and viewer
-4. Viewer refactor to runtime JSON loading
-5. GPX import and export
+3. Viewer refactor to runtime JSON loading
+4. GPX import and export
+
+## [v2.0.6] - 2026-05-28
+
+### Changed
+1. Decision and Gateway waypoints now render as distinct shapes on the map. Decision = diamond,
+   Gateway = 5-point star. Regular and Major remain as circles (Major slightly larger with heavier
+   stroke). Shapes use the chapter's palette color with white outline. When both Decision and
+   Gateway are set, diamond (Decision) takes visual priority. Inactive chapters still render all
+   waypoints as small circle dots.
 
 ## [v2.0.5] - 2026-05-28
 
