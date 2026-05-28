@@ -14,9 +14,15 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 5. Chapter countries auto-aggregate from waypoints
 6. Month/year dropdowns for "When" field
 7. Decision/Gateway visual marker styles in editor and viewer
-8. Metadata field consolidation (routing + bailout + prose → notes)
-9. Viewer refactor to runtime JSON loading
-10. GPX import and export
+8. Viewer refactor to runtime JSON loading
+9. GPX import and export
+
+## [v2.0.2] - 2026-05-28
+
+### Changed
+1. Chapter metadata consolidation — `routing`, `bailout`, and `prose` fields replaced by a single
+   `notes` textarea. Import from v1 JSON and older CSVs auto-merges the three fields into `notes`
+   with labelled sections (e.g., "Routing: …", "Bail-out: …"). Schema doc updated.
 
 ## [v2.0.1] - 2026-05-28
 

@@ -19,13 +19,11 @@ quoted multiline cells.
 | `name` | string | yes | Display name (e.g., "Med Westward") |
 | `when` | string | yes | Time window (e.g., "Feb 2026 – Dec 2026") |
 | `era` | enum | yes | One of: `past`, `current`, `future` |
-| `routing` | string | no | Routing summary (v2.0; consolidating to `notes` in future) |
-| `bailout` | string | no | Bail-out options (v2.0; consolidating to `notes` in future) |
+| `notes` | string | no | Free-form chapter notes (routing, bail-out options, summary, etc.) |
 | `countries` | string | no | Comma-separated list of countries/territories |
 | `keyDestinations` | string | no | Comma-separated list of key destinations |
 | `blogUrl` | string | no | URL to blog post collection for this chapter |
 | `padMultiplier` | float | yes | NM padding factor (default 1.20) |
-| `prose` | string | no | Short summary paragraph (quoted multiline OK) |
 
 **Derived values (not stored in CSV, computed at runtime):**
 - `nmBase` = haversine sum of all chapter waypoints in order (nautical miles)
@@ -90,13 +88,11 @@ CSVs are the human-editable source.
       "name": "Chapter Name",
       "when": "Month Year – Month Year",
       "era": "past | current | future",
-      "routing": "Routing summary text",
-      "bailout": "Bail-out options text",
+      "notes": "Free-form chapter notes",
       "countries": ["Country1", "Country2"],
       "keyDestinations": ["Dest1", "Dest2"],
       "blogUrl": "https://... | null",
       "padMultiplier": 1.20,
-      "prose": "Short summary paragraph",
       "nm": 6000,
       "nmBase": 5000,
       "waypoints": [
