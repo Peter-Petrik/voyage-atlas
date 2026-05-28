@@ -13,12 +13,16 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 4. Country auto-populate via reverse geocoding
 5. Chapter countries auto-aggregate from waypoints
 6. Month/year dropdowns for "When" field
-7. Unsaved-changes warning (beforeunload handler)
-8. Date-prefixed export filenames (YYYY-MM-DD-)
-9. Decision/Gateway visual marker styles in editor and viewer
-10. Metadata field consolidation (routing + bailout + prose → notes)
-11. Viewer refactor to runtime JSON loading
-12. GPX import and export
+7. Decision/Gateway visual marker styles in editor and viewer
+8. Metadata field consolidation (routing + bailout + prose → notes)
+9. Viewer refactor to runtime JSON loading
+10. GPX import and export
+
+## [v2.0.1] - 2026-05-28
+
+### Added
+1. Unsaved-changes warning — browser prompts before closing/navigating away when edits exist.
+2. Date-prefixed export filenames — all exports prepend `YYYY-MM-DD-` to prevent overwrites.
 
 ## [v2.0] - 2026-05-28
 

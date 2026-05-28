@@ -490,6 +490,7 @@ let STATE = { chapters: [] };
 let activeChapterNum = null;  // which chapter is "selected" on the map
 let rapidClickMode = false;
 let pendingCSVChapters = null; // temp storage during 2-step CSV import
+let isDirty = false; // unsaved changes flag
 
 /* ═══════════════════════════════════════════════════════════════
    MAP SETUP
@@ -778,6 +779,7 @@ function chapterNm(ch) {
 }
 
 function updateHeroStats() {
+  isDirty = true;
   let totalNm = 0, totalWpts = 0;
   STATE.chapters.forEach(ch => {
     totalNm += chapterNm(ch);
@@ -1291,6 +1293,7 @@ function loadFromV1JSON(data) {
   renderAllChapters();
   if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
   setTimeout(() => map.invalidateSize(), 100);
+  isDirty = false;
 }
 
 function loadFromV2JSON(data) {
@@ -1320,6 +1323,7 @@ function loadFromV2JSON(data) {
   renderAllChapters();
   if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
   setTimeout(() => map.invalidateSize(), 100);
+  isDirty = false;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1465,6 +1469,7 @@ function exportJSON() {
   };
 
   downloadFile('voyage-data.json', JSON.stringify(out, null, 2), 'application/json');
+  isDirty = false;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1574,10 +1579,12 @@ function escXml(s) {
 }
 
 function downloadFile(filename, content, mimeType) {
+  const d = new Date();
+  const prefix = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-`;
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = filename;
+  a.href = url; a.download = prefix + filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1620,6 +1627,14 @@ document.addEventListener('DOMContentLoaded', function() {
   initMap();
   renderAllChapters();
   updateHeroStats();
+  isDirty = false; // initial render triggers updateHeroStats; reset
+});
+
+window.addEventListener('beforeunload', function(e) {
+  if (isDirty) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
 });
 </script>
 </body>
