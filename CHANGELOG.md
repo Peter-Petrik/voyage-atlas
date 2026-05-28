@@ -11,6 +11,20 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.1] - 2026-05-28
+
+### Added — Voyage Map Viewer (`voyage-viewer.html`)
+1. New generic viewer that loads JSON at runtime via file picker — no baked-in data.
+   Replaces the GRACE-specific `grace-voyage-map.html` (retained in repo as the v1.1 archive).
+2. Landing state with "Load JSON" prompt when no data is loaded.
+3. Supports both v1 JSON (separate routes/waypoints, routing/bailout fields) and v2 JSON
+   (unified waypoints, notes field). Schema auto-detected and normalized on load.
+4. Decision markers (diamond) and Gateway markers (star) rendered as toggleable layers —
+   no longer stubs. Layers populate from waypoint flags in the loaded data.
+5. Title, hero stats, and footer version populate dynamically from the loaded JSON's meta block.
+6. "Load different file" link in footer for switching datasets without refreshing.
+7. 707 lines (vs 4,479 for the baked viewer) — generic, data-independent, reusable.
+
 ## [v2.0.11] - 2026-05-28
 
 ### Added
