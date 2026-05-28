@@ -86,7 +86,8 @@
   .stat-lbl { font-size: 8.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
 
   /* ---- Map ---- */
-  #map { flex: 1; width: 100%; }
+  #stage { position: relative; flex: 1; min-height: 0; }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; }
   .leaflet-container { background: var(--tile-bg); font-family: 'Spline Sans Mono', monospace; }
 
   /* ---- Floating control panels ---- */
@@ -245,6 +246,7 @@
   <div class="head-stats" id="hero"></div>
 </div>
 
+<div id="stage">
 <div id="map"></div>
 
 <!-- Filter / layers -->
@@ -293,6 +295,7 @@
   </div>
   <div class="drawer-body" id="drawer-body"></div>
 </div>
+</div><!-- /stage -->
 
 <!-- Footer -->
 <div id="footer">
@@ -305,6 +308,8 @@
   <div class="cl-box">
     <button id="cl-x" onclick="document.getElementById('cl-modal').classList.remove('show')">×</button>
     <h3>Changelog</h3>
+    <div class="cl-entry"><span class="cl-ver">Map v1.1</span> <span class="cl-date">— May 2026</span><br>
+      Fixed: route lines no longer split across the map at the dateline; the info and filter panels (and the close button) no longer hide behind the header; the world repeats again so the circumnavigation flows when scrolling sideways. Added: <code>blogUrl</code> data field (no UI yet).</div>
     <div class="cl-entry"><span class="cl-ver">Map v1.0</span> <span class="cl-date">— May 2026</span><br>
       Initial release. 18 framework chapters (Ch 2–19) rendered from <code>grace-voyage-map.json</code>; Ch 1 (Med Eastward) reserved for Phase 2. Adaptive light/dark base maps, chapter drawer, avoidance-zone overlay, ~81,000nm across 39 nations and 15 territories.</div>
   </div>
@@ -316,7 +321,7 @@ const DATA = {
   "meta": {
     "title": "S/Y GRACE — Global Voyage Framework",
     "frameworkVersion": "v1.4",
-    "mapVersion": "v1.0",
+    "mapVersion": "v1.1",
     "hero": {
       "nm": 81051,
       "years": "10+",
@@ -442,6 +447,7 @@ const DATA = {
         "Greece",
         "Aegean"
       ],
+      "blogUrl": null,
       "nm": 6000,
       "nmBase": 6000,
       "padMultiplier": 1.0,
@@ -470,6 +476,7 @@ const DATA = {
         "Balearics",
         "Gibraltar"
       ],
+      "blogUrl": null,
       "nm": 2882,
       "nmBase": 2506,
       "padMultiplier": 1.15,
@@ -1168,6 +1175,7 @@ const DATA = {
         "Agadir",
         "Funchal (Madeira)"
       ],
+      "blogUrl": null,
       "nm": 1018,
       "nmBase": 848,
       "padMultiplier": 1.2,
@@ -1282,6 +1290,7 @@ const DATA = {
         "Terceira",
         "São Miguel"
       ],
+      "blogUrl": null,
       "nm": 1149,
       "nmBase": 851,
       "padMultiplier": 1.35,
@@ -1376,6 +1385,7 @@ const DATA = {
         "Ireland",
         "Inner Hebrides"
       ],
+      "blogUrl": null,
       "nm": 2968,
       "nmBase": 2374,
       "padMultiplier": 1.25,
@@ -1635,6 +1645,7 @@ const DATA = {
         "Orkney",
         "Irish west coast"
       ],
+      "blogUrl": null,
       "nm": 1365,
       "nmBase": 455,
       "padMultiplier": 3.0,
@@ -1726,6 +1737,7 @@ const DATA = {
         "Tromsø",
         "Svalbard"
       ],
+      "blogUrl": null,
       "nm": 3929,
       "nmBase": 3143,
       "padMultiplier": 1.25,
@@ -2040,6 +2052,7 @@ const DATA = {
         "Canary Islands",
         "Mindelo (Cape Verde)"
       ],
+      "blogUrl": null,
       "nm": 4235,
       "nmBase": 3529,
       "padMultiplier": 1.2,
@@ -2325,6 +2338,7 @@ const DATA = {
         "Fernando de Noronha",
         "Recife / Olinda"
       ],
+      "blogUrl": null,
       "nm": 1694,
       "nmBase": 1613,
       "padMultiplier": 1.05,
@@ -2385,6 +2399,7 @@ const DATA = {
         "Ilha Grande",
         "Paraty"
       ],
+      "blogUrl": null,
       "nm": 2996,
       "nmBase": 1498,
       "padMultiplier": 2.0,
@@ -2533,6 +2548,7 @@ const DATA = {
         "Falklands (optional)",
         "Ushuaia"
       ],
+      "blogUrl": null,
       "nm": 3159,
       "nmBase": 2527,
       "padMultiplier": 1.25,
@@ -2658,6 +2674,7 @@ const DATA = {
         "Chilean channels",
         "Drake attempt"
       ],
+      "blogUrl": null,
       "nm": 4138,
       "nmBase": 1655,
       "padMultiplier": 2.5,
@@ -2751,6 +2768,7 @@ const DATA = {
         "Valparaíso",
         "Juan Fernández"
       ],
+      "blogUrl": null,
       "nm": 2155,
       "nmBase": 1539,
       "padMultiplier": 1.4,
@@ -2887,6 +2905,7 @@ const DATA = {
         "Pitcairn",
         "Gambier"
       ],
+      "blogUrl": null,
       "nm": 3494,
       "nmBase": 3038,
       "padMultiplier": 1.15,
@@ -2962,6 +2981,7 @@ const DATA = {
         "Tonga",
         "Fiji"
       ],
+      "blogUrl": null,
       "nm": 4676,
       "nmBase": 3225,
       "padMultiplier": 1.45,
@@ -3152,6 +3172,7 @@ const DATA = {
         "Hauraki Gulf",
         "Fiordland"
       ],
+      "blogUrl": null,
       "nm": 3993,
       "nmBase": 2852,
       "padMultiplier": 1.4,
@@ -3322,6 +3343,7 @@ const DATA = {
         "Ogasawara",
         "Japan"
       ],
+      "blogUrl": null,
       "nm": 9053,
       "nmBase": 7544,
       "padMultiplier": 1.2,
@@ -3539,6 +3561,7 @@ const DATA = {
         "Alaska",
         "British Columbia"
       ],
+      "blogUrl": null,
       "nm": 5400,
       "nmBase": 4154,
       "padMultiplier": 1.3,
@@ -3743,6 +3766,7 @@ const DATA = {
         "New Caledonia",
         "Sydney"
       ],
+      "blogUrl": null,
       "nm": 16747,
       "nmBase": 13956,
       "padMultiplier": 1.2,
@@ -4167,7 +4191,6 @@ const DATA = {
     }
   ]
 };
-
 /* ===================== Paul Tol "muted" palette ===================== */
 /* 9 chromatic colours, reused across 19 chapters by geographic opposition. */
 const TOL = {
@@ -4197,8 +4220,33 @@ function unwrap(coords) {
   return out;
 }
 
+/* Split a native-frame line at the antimeridian into segments that each stay
+   within [-180, 180], inserting an interpolated point at the seam so the line
+   exits one edge and re-enters the other. Keeps every segment in the native
+   frame, aligned with the (native) waypoint markers — no off-frame drawing. */
+function splitAtDateline(coords) {
+  const segs = []; let seg = [coords[0]];
+  for (let i = 1; i < coords.length; i++) {
+    const [la0, lo0] = coords[i-1];
+    const [la1, lo1] = coords[i];
+    if (Math.abs(lo1 - lo0) > 180) {                 // crosses the seam
+      const lo1c = lo1 + (lo1 - lo0 > 0 ? -360 : 360); // continuous neighbour
+      const seam = lo1c > lo0 ? 180 : -180;
+      const t = (seam - lo0) / (lo1c - lo0);
+      const latSeam = la0 + (la1 - la0) * t;
+      seg.push([latSeam, seam]);                     // exit one edge
+      segs.push(seg);
+      seg = [[latSeam, -seam], [la1, lo1]];          // re-enter the other
+    } else {
+      seg.push([la1, lo1]);
+    }
+  }
+  segs.push(seg);
+  return segs;
+}
+
 /* ============================ Map init ============================= */
-const map = L.map('map', { center: [12, -40], zoom: 2, worldCopyJump: false, zoomControl: true });
+const map = L.map('map', { center: [12, -40], zoom: 2, worldCopyJump: true, zoomControl: true });
 
 const baseLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>', subdomains:'abcd', maxZoom: 19
@@ -4228,16 +4276,26 @@ const gatewayLayer  = L.layerGroup();         // stub
 const polylines = {};   // chapter num -> [L.polyline,...]
 const drawnChapters = DATA.chapters.filter(c => c.routes && c.routes.length);
 
+/* Draw vector data in three world copies so a circumnavigation flows continuously
+   when the basemap repeats horizontally. worldCopyJump keeps the view centred
+   within the native world, so the visible range always falls inside these copies. */
+const WORLD_COPIES = [-360, 0, 360];
+const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlngs;
+
 /* ----- Routes ----- */
 DATA.chapters.forEach(ch => {
   const color = CHAPTER_COLORS[ch.num] || '#888';
   polylines[ch.num] = [];
   (ch.routes || []).forEach(coords => {
-    const poly = L.polyline(unwrap(coords), { color, weight: 3, opacity: 0.85, smoothFactor: 1 }).addTo(routesLayer);
-    poly.on('click', () => selectChapter(ch.num));
-    poly.on('mouseover', () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: 5, opacity: 1 }); });
-    poly.on('mouseout',  () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: 3, opacity: 0.85 }); });
-    polylines[ch.num].push(poly);
+    splitAtDateline(coords).forEach(seg => {
+      WORLD_COPIES.forEach(off => {
+        const poly = L.polyline(shiftLon(seg, off), { color, weight: 3, opacity: 0.85, smoothFactor: 1 }).addTo(routesLayer);
+        poly.on('click', () => selectChapter(ch.num));
+        poly.on('mouseover', () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: 5, opacity: 1 }); });
+        poly.on('mouseout',  () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: 3, opacity: 0.85 }); });
+        polylines[ch.num].push(poly);
+      });
+    });
   });
 });
 
@@ -4246,19 +4304,19 @@ DATA.chapters.forEach(ch => {
   (ch.waypoints || []).forEach(w => {
     const major = !!w.major, label = !!w.routingLabel;
     const stroke = document.body.classList.contains('dark') ? '#0b1622' : '#fbf8f1';
-    const m = L.circleMarker([w.lat, w.lon], {
-      radius:      major ? 6 : (label ? 2.2 : 3.6),
-      weight:      major ? 2 : 1.2,
-      color:       stroke,
-      fillColor:   major ? CHAPTER_COLORS[ch.num] : (label ? '#9aa7b5' : CHAPTER_COLORS[ch.num]),
-      fillOpacity: major ? 1 : (label ? 0.5 : 0.8),
+    const popup = `<div class="pop-name">${w.name}</div><div class="pop-when">${ch.when}</div>` +
+                  (major ? '<div class="pop-major">Major port</div>' : '');
+    WORLD_COPIES.forEach(off => {
+      const m = L.circleMarker([w.lat, w.lon + off], {
+        radius:      major ? 6 : (label ? 2.2 : 3.6),
+        weight:      major ? 2 : 1.2,
+        color:       stroke,
+        fillColor:   major ? CHAPTER_COLORS[ch.num] : (label ? '#9aa7b5' : CHAPTER_COLORS[ch.num]),
+        fillOpacity: major ? 1 : (label ? 0.5 : 0.8),
+      });
+      m.addTo(wptsLayer);
+      m.bindPopup(popup, { maxWidth: 230 });
     });
-    m.addTo(wptsLayer);
-    m.bindPopup(
-      `<div class="pop-name">${w.name}</div><div class="pop-when">${ch.when}</div>` +
-      (major ? '<div class="pop-major">Major port</div>' : ''),
-      { maxWidth: 230 }
-    );
   });
 });
 // keep marker stroke in sync with theme
@@ -4270,9 +4328,11 @@ function refreshMarkerStrokes() {
 /* ----- PAZ rectangles ----- */
 (DATA.paz || []).forEach(z => {
   const [s, w, n, e] = z.bounds;
-  L.rectangle([[s, w],[n, e]], { color: '#9b2d20', weight: 1, fillColor: '#b13327', fillOpacity: 0.22, stroke: true, dashArray: '4 3' })
-    .bindPopup(`<div class="pop-zone">${z.zone}</div><div class="pop-when">Permanent avoidance zone</div>`, { maxWidth: 240 })
-    .addTo(pazLayer);
+  WORLD_COPIES.forEach(off => {
+    L.rectangle([[s, w + off],[n, e + off]], { color: '#9b2d20', weight: 1, fillColor: '#b13327', fillOpacity: 0.22, stroke: true, dashArray: '4 3' })
+      .bindPopup(`<div class="pop-zone">${z.zone}</div><div class="pop-when">Permanent avoidance zone</div>`, { maxWidth: 240 })
+      .addTo(pazLayer);
+  });
 });
 
 /* ====================== Layer toggle wiring ======================= */
@@ -4358,10 +4418,18 @@ function selectChapter(num) {
   document.querySelectorAll('.dr-row').forEach(el => el.classList.toggle('active', el.id === `dr-${num}`));
   document.querySelectorAll('.leg-row').forEach(el => el.classList.toggle('active', el.id === `leg-${num}`));
 
-  // fit to chapter extent
+  // fit to chapter extent — compute span on the continuous (unwrapped) line for a
+  // tight bound, then recenter the longitude into the native frame where the
+  // split-rendered route and markers actually live.
   const pts = [];
   (ch.routes||[]).forEach(coords => unwrap(coords).forEach(p => pts.push(p)));
-  if (pts.length) map.fitBounds(L.latLngBounds(pts), { padding: [60, 60], maxZoom: 6 });
+  if (pts.length) {
+    const b = L.latLngBounds(pts);
+    const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), 6);
+    const c = b.getCenter();
+    const lon = ((c.lng + 180) % 360 + 360) % 360 - 180;   // wrap into [-180,180]
+    map.setView([c.lat, lon], z);
+  }
 
   // info panel
   document.getElementById('info-when').textContent = ch.when;
