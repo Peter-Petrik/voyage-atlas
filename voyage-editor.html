@@ -347,8 +347,8 @@ html, body {
 }
 #settings-header {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; cursor: pointer; user-select: none;
-  font-family: 'Fraunces', serif; font-size: 11px;
+  padding: 10px 12px; cursor: pointer; user-select: none;
+  font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600;
   color: var(--accent); letter-spacing: 0.04em;
 }
 #settings-header:hover { background: var(--row-hover); }
@@ -428,9 +428,9 @@ th .hi { margin-left: 2px; }
         <button onclick="importCSV()">Import CSVs (chapters + waypoints)…</button>
       </div>
     </div>
-    <button class="btn btn-accent" onclick="saveDefault()" title="Save as voyage-data.json">Save</button>
-    <div class="dropdown">
-      <button class="btn" onclick="toggleDropdown('export-menu')">Save As ▾</button>
+    <div class="dropdown" style="display:flex;">
+      <button class="btn btn-accent" onclick="saveDefault()" style="border-radius:4px 0 0 4px;border-right:none;">Save</button>
+      <button class="btn btn-accent" onclick="toggleDropdown('export-menu')" style="border-radius:0 4px 4px 0;padding:5px 6px;">▾</button>
       <div id="export-menu" class="dropdown-menu">
         <button onclick="exportJSON()">JSON (timestamped)</button>
         <button onclick="exportChaptersCSV()">chapters.csv</button>
@@ -557,6 +557,15 @@ th .hi { margin-left: 2px; }
 
 <!-- CSV import step 2 modal -->
 <div class="modal-overlay" id="csv-step2-modal">
+  <div class="modal">
+    <h2>Import Waypoints CSV</h2>
+    <p>Chapters loaded. Now select the waypoints CSV file.</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeCSVStep2()">Cancel</button>
+      <button class="btn btn-accent" onclick="document.getElementById('file-csv-waypoints').click()">Select waypoints.csv…</button>
+    </div>
+  </div>
+</div>
 
 <!-- Delete waypoint confirmation modal -->
 <div class="modal-overlay" id="delete-wpt-modal">
@@ -566,15 +575,6 @@ th .hi { margin-left: 2px; }
     <div class="modal-actions">
       <button class="btn" onclick="closeDeleteWptModal()">Cancel</button>
       <button class="btn btn-danger" onclick="doDeleteWpt()">Delete</button>
-    </div>
-  </div>
-</div>
-  <div class="modal">
-    <h2>Import Waypoints CSV</h2>
-    <p>Chapters loaded. Now select the waypoints CSV file.</p>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeCSVStep2()">Cancel</button>
-      <button class="btn btn-accent" onclick="document.getElementById('file-csv-waypoints').click()">Select waypoints.csv…</button>
     </div>
   </div>
 </div>
@@ -832,6 +832,9 @@ function updateMapChapter(chNum) {
       ghosts.push(ghost);
     }
   }
+
+  // Ensure waypoint markers render above ghost midpoints
+  markers.forEach(m => { if (m.bringToFront) m.bringToFront(); });
 
   mapLayers[chNum] = { line, markers, ghosts };
 }
@@ -1262,9 +1265,9 @@ function updateHeroStats() {
   if (nInput && !s.nationsOverride) nInput.placeholder = `(${classified.nations.length} auto)`;
   if (tInput && !s.territoriesOverride) tInput.placeholder = `(${classified.territories.length} auto)`;
   let statsText = `${displayNm.toLocaleString()} nm${s.nmOverride ? ' ⚙' : ''}`;
-  if (nations) statsText += ` · ${nations} nations${s.nationsOverride ? ' ⚙' : ''}`;
-  if (territories) statsText += ` · ${territories} territories${s.territoriesOverride ? ' ⚙' : ''}`;
-  statsText += ` · ${STATE.chapters.length} chapters · ${totalWpts} waypoints`;
+  if (nations) statsText += ` · ${nations} ${nations === 1 ? 'nation' : 'nations'}${s.nationsOverride ? ' ⚙' : ''}`;
+  if (territories) statsText += ` · ${territories} ${territories === 1 ? 'territory' : 'territories'}${s.territoriesOverride ? ' ⚙' : ''}`;
+  statsText += ` · ${STATE.chapters.length} ${STATE.chapters.length === 1 ? 'chapter' : 'chapters'} · ${totalWpts} ${totalWpts === 1 ? 'waypoint' : 'waypoints'}`;
   document.getElementById('hero-stats').textContent = statsText;
 }
 
@@ -1941,6 +1944,7 @@ function loadFromV1JSON(data) {
     STATE.settings.voyageTitle = data.meta.title;
   }
   loadSettings();
+  updateHeroStats();
   isDirty = false;
 }
 
@@ -1980,6 +1984,7 @@ function loadFromV2JSON(data) {
     STATE.settings.voyageTitle = data.meta.title;
   }
   loadSettings();
+  updateHeroStats();
   isDirty = false;
 }
 

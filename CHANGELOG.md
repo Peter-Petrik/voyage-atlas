@@ -11,6 +11,26 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.4.1] - 2026-05-29
+
+### Fixed — Editor
+1. Right-click delete now works — delete confirmation modal was nested inside the CSV import
+   modal (invisible). Moved to top-level.
+2. Waypoint click regression fixed — ghost midpoint markers were rendering on top of waypoints,
+   intercepting clicks. Waypoint markers now brought to front after ghost creation.
+3. Status bar now reflects Voyage Settings overrides immediately after JSON import.
+4. Singular/plural throughout — "1 nation" not "1 nations", "1 territory" not "1 territories",
+   same for chapters and waypoints.
+5. Save button redesigned as split button — single "Save" with adjacent ▾ dropdown for
+   timestamped JSON, CSVs, KML.
+6. Voyage Settings header enlarged and bolded for visual prominence.
+
+### Fixed — Viewer
+1. Singular/plural in hero stats.
+
+### Added — Viewer
+1. Day/night theme toggle button (◐) in header.
+
 ## [v2.4] - 2026-05-29
 
 ### Added

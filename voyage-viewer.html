@@ -257,6 +257,7 @@
   </div>
   <div class="head-stats" id="hero"></div>
   <button id="load-btn" onclick="document.getElementById('file-input').click()">Load JSON…</button>
+  <button id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark theme" style="background:none;border:1px solid var(--border-strong);color:var(--ink);border-radius:4px;width:34px;height:34px;cursor:pointer;font-size:15px;flex-shrink:0;">◐</button>
 </div>
 
 <div id="stage">
@@ -494,11 +495,11 @@ function loadVoyageData(raw) {
   const h = DATA.meta && DATA.meta.hero ? DATA.meta.hero : {};
   const heroItems = [];
   if (h.nm) heroItems.push([Number(h.nm).toLocaleString(), 'Nautical Miles']);
-  if (h.nations) heroItems.push([h.nations, 'Nations']);
-  if (h.territories) heroItems.push([h.territories, 'Territories']);
-  if (h.chapters) heroItems.push([h.chapters, 'Chapters']);
-  if (h.waypoints) heroItems.push([h.waypoints, 'Waypoints']);
-  if (h.years) heroItems.push([h.years, 'Years']);
+  if (h.nations) heroItems.push([h.nations, h.nations === 1 ? 'Nation' : 'Nations']);
+  if (h.territories) heroItems.push([h.territories, h.territories === 1 ? 'Territory' : 'Territories']);
+  if (h.chapters) heroItems.push([h.chapters, h.chapters === 1 ? 'Chapter' : 'Chapters']);
+  if (h.waypoints) heroItems.push([h.waypoints, h.waypoints === 1 ? 'Waypoint' : 'Waypoints']);
+  if (h.years) heroItems.push([h.years, h.years === 1 ? 'Year' : 'Years']);
   document.getElementById('hero').innerHTML = heroItems.map(
     ([v,l]) => `<div class="stat"><span class="stat-val">${v}</span><span class="stat-lbl">${l}</span></div>`
   ).join('');
@@ -703,6 +704,11 @@ function closeDrawer() {
 
 /* Theme flip + marker stroke sync */
 const _origSetBase = setBase;
+
+function toggleTheme() {
+  const isDark = !document.body.classList.contains('dark');
+  setBase(isDark ? 'dark' : 'light');
+}
 
 /* Esc closes things */
 document.addEventListener('keydown', e => {
