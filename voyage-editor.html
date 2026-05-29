@@ -522,7 +522,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 waypoints · 0 nm</span>
-  <span>Voyage Route Editor v2.5</span>
+  <span>Voyage Route Editor v2.5.1</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1766,21 +1766,23 @@ function pullFromPrevious(chNum) {
   const prevPts = prev.waypoints.filter(w => w.lat && w.lon);
   if (prevPts.length === 0) return;
   const last = prevPts[prevPts.length - 1];
-  const firstIdx = ch.waypoints.findIndex(w => w.lat && w.lon);
-  if (firstIdx === -1) {
-    // No coordinate waypoint yet — prepend a copy of the predecessor's endpoint
-    ch.waypoints.unshift({
-      name: last.name || '', lat: last.lat, lon: last.lon,
-      major: false, decision: false, gateway: false,
-      country: last.country || '', notes: ''
-    });
-  } else {
-    const w = ch.waypoints[firstIdx];
-    w.lat = last.lat;
-    w.lon = last.lon;
-    if (!w.name || !w.name.trim()) w.name = last.name || '';
-    if (!w.country || !w.country.trim()) w.country = last.country || '';
-  }
+  // Guard: if already synced (first coord waypoint matches the endpoint), do nothing
+  const firstPt = ch.waypoints.find(w => w.lat && w.lon);
+  if (firstPt && haversineNm(firstPt.lat, firstPt.lon, last.lat, last.lon) < 1) return;
+  // Insert a full copy of the predecessor's last waypoint as a NEW first row.
+  // Never overwrites the existing waypoint 1 — this matches the shared-handoff data model
+  // (the handoff point appears as the last row of the prior chapter and the first row of this
+  // one) and avoids mislabeling or moving an existing named waypoint by a large distance.
+  ch.waypoints.unshift({
+    name: last.name || '',
+    lat: last.lat,
+    lon: last.lon,
+    major: last.major || false,
+    decision: last.decision || false,
+    gateway: last.gateway || false,
+    country: last.country || '',
+    notes: last.notes || ''
+  });
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
   updateChapterCountries(chNum);

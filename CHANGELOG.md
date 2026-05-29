@@ -11,6 +11,17 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.5.1] - 2026-05-29
+
+### Fixed
+1. Endpoint pull-sync now **inserts** a copy of the predecessor's last waypoint as a new first row
+   instead of **overwriting** the existing first waypoint's coordinates. The overwrite behavior
+   could silently relocate a named waypoint by a large distance (e.g., moving "Funchal" 23 nm
+   offshore onto a routing vertex) and distort the within-chapter distance. Insertion preserves
+   the existing waypoint and matches the shared-handoff data model (the handoff point legitimately
+   appears as the last row of the prior chapter and the first row of this one). Added a guard so
+   pulling when already synced (endpoint within 1 nm) is a no-op.
+
 ## [v2.5] - 2026-05-29
 
 ### Added — Editor
