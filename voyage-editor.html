@@ -1023,13 +1023,18 @@ function processRevGeoQueue() {
 function reverseGeocodeWaypoint(chNum, idx) {
   const ch = getChapter(chNum);
   if (!ch || !ch.waypoints[idx]) return;
-  const w = ch.waypoints[idx];
-  if (!w.lat || !w.lon) return;
-  reverseGeocode(w.lat, w.lon, function(country) {
+  const wptRef = ch.waypoints[idx];
+  if (!wptRef.lat || !wptRef.lon) return;
+  reverseGeocode(wptRef.lat, wptRef.lon, function(country) {
     if (country) {
-      w.country = country;
-      const input = document.querySelector(`#wpt-country-${chNum}-${idx}`);
-      if (input) input.value = country;
+      wptRef.country = country;
+      // Locate current index by reference (may have shifted during async)
+      const ch2 = getChapter(chNum);
+      const curIdx = ch2 ? ch2.waypoints.indexOf(wptRef) : -1;
+      if (curIdx !== -1) {
+        const input = document.querySelector(`#wpt-country-${chNum}-${curIdx}`);
+        if (input) input.value = country;
+      }
       updateChapterCountries(chNum);
     }
   });
@@ -1091,7 +1096,21 @@ function updateChapterCountries(chNum) {
   updateHeroStats();
 }
 
+let fwdGeoQueue = [];
+let fwdGeoRunning = false;
 function forwardGeocodeWaypoint(chNum, idx, name) {
+  // Capture the waypoint object by reference so reorder/delete during fetch can't misroute it
+  const ch = getChapter(chNum);
+  if (!ch || !ch.waypoints[idx]) return;
+  const wptRef = ch.waypoints[idx];
+  fwdGeoQueue.push({ chNum, wptRef, name });
+  processFwdGeoQueue();
+}
+
+function processFwdGeoQueue() {
+  if (fwdGeoRunning || fwdGeoQueue.length === 0) return;
+  fwdGeoRunning = true;
+  const { chNum, wptRef, name } = fwdGeoQueue.shift();
   fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&limit=1&addressdetails=1`, {
     headers: { 'Accept-Language': 'en' }
   })
@@ -1100,27 +1119,33 @@ function forwardGeocodeWaypoint(chNum, idx, name) {
       if (!results || results.length === 0) return;
       const r = results[0];
       const ch = getChapter(chNum);
-      if (!ch || !ch.waypoints[idx]) return;
-      const w = ch.waypoints[idx];
-      if (w.lat || w.lon) return; // don't overwrite if coords were set meanwhile
+      if (!ch) return;
+      // Locate the waypoint by reference (index may have shifted)
+      const curIdx = ch.waypoints.indexOf(wptRef);
+      if (curIdx === -1) return; // deleted during fetch
+      const w = wptRef;
+      if (w.lat || w.lon) return; // coords set meanwhile
       w.lat = Math.round(parseFloat(r.lat) * 100000) / 100000;
       w.lon = Math.round(parseFloat(r.lon) * 100000) / 100000;
       if (r.address && r.address.country && !w.country) w.country = r.address.country;
-      // Update table inputs
-      const latInput = document.querySelector(`#wpt-lat-${chNum}-${idx}`);
-      const lonInput = document.querySelector(`#wpt-lon-${chNum}-${idx}`);
-      const countryInput = document.querySelector(`#wpt-country-${chNum}-${idx}`);
+      // Update table inputs at the CURRENT index
+      const latInput = document.querySelector(`#wpt-lat-${chNum}-${curIdx}`);
+      const lonInput = document.querySelector(`#wpt-lon-${chNum}-${curIdx}`);
+      const countryInput = document.querySelector(`#wpt-country-${chNum}-${curIdx}`);
       if (latInput) latInput.value = w.lat;
       if (lonInput) lonInput.value = w.lon;
       if (countryInput && w.country) countryInput.value = w.country;
       updateMapChapter(chNum);
       updateChapterCountries(chNum);
-      // Update chapter NM display
       const chEl = document.getElementById(`ch-${chNum}`);
       if (chEl) chEl.querySelector('.ch-nm').textContent = chapterNm(ch).toLocaleString() + ' nm';
       updateHeroStats();
     })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => {
+      fwdGeoRunning = false;
+      if (fwdGeoQueue.length > 0) setTimeout(processFwdGeoQueue, 1100); // Nominatim 1 req/sec
+    });
 }
 
 /* ═══════════════════════════════════════════════════════════════

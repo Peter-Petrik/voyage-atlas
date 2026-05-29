@@ -11,6 +11,26 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.4.4] - 2026-05-29
+
+### Fixed — Editor (from deep structural review)
+1. HIGH — Forward geocode now rate-limited through a 1-req/sec queue (`processFwdGeoQueue`),
+   matching the reverse-geocode queue. Previously fired simultaneous direct fetches; pasting
+   multiple name-only rows would hit Nominatim's rate limit (429) or risk an IP ban.
+2. MEDIUM — Async geocode DOM race fixed. `forwardGeocodeWaypoint` and `reverseGeocodeWaypoint`
+   now capture the waypoint by object reference and locate its current index after the fetch
+   resolves (`indexOf`), so reordering or deleting rows during the ~1 sec fetch no longer writes
+   the result to the wrong row's input field.
+
+### Removed
+1. Dead code — unused `_origSetBase` constant in the viewer.
+
+### Notes
+1. Added structural HTML/JS validation tooling to the review process: DOM-ID-vs-reference
+   cross-checking, inline-handler-vs-function-definition checking, tag-balance, duplicate-function
+   and dead-code detection, and async-race analysis. This catches the class of bug (modal nesting,
+   z-order) that syntax-only checking missed.
+
 ## [v2.4.3] - 2026-05-29
 
 ### Changed — Editor

@@ -702,9 +702,6 @@ function closeDrawer() {
   document.getElementById('drawer-overlay').classList.remove('show');
 }
 
-/* Theme flip + marker stroke sync */
-const _origSetBase = setBase;
-
 function toggleTheme() {
   const isDark = !document.body.classList.contains('dark');
   setBase(isDark ? 'dark' : 'light');
