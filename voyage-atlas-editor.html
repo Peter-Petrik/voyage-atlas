@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Voyage Route Editor</title>
+<title>Voyage Atlas — Editor</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
 /* ═══════════════════════════════════════════════════════════════
-   THEME — matches the voyage-viewer admiralty-chart aesthetic
+   THEME — matches the voyage-atlas viewer admiralty-chart aesthetic
    ═══════════════════════════════════════════════════════════════ */
 :root {
   --bg:      #f4efe4;
@@ -428,7 +428,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ HEADER ═══════════ -->
 <div id="header">
   <div>
-    <h1>Voyage Route Editor</h1>
+    <h1>Voyage Atlas — Editor</h1>
     <div class="hdr-sub">Chapter &amp; waypoint management</div>
   </div>
   <div class="hdr-actions">
@@ -464,7 +464,7 @@ th .hi { margin-left: 2px; }
       <div id="settings-body">
         <div class="settings-grid">
           <div class="meta-field">
-            <label>Vessel Name <span class="hi" data-tip="Name of the vessel. Used in page titles: '[Name] Voyage Planner' (editor) and '[Name] Voyage' (viewer).">i</span></label>
+            <label>Vessel Name <span class="hi" data-tip="Name of the vessel. Used in page titles: '[Name] Voyage Atlas — Editor' (editor) and '[Name] Voyage Atlas' (viewer).">i</span></label>
             <input type="text" id="set-vessel" value="" onchange="updateSettings()">
           </div>
           <div class="meta-field">
@@ -522,7 +522,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 waypoints · 0 nm</span>
-  <span>Voyage Route Editor v2.5.1</span>
+  <span>Voyage Atlas Editor v2.5.2</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1291,7 +1291,7 @@ function updateSettings() {
   s.nationsOverride = parseInt(document.getElementById('set-nations').value) || null;
   s.territoriesOverride = parseInt(document.getElementById('set-territories').value) || null;
   // Update page title
-  const title = s.vesselName ? `${s.vesselName} Voyage Planner` : 'Voyage Route Editor';
+  const title = s.vesselName ? `${s.vesselName} Voyage Atlas — Editor` : 'Voyage Atlas — Editor';
   document.querySelector('#header h1').textContent = title;
   document.title = title;
   updateHeroStats();
@@ -1306,7 +1306,7 @@ function loadSettings() {
   document.getElementById('set-nations').value = s.nationsOverride || '';
   document.getElementById('set-territories').value = s.territoriesOverride || '';
   // Update page title
-  const title = s.vesselName ? `${s.vesselName} Voyage Planner` : 'Voyage Route Editor';
+  const title = s.vesselName ? `${s.vesselName} Voyage Atlas — Editor` : 'Voyage Atlas — Editor';
   document.querySelector('#header h1').textContent = title;
   document.title = title;
 }
@@ -2242,7 +2242,7 @@ function buildExportJSON() {
 
   return JSON.stringify({
     meta: {
-      title: s.voyageTitle || (s.vesselName ? `${s.vesselName} Voyage` : 'Voyage Route Data'),
+      title: s.voyageTitle || (s.vesselName ? `${s.vesselName} Voyage Atlas` : 'Voyage Atlas'),
       version: '2.5',
       generatedAt: new Date().toISOString(),
       hero: { nm: displayNm, chapters: chapters.length, waypoints: totalWpts, nations, territories },
@@ -2321,8 +2321,8 @@ function exportKML() {
   let kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 <Document>
-<name>Voyage Route</name>
-<description>Exported from Voyage Route Editor</description>
+<name>Voyage Atlas</name>
+<description>Exported from Voyage Atlas</description>
 `;
 
   // Define styles

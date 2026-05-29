@@ -1,7 +1,7 @@
-# Voyage Editor — Data Schema (v2.5)
+# Voyage Atlas — Data Schema (v2.5)
 
-This document defines the data contract between the **editor** (`voyage-editor.html`) and the
-**viewer** (`grace-voyage-map.html`). Any tool that produces data in this schema can feed the
+This document defines the data contract between the **editor** (`voyage-atlas-editor.html`) and the
+**viewer** (`voyage-atlas.html`). Any tool that produces data in this schema can feed the
 viewer; any tool that consumes this schema can read editor output.
 
 ---
@@ -131,7 +131,7 @@ CSVs are the human-editable source.
 - `territories` — count of overseas territories (auto-classified or overridden)
 
 **`meta.settings` fields:**
-- `vesselName` — drives page titles: "[Name] Voyage Planner" (editor), "[Name] Voyage" (viewer)
+- `vesselName` — drives page titles: "[Name] Voyage Atlas — Editor" (editor), "[Name] Voyage Atlas" (viewer)
 - `voyageTitle` — custom title override; if blank, auto-generated from vessel name
 - `nmOverride` — if set (number), replaces the auto-calculated total NM in hero stats
 - `nationsOverride` — if set (integer), replaces the auto-classified nations count

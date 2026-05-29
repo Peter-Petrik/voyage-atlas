@@ -1,6 +1,8 @@
-# Changelog — Voyage Map
+# Changelog — Voyage Atlas
 
-All notable changes to the voyage map project (editor + viewer) are recorded here. Format follows
+All notable changes to the Voyage Atlas project (editor + viewer) are recorded here.
+File and product names in entries before v2.5.2 have been updated to current names for
+consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
@@ -10,6 +12,27 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 1. Chapter endpoint synchronization
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
+
+## [v2.5.2] - 2026-05-29
+
+### Changed — project-wide rename to Voyage Atlas
+1. The project is renamed from "Voyage Planner / Voyage Map" to **Voyage Atlas**. Rationale: in the
+   cruising community "plan/planner" carries the wrong posture (*"sailors' plans are written in sand
+   and at low tide"*); an atlas is a collection of charts, which is what this tool holds.
+2. File renames:
+   - `voyage-editor.html` → `voyage-atlas-editor.html`
+   - `voyage-viewer.html` → `voyage-atlas.html`
+   - `voyage-editor-schema.md` → `voyage-atlas-schema.md`
+   - `voyage-editor-faq.md` → `voyage-atlas-faq.md` (also consolidated — now covers editor + viewer)
+   - `grace-voyage-map-future-enhancements.md` → `voyage-atlas-enhancements.md`
+   - `grace-voyage-map-runbook.md` → `voyage-atlas-runbook.md`
+3. Page titles and footers updated: editor "[Vessel] Voyage Atlas — Editor" (default "Voyage Atlas
+   — Editor"); viewer "[Vessel] Voyage Atlas" (default "Voyage Atlas"). All internal "Voyage
+   Planner / Voyage Route Editor / Voyage Map Viewer" strings scrubbed.
+4. Unchanged: the data filename `voyage-data.json`, all JSON field names, and the archived v1.1
+   baked viewer `grace-voyage-map.html` (keeps its historical name).
+5. The FAQ is consolidated into a single owner's manual with four parts (Concepts · Editor · Viewer
+   · Design principles), opening with the Atlas-not-Planner / sand-at-low-tide framing.
 
 ## [v2.5.1] - 2026-05-29
 
@@ -181,7 +204,7 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 3. Delete confirmation modal with keyboard support (Enter/ESC).
 
 ### Changed
-1. Page title dynamically updates to "[Vessel Name] Voyage Planner" when vessel name is set.
+1. Page title dynamically updates to include the vessel name when set.
 2. JSON export meta block now includes settings (vessel name, overrides) and enriched hero stats
    (nations, territories). Schema version bumped to 2.2.
 3. Editor and viewer footer versions now consistently on the right side.
@@ -209,7 +232,7 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 
 ## [v2.1] - 2026-05-28
 
-### Added — Voyage Map Viewer (`voyage-viewer.html`)
+### Added — Viewer (`voyage-atlas.html`)
 1. New generic viewer that loads JSON at runtime via file picker — no baked-in data.
    Replaces the GRACE-specific `grace-voyage-map.html` (retained in repo as the v1.1 archive).
 2. Landing state with "Load JSON" prompt when no data is loaded.
@@ -318,7 +341,7 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 
 ## [v2.0] - 2026-05-28
 
-### Added — Voyage Route Editor (`voyage-editor.html`)
+### Added — Editor (`voyage-atlas-editor.html`)
 1. New self-contained HTML/JS editor for managing chapters and waypoints. Replaces the prior
    workflow of editing via Claude prompts and Python converter scripts.
 2. Accordion-style chapter list with independent metadata and waypoint expand toggles.
@@ -350,7 +373,7 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
    those waypoints become regular named waypoints with no flags.
 4. **Schema:** `waypoints.csv` columns: chapter, order, name, lat, lon, major, decision, gateway,
    country, notes. `chapters.csv` columns: num, name, when, era, routing, bailout, countries,
-   keyDestinations, blogUrl, padMultiplier, prose. Full schema in `voyage-editor-schema.md`.
+   keyDestinations, blogUrl, padMultiplier, prose. Full schema in `voyage-atlas-schema.md`.
 
 ### Fixed
 1. Editor layout — body missing `display: flex; flex-direction: column`, causing chapter panel

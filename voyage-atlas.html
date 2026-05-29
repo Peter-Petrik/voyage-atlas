@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Voyage Map Viewer</title>
+<title>Voyage Atlas</title>
 <meta name="theme-color" content="#f4efe4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Voyage Map">
+<meta name="apple-mobile-web-app-title" content="Voyage Atlas">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -252,8 +252,8 @@
 <div id="header">
   <button id="drawer-btn" title="Voyage chapters" onclick="toggleDrawer()">☰</button>
   <div class="head-titles">
-    <h1 id="page-title">Voyage Map Viewer</h1>
-    <div class="head-sub">Load a voyage JSON file to explore</div>
+    <h1 id="page-title">Voyage Atlas</h1>
+    <div class="head-sub">Load a voyage atlas to explore</div>
   </div>
   <div class="head-stats" id="hero"></div>
   <button id="load-btn" onclick="document.getElementById('file-input').click()">Load JSON…</button>
@@ -266,8 +266,8 @@
 <!-- Landing overlay -->
 <div id="landing">
   <div class="landing-box">
-    <h2>Voyage Map Viewer</h2>
-    <p>Load a voyage JSON file exported from the Voyage Route Editor to see your chapters,
+    <h2>Voyage Atlas</h2>
+    <p>Load a voyage atlas JSON file exported from the Voyage Atlas Editor to see your chapters,
        waypoints, and route lines on an interactive map.</p>
     <button class="landing-btn" onclick="document.getElementById('file-input').click()">Load JSON…</button>
   </div>
@@ -322,7 +322,7 @@
 
 <div id="footer">
   <span id="footer-data"></span>
-  <span id="footer-ver">Voyage Map Viewer v2.5</span>
+  <span id="footer-ver">Voyage Atlas v2.5.2</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -484,9 +484,9 @@ function loadVoyageData(raw) {
   const settings = (DATA.meta && DATA.meta.settings) || {};
   const vesselName = settings.vesselName || '';
   const title = settings.voyageTitle
-    || (vesselName ? `${vesselName} Voyage` : null)
+    || (vesselName ? `${vesselName} Voyage Atlas` : null)
     || (DATA.meta && DATA.meta.title)
-    || 'Voyage Map';
+    || 'Voyage Atlas';
   document.getElementById('page-title').textContent = title;
   document.title = title;
   document.querySelector('.head-sub').textContent = 'Click any route, waypoint, or chapter to explore';
