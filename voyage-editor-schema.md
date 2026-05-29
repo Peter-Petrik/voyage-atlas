@@ -1,4 +1,4 @@
-# Voyage Editor — Data Schema (v2.0)
+# Voyage Editor — Data Schema (v2.3)
 
 This document defines the data contract between the **editor** (`voyage-editor.html`) and the
 **viewer** (`grace-voyage-map.html`). Any tool that produces data in this schema can feed the
@@ -65,7 +65,7 @@ visually but stores them as independent rows.
 
 ---
 
-## JSON Schema (v2.0)
+## JSON Schema (v2.3)
 
 The editor exports this format; the viewer consumes it. The JSON is the interchange format —
 CSVs are the human-editable source.
@@ -73,13 +73,22 @@ CSVs are the human-editable source.
 ```json
 {
   "meta": {
-    "title": "string — user-defined voyage title",
-    "version": "2.0",
+    "title": "string — auto from vessel name, or user-defined",
+    "version": "2.3",
     "generatedAt": "ISO 8601 datetime",
     "hero": {
       "nm": 81051,
       "chapters": 19,
-      "waypoints": 275
+      "waypoints": 275,
+      "nations": 39,
+      "territories": 15
+    },
+    "settings": {
+      "vesselName": "S/Y GRACE",
+      "voyageTitle": "S/Y GRACE Global Voyage",
+      "nmOverride": null,
+      "nationsOverride": null,
+      "territoriesOverride": null
     }
   },
   "chapters": [
@@ -113,6 +122,25 @@ CSVs are the human-editable source.
 }
 ```
 
+**`meta.hero` fields:**
+- `nm` — total nautical miles (global override if set, otherwise sum of chapter NMs)
+- `chapters` — count of chapters
+- `waypoints` — count of named waypoints (shaping vertices excluded)
+- `nations` — count of sovereign nations (auto-classified or overridden)
+- `territories` — count of overseas territories (auto-classified or overridden)
+
+**`meta.settings` fields:**
+- `vesselName` — drives page titles: "[Name] Voyage Planner" (editor), "[Name] Voyage" (viewer)
+- `voyageTitle` — custom title override; if blank, auto-generated from vessel name
+- `nmOverride` — if set (number), replaces the auto-calculated total NM in hero stats
+- `nationsOverride` — if set (integer), replaces the auto-classified nations count
+- `territoriesOverride` — if set (integer), replaces the auto-classified territories count
+
+**Nation/territory auto-classification:** the editor contains a built-in reference list of ~65
+overseas territories (see FAQ for the full list). Each distinct country name from waypoint data
+is checked against this list: match = territory, no match = nation. Overrides in settings take
+precedence over the auto-count.
+
 **Key differences from v1 JSON:**
 1. No `routes[]` array — route geometry is derived from the waypoint list in order
 2. No `routingLabel` field — replaced by the three independent boolean flags
@@ -121,6 +149,9 @@ CSVs are the human-editable source.
 5. `nm` and `nmBase` are included for convenience but are always recomputable from waypoints +
    `padMultiplier`
 6. `hero.waypoints` counts only named waypoints (non-empty name); shaping vertices excluded
+7. `hero.nations` and `hero.territories` added (v2.3)
+8. `meta.settings` block added (v2.3) — vessel name, title, NM/nations/territories overrides
+9. `routing`, `bailout`, `prose` consolidated into `notes` (v2.0.2)
 
 **v1 → v2 import logic (handled by the editor):**
 1. Route segments concatenated in order; shared endpoints deduplicated (tolerance: 0.0001°)
