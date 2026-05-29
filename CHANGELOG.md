@@ -11,6 +11,29 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.3.2] - 2026-05-29
+
+### Fixed — Editor
+1. NM display now updates after forward geocode populates coordinates — chapter header and footer
+   stats reflect the new distance immediately.
+2. Ghost midpoint no longer persists after rapid-click — added guard to skip rapid-click add when
+   ghost drag is active.
+3. Nations and territories recalculate when waypoints are deleted — deleteWpt now calls
+   updateChapterCountries to rebuild the country list.
+4. "Fill countries" message clarified — shows "All waypoints with coordinates already have
+   countries (N rows have no coordinates)" when empty rows exist.
+5. Paste from clipboard now triggers geocoding — forward geocode for names without coordinates,
+   reverse geocode for coordinates without country.
+6. Right-click delete now works — native browser context menu prevented on map container so
+   Leaflet's contextmenu event fires on markers.
+7. Stats order standardized: NM, Nations, Territories, Chapters, Waypoints (editor footer and
+   viewer header).
+
+### Fixed — Viewer
+1. Vessel name now appears in viewer title — title priority: custom voyageTitle > vessel name
+   derived > meta.title > default. Previously meta.title always took precedence.
+2. Hero stats order matches editor: NM, Nations, Territories, Chapters, Waypoints.
+
 ## [v2.3.1] - 2026-05-29
 
 ### Added

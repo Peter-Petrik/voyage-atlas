@@ -479,10 +479,13 @@ function loadVoyageData(raw) {
 
   DATA = normalizeData(raw);
 
-  // Title
+  // Title — prioritize: custom voyageTitle > vessel name > meta.title > default
   const settings = (DATA.meta && DATA.meta.settings) || {};
   const vesselName = settings.vesselName || '';
-  const title = (DATA.meta && DATA.meta.title) || (vesselName ? `${vesselName} Voyage` : 'Voyage Map');
+  const title = settings.voyageTitle
+    || (vesselName ? `${vesselName} Voyage` : null)
+    || (DATA.meta && DATA.meta.title)
+    || 'Voyage Map';
   document.getElementById('page-title').textContent = title;
   document.title = title;
   document.querySelector('.head-sub').textContent = 'Click any route, waypoint, or chapter to explore';
@@ -491,11 +494,11 @@ function loadVoyageData(raw) {
   const h = DATA.meta && DATA.meta.hero ? DATA.meta.hero : {};
   const heroItems = [];
   if (h.nm) heroItems.push([Number(h.nm).toLocaleString(), 'Nautical Miles']);
-  if (h.years) heroItems.push([h.years, 'Years']);
-  if (h.chapters) heroItems.push([h.chapters, 'Chapters']);
   if (h.nations) heroItems.push([h.nations, 'Nations']);
   if (h.territories) heroItems.push([h.territories, 'Territories']);
+  if (h.chapters) heroItems.push([h.chapters, 'Chapters']);
   if (h.waypoints) heroItems.push([h.waypoints, 'Waypoints']);
+  if (h.years) heroItems.push([h.years, 'Years']);
   document.getElementById('hero').innerHTML = heroItems.map(
     ([v,l]) => `<div class="stat"><span class="stat-val">${v}</span><span class="stat-lbl">${l}</span></div>`
   ).join('');

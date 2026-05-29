@@ -632,7 +632,7 @@ function initMap() {
 }
 
 function onMapClick(e) {
-  if (!rapidClickMode || activeChapterNum === null) return;
+  if (!rapidClickMode || activeChapterNum === null || ghostDragTarget) return;
   const ch = getChapter(activeChapterNum);
   if (!ch) return;
   const wpt = makeWaypoint();
@@ -1060,8 +1060,11 @@ function fillChapterCountries(chNum) {
   });
   if (total === 0) {
     updateChapterCountries(chNum);
+    const noCoords = ch.waypoints.filter(w => !w.lat || !w.lon).length;
     const statusEl = document.getElementById('status-text');
-    if (statusEl) statusEl.innerHTML = `<span class="status-active">All waypoints already have countries</span>`;
+    let msg = 'All waypoints with coordinates already have countries';
+    if (noCoords > 0) msg += ` (${noCoords} rows have no coordinates)`;
+    if (statusEl) statusEl.innerHTML = `<span class="status-active">${msg}</span>`;
   } else {
     const statusEl = document.getElementById('status-text');
     if (statusEl) statusEl.innerHTML = `<span class="status-active">Geocoding 0/${total}…</span> (1/sec rate limit)`;
@@ -1109,6 +1112,9 @@ function forwardGeocodeWaypoint(chNum, idx, name) {
       if (countryInput && w.country) countryInput.value = w.country;
       updateMapChapter(chNum);
       updateChapterCountries(chNum);
+      // Update chapter NM display
+      const chEl = document.getElementById(`ch-${chNum}`);
+      if (chEl) chEl.querySelector('.ch-nm').textContent = chapterNm(ch).toLocaleString() + ' nm';
       updateHeroStats();
     })
     .catch(() => {});
@@ -1254,9 +1260,10 @@ function updateHeroStats() {
   const tInput = document.getElementById('set-territories');
   if (nInput && !s.nationsOverride) nInput.placeholder = `(${classified.nations.length} auto)`;
   if (tInput && !s.territoriesOverride) tInput.placeholder = `(${classified.territories.length} auto)`;
-  let statsText = `${STATE.chapters.length} chapters · ${totalWpts} waypoints · ${displayNm.toLocaleString()} nm`;
+  let statsText = `${displayNm.toLocaleString()} nm`;
   if (nations) statsText += ` · ${nations} nations`;
   if (territories) statsText += ` · ${territories} territories`;
+  statsText += ` · ${STATE.chapters.length} chapters · ${totalWpts} waypoints`;
   document.getElementById('hero-stats').textContent = statsText;
 }
 
@@ -1596,6 +1603,7 @@ function deleteWpt(chNum, idx) {
   ch.waypoints.splice(idx, 1);
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
+  updateChapterCountries(chNum);
   updateHeroStats();
 }
 
@@ -1789,6 +1797,14 @@ function doPaste() {
   renderChapterWaypoints(pasteTargetChNum);
   updateMapChapter(pasteTargetChNum);
   updateHeroStats();
+  // Geocode pasted rows: forward for names without coords, reverse for coords without country
+  ch.waypoints.forEach((w, idx) => {
+    if (w.name && w.name.trim() && !w.lat && !w.lon) {
+      forwardGeocodeWaypoint(pasteTargetChNum, idx, w.name.trim());
+    } else if (w.lat && w.lon && (!w.country || !w.country.trim())) {
+      reverseGeocodeWaypoint(pasteTargetChNum, idx);
+    }
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2319,6 +2335,8 @@ document.addEventListener('click', function(e) {
    ═══════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function() {
   initMap();
+  // Prevent native browser context menu on map so right-click delete works
+  document.getElementById('map').addEventListener('contextmenu', function(e) { e.preventDefault(); });
   renderAllChapters();
   updateHeroStats();
   isDirty = false;
