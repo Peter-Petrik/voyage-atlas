@@ -320,8 +320,8 @@
 </div><!-- /stage -->
 
 <div id="footer">
-  <span id="footer-ver">Voyage Map Viewer v2.2</span>
   <span id="footer-data"></span>
+  <span id="footer-ver">Voyage Map Viewer v2.2</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -480,8 +480,11 @@ function loadVoyageData(raw) {
   DATA = normalizeData(raw);
 
   // Title
-  const title = (DATA.meta && DATA.meta.title) || 'Voyage Map';
+  const settings = (DATA.meta && DATA.meta.settings) || {};
+  const vesselName = settings.vesselName || '';
+  const title = (DATA.meta && DATA.meta.title) || (vesselName ? `${vesselName} Voyage` : 'Voyage Map');
   document.getElementById('page-title').textContent = title;
+  document.title = title;
   document.querySelector('.head-sub').textContent = 'Click any route, waypoint, or chapter to explore';
 
   // Hero stats

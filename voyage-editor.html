@@ -340,6 +340,28 @@ html, body {
   flex-shrink: 0;
 }
 
+/* ═══════════ VOYAGE SETTINGS ═══════════ */
+#settings-panel {
+  margin-bottom: 10px; border: 1px solid var(--border);
+  border-radius: 5px; background: var(--panel); overflow: hidden;
+}
+#settings-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; cursor: pointer; user-select: none;
+  font-family: 'Fraunces', serif; font-size: 11px;
+  color: var(--accent); letter-spacing: 0.04em;
+}
+#settings-header:hover { background: var(--row-hover); }
+#settings-body {
+  display: none; padding: 10px 12px;
+  border-top: 1px solid var(--border); background: var(--row-alt);
+}
+#settings-body.open { display: block; }
+.settings-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px;
+}
+.settings-grid .meta-field input { width: 100%; }
+
 /* ═══════════ HELP TIPS ═══════════ */
 .hi {
   display: inline-flex; align-items: center; justify-content: center;
@@ -423,6 +445,37 @@ th .hi { margin-left: 2px; }
 <div id="main">
   <!-- Left: chapter panel -->
   <div id="chapter-panel">
+    <!-- Voyage Settings -->
+    <div id="settings-panel">
+      <div id="settings-header" onclick="document.getElementById('settings-body').classList.toggle('open')">
+        <span>⚙</span><span>Voyage Settings</span><span class="caret" style="margin-left:auto;">▾</span>
+      </div>
+      <div id="settings-body">
+        <div class="settings-grid">
+          <div class="meta-field">
+            <label>Vessel Name <span class="hi" data-tip="Name of the vessel. Used in page titles: '[Name] Voyage Planner' (editor) and '[Name] Voyage' (viewer).">i</span></label>
+            <input type="text" id="set-vessel" value="" onchange="updateSettings()">
+          </div>
+          <div class="meta-field">
+            <label>Voyage Title <span class="hi" data-tip="Custom title for the voyage. If blank, auto-generates from vessel name. Shown in the viewer header and exports.">i</span></label>
+            <input type="text" id="set-title" value="" placeholder="(auto from vessel name)" onchange="updateSettings()">
+          </div>
+          <div class="meta-field">
+            <label>NM Override <span class="hi" data-tip="Override the auto-calculated total nautical miles. Leave blank to use the sum of all chapter NM (base × pad multiplier). Use when actual sailed distance differs from planned.">i</span></label>
+            <input type="number" id="set-nm" value="" placeholder="(auto)" onchange="updateSettings()">
+          </div>
+          <div class="meta-field">
+            <label>Nations <span class="hi" data-tip="Count of sovereign nations in the voyage. Auto-calculated from chapter countries. Override here if the auto-count is incorrect (e.g., some entries are territories, not nations).">i</span></label>
+            <input type="number" id="set-nations" value="" placeholder="(auto)" onchange="updateSettings()">
+          </div>
+          <div class="meta-field">
+            <label>Territories <span class="hi" data-tip="Count of overseas territories, dependencies, or autonomous regions. Not auto-calculated — enter manually. The distinction between a nation and a territory is a judgment call (e.g., French Polynesia, Svalbard, Bermuda).">i</span></label>
+            <input type="number" id="set-territories" value="" placeholder="0" onchange="updateSettings()">
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div style="display:flex;gap:6px;padding:0 0 8px 0;align-items:center;">
       <button class="btn btn-sm" id="toggle-all-meta" onclick="toggleAllMeta(this)" title="Toggle all metadata panels">📋 Expand all</button>
       <button class="btn btn-sm" id="toggle-all-wpts" onclick="toggleAllWpts(this)" title="Toggle all waypoint tables">📍 Expand all</button>
@@ -503,6 +556,18 @@ th .hi { margin-left: 2px; }
 
 <!-- CSV import step 2 modal -->
 <div class="modal-overlay" id="csv-step2-modal">
+
+<!-- Delete waypoint confirmation modal -->
+<div class="modal-overlay" id="delete-wpt-modal">
+  <div class="modal">
+    <h2>Delete Waypoint</h2>
+    <p id="delete-wpt-msg">Delete this waypoint?</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeDeleteWptModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="doDeleteWpt()">Delete</button>
+    </div>
+  </div>
+</div>
   <div class="modal">
     <h2>Import Waypoints CSV</h2>
     <p>Chapters loaded. Now select the waypoints CSV file.</p>
@@ -532,7 +597,7 @@ function chapterColor(num) {
 /* ═══════════════════════════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════════════════════════ */
-let STATE = { chapters: [] };
+let STATE = { chapters: [], settings: { vesselName: '', voyageTitle: '', nmOverride: null, nationsOverride: null, territories: 0 } };
 let activeChapterNum = null;  // which chapter is "selected" on the map
 let rapidClickMode = false;
 let pendingCSVChapters = null; // temp storage during 2-step CSV import
@@ -701,6 +766,12 @@ function updateMapChapter(chNum) {
         map.on('mousemove', onMarkerDrag);
         map.on('mouseup', onMarkerDragEnd);
         L.DomEvent.stopPropagation(e);
+      });
+      // Right-click delete
+      marker.on('contextmenu', function(e) {
+        L.DomEvent.stopPropagation(e);
+        L.DomEvent.preventDefault(e);
+        confirmDeleteWaypoint(chNum, idx);
       });
     }
 
@@ -1088,15 +1159,51 @@ function chapterNm(ch) {
   return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1));
 }
 
+function updateSettings() {
+  const s = STATE.settings;
+  s.vesselName = document.getElementById('set-vessel').value.trim();
+  s.voyageTitle = document.getElementById('set-title').value.trim();
+  s.nmOverride = parseFloat(document.getElementById('set-nm').value) || null;
+  s.nationsOverride = parseInt(document.getElementById('set-nations').value) || null;
+  s.territories = parseInt(document.getElementById('set-territories').value) || 0;
+  // Update page title
+  const title = s.vesselName ? `${s.vesselName} Voyage Planner` : 'Voyage Route Editor';
+  document.querySelector('#header h1').textContent = title;
+  document.title = title;
+  updateHeroStats();
+  isDirty = true;
+}
+
+function loadSettings() {
+  const s = STATE.settings || {};
+  document.getElementById('set-vessel').value = s.vesselName || '';
+  document.getElementById('set-title').value = s.voyageTitle || '';
+  document.getElementById('set-nm').value = s.nmOverride || '';
+  document.getElementById('set-nations').value = s.nationsOverride || '';
+  document.getElementById('set-territories').value = s.territories || '';
+  // Update page title
+  const title = s.vesselName ? `${s.vesselName} Voyage Planner` : 'Voyage Route Editor';
+  document.querySelector('#header h1').textContent = title;
+  document.title = title;
+}
+
 function updateHeroStats() {
   isDirty = true;
   let totalNm = 0, totalWpts = 0;
+  const allCountries = new Set();
   STATE.chapters.forEach(ch => {
     totalNm += chapterNm(ch);
     totalWpts += ch.waypoints.filter(w => w.name && w.name.trim()).length;
+    (ch.countries || []).forEach(c => { if (c) allCountries.add(c); });
   });
-  document.getElementById('hero-stats').textContent =
-    `${STATE.chapters.length} chapters · ${totalWpts} waypoints · ${totalNm.toLocaleString()} nm`;
+  const s = STATE.settings || {};
+  const displayNm = s.nmOverride || totalNm;
+  const nations = s.nationsOverride || allCountries.size;
+  const territories = s.territories || 0;
+  let statsText = `${STATE.chapters.length} chapters · ${totalWpts} waypoints · ${displayNm.toLocaleString()} nm`;
+  if (nations) statsText += ` · ${nations} nations`;
+  if (territories) statsText += ` · ${territories} territories`;
+  document.getElementById('hero-stats').textContent = statsText;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1438,6 +1545,27 @@ function deleteWpt(chNum, idx) {
   updateHeroStats();
 }
 
+let pendingDeleteWpt = null;
+function confirmDeleteWaypoint(chNum, idx) {
+  const ch = getChapter(chNum);
+  if (!ch || !ch.waypoints[idx]) return;
+  const w = ch.waypoints[idx];
+  const name = w.name && w.name.trim() ? w.name : `routing vertex #${idx + 1}`;
+  document.getElementById('delete-wpt-msg').textContent = `Delete "${name}" from Ch ${chNum}?`;
+  pendingDeleteWpt = { chNum, idx };
+  document.getElementById('delete-wpt-modal').classList.add('open');
+}
+function closeDeleteWptModal() {
+  document.getElementById('delete-wpt-modal').classList.remove('open');
+  pendingDeleteWpt = null;
+}
+function doDeleteWpt() {
+  if (pendingDeleteWpt) {
+    deleteWpt(pendingDeleteWpt.chNum, pendingDeleteWpt.idx);
+  }
+  closeDeleteWptModal();
+}
+
 /* ═══════════════════════════════════════════════════════════════
    CHAPTER ACTIONS
    ═══════════════════════════════════════════════════════════════ */
@@ -1729,6 +1857,19 @@ function loadFromV1JSON(data) {
   renderAllChapters();
   if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
   setTimeout(() => map.invalidateSize(), 100);
+  // Load settings from meta
+  if (data.meta && data.meta.settings) {
+    STATE.settings = { ...STATE.settings, ...data.meta.settings };
+  } else if (data.meta && data.meta.hero) {
+    // v1: extract what we can from hero stats
+    const h = data.meta.hero;
+    if (h.nations) STATE.settings.nationsOverride = h.nations;
+    if (h.territories) STATE.settings.territories = h.territories;
+  }
+  if (data.meta && data.meta.title) {
+    STATE.settings.voyageTitle = data.meta.title;
+  }
+  loadSettings();
   isDirty = false;
 }
 
@@ -1761,6 +1902,13 @@ function loadFromV2JSON(data) {
   renderAllChapters();
   if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
   setTimeout(() => map.invalidateSize(), 100);
+  if (data.meta && data.meta.settings) {
+    STATE.settings = { ...STATE.settings, ...data.meta.settings };
+  }
+  if (data.meta && data.meta.title && !STATE.settings.voyageTitle) {
+    STATE.settings.voyageTitle = data.meta.title;
+  }
+  loadSettings();
   isDirty = false;
 }
 
@@ -1893,15 +2041,30 @@ function exportJSON() {
     };
   });
 
+  const s = STATE.settings || {};
+  const displayNm = s.nmOverride || totalNm;
+  const allCountries = new Set();
+  STATE.chapters.forEach(ch => (ch.countries || []).forEach(c => { if (c) allCountries.add(c); }));
+  const nations = s.nationsOverride || allCountries.size;
+
   const out = {
     meta: {
-      title: 'Voyage Route Data',
-      version: '2.0',
+      title: s.voyageTitle || (s.vesselName ? `${s.vesselName} Voyage` : 'Voyage Route Data'),
+      version: '2.2',
       generatedAt: new Date().toISOString(),
       hero: {
-        nm: totalNm,
+        nm: displayNm,
         chapters: chapters.length,
-        waypoints: totalWpts
+        waypoints: totalWpts,
+        nations: nations,
+        territories: s.territories || 0
+      },
+      settings: {
+        vesselName: s.vesselName || '',
+        voyageTitle: s.voyageTitle || '',
+        nmOverride: s.nmOverride || null,
+        nationsOverride: s.nationsOverride || null,
+        territories: s.territories || 0
       }
     },
     chapters
@@ -2115,11 +2278,13 @@ document.addEventListener('keydown', function(e) {
     if (document.getElementById('bulk-modal').classList.contains('open')) closeBulkModal();
     if (document.getElementById('paste-modal').classList.contains('open')) closePasteModal();
     if (document.getElementById('csv-step2-modal').classList.contains('open')) closeCSVStep2();
+    if (document.getElementById('delete-wpt-modal').classList.contains('open')) closeDeleteWptModal();
     closeDropdowns();
   }
   if (e.key === 'Enter' && !e.shiftKey) {
     if (document.getElementById('bulk-modal').classList.contains('open')) { e.preventDefault(); doBulkAdd(); }
     if (document.getElementById('csv-step2-modal').classList.contains('open')) { e.preventDefault(); document.getElementById('file-csv-waypoints').click(); }
+    if (document.getElementById('delete-wpt-modal').classList.contains('open')) { e.preventDefault(); doDeleteWpt(); }
   }
 });
 

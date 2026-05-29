@@ -11,6 +11,27 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.3] - 2026-05-29
+
+### Added — Editor
+1. Voyage Settings panel — collapsible section above chapters with: vessel name (drives page
+   titles), voyage title, global NM override, nations count (auto-calculated with override),
+   and territories count. Settings persist in JSON exports and load on import.
+2. Right-click waypoint delete on map — right-click any marker on the active chapter to open a
+   confirmation modal. Enter confirms, ESC cancels.
+3. Delete confirmation modal with keyboard support (Enter/ESC).
+
+### Changed
+1. Page title dynamically updates to "[Vessel Name] Voyage Planner" when vessel name is set.
+2. JSON export meta block now includes settings (vessel name, overrides) and enriched hero stats
+   (nations, territories). Schema version bumped to 2.2.
+3. Editor and viewer footer versions now consistently on the right side.
+4. v1 JSON import extracts nations/territories from hero stats into Voyage Settings.
+
+### Changed — Viewer
+1. Page title uses vessel name from settings: "[Vessel Name] Voyage" when available.
+2. Footer layout: data version on left, viewer version on right (matches editor).
+
 ## [v2.2] - 2026-05-29
 
 ### Added
