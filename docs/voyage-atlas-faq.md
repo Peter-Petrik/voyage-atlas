@@ -387,6 +387,6 @@ the day-to-day tactics of actually sailing them.
 
 ---
 
-*Companion documents: `voyage-atlas-schema.md` (data format), `voyage-atlas-runbook.md` (build
-record and design decisions), `voyage-atlas-enhancements.md` (planned features), `CHANGELOG.md`
-(version history).*
+*Companion documents: [`voyage-atlas-schema.md`](voyage-atlas-schema.md) (the data format),
+[`voyage-atlas-enhancements.md`](voyage-atlas-enhancements.md) (planned features), and the
+[changelog](../CHANGELOG.md) (version history).*
