@@ -1,0 +1,207 @@
+{
+  "meta": {
+    "title": "Example Voyage Atlas",
+    "version": "2.5",
+    "generatedAt": "2026-05-29",
+    "hero": {
+      "nm": 137,
+      "chapters": 3,
+      "waypoints": 10,
+      "nations": 1,
+      "territories": 0
+    },
+    "settings": {
+      "vesselName": "Example",
+      "voyageTitle": "",
+      "nmOverride": null,
+      "nationsOverride": null,
+      "territoriesOverride": null
+    }
+  },
+  "chapters": [
+    {
+      "num": 1,
+      "name": "Corfu to Paxos",
+      "when": "May – Jun",
+      "era": "current",
+      "notes": "Demo chapter. Start at Corfu and work south to Paxos.",
+      "keyDestinations": [
+        "Corfu Old Town",
+        "Paxos"
+      ],
+      "blogUrl": null,
+      "padMultiplier": 1.2,
+      "waypoints": [
+        {
+          "order": 1,
+          "name": "Corfu (Kerkyra)",
+          "lat": 39.624,
+          "lon": 19.922,
+          "major": true,
+          "decision": false,
+          "gateway": false,
+          "country": "Greece",
+          "notes": "Major port — provisioning and check-in."
+        },
+        {
+          "order": 2,
+          "name": "Petriti",
+          "lat": 39.5,
+          "lon": 20.0,
+          "major": false,
+          "decision": false,
+          "gateway": false,
+          "country": "Greece",
+          "notes": ""
+        },
+        {
+          "order": 3,
+          "name": "Paxos (Gaios)",
+          "lat": 39.198,
+          "lon": 20.184,
+          "major": false,
+          "decision": false,
+          "gateway": false,
+          "country": "Greece",
+          "notes": ""
+        }
+      ],
+      "nmBase": 28,
+      "nmApproach": 0,
+      "nm": 34,
+      "countries": [
+        "Greece"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "Lefkada & Meganisi",
+      "when": "Jun – Jul",
+      "era": "future",
+      "notes": "South through the Lefkada Canal into the inner Ionian.",
+      "keyDestinations": [
+        "Lefkada Canal",
+        "Meganisi"
+      ],
+      "blogUrl": null,
+      "padMultiplier": 1.35,
+      "waypoints": [
+        {
+          "order": 1,
+          "name": "Paxos (Gaios)",
+          "lat": 39.198,
+          "lon": 20.184,
+          "major": false,
+          "decision": false,
+          "gateway": false,
+          "country": "Greece",
+          "notes": ""
+        },
+        {
+          "order": 2,
+          "name": "Preveza",
+          "lat": 38.957,
+          "lon": 20.751,
+          "major": false,
+          "decision": false,
+          "gateway": false,
+          "country": "Greece",
+          "notes": ""
+        },
+        {
+          "order": 3,
+          "name": "Lefkada Town",
+          "lat": 38.831,
+          "lon": 20.711,
+          "major": false,
+          "decision": false,
+          "gateway": true,
+          "country": "Greece",
+          "notes": "Gateway — the Lefkada Canal swing bridge."
+        },
+        {
+          "order": 4,
+          "name": "Nidri",
+          "lat": 38.7,
+          "lon": 20.71,
+          "major": false,
+          "decision": false,
+          "gateway": false,
+          "country": "Greece",
+          "notes": ""
+        },
+        {
+          "order": 5,
+          "name": "Vathi, Meganisi",
+          "lat": 38.672,
+          "lon": 20.768,
+          "major": false,
+          "decision": false,
+          "gateway": false,
+          "country": "Greece",
+          "notes": ""
+        }
+      ],
+      "nmBase": 49,
+      "nmApproach": 0,
+      "nm": 66,
+      "countries": [
+        "Greece"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "Crossing to Kefalonia",
+      "when": "Jul – Aug",
+      "era": "future",
+      "notes": "A short open passage to Kefalonia. Note the gap from Ch 2 — this is the 'pull from previous' demo.",
+      "keyDestinations": [
+        "Fiskardo",
+        "Argostoli"
+      ],
+      "blogUrl": null,
+      "padMultiplier": 1.15,
+      "waypoints": [
+        {
+          "order": 1,
+          "name": "Fiskardo, Kefalonia",
+          "lat": 38.458,
+          "lon": 20.575,
+          "major": false,
+          "decision": false,
+          "gateway": false,
+          "country": "Greece",
+          "notes": "Deliberate gap from Ch 2's end — try the pull-sync button."
+        },
+        {
+          "order": 2,
+          "name": "",
+          "lat": 38.3,
+          "lon": 20.55,
+          "major": false,
+          "decision": false,
+          "gateway": false,
+          "country": "Greece",
+          "notes": ""
+        },
+        {
+          "order": 3,
+          "name": "Argostoli, Kefalonia",
+          "lat": 38.175,
+          "lon": 20.489,
+          "major": true,
+          "decision": false,
+          "gateway": false,
+          "country": "Greece",
+          "notes": "Major port — island capital."
+        }
+      ],
+      "nmBase": 18,
+      "nmApproach": 16,
+      "nm": 37,
+      "countries": [
+        "Greece"
+      ]
+    }
+  ]
+}
