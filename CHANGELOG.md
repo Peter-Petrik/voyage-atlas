@@ -11,6 +11,14 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.4.2] - 2026-05-29
+
+### Fixed
+1. Singular/plural sweep — all count displays now handle singular forms: waypoint toolbar
+   ("1 row · 1 named"), chapter status bar ("1 waypoint"), geocoding completion ("1 waypoint"),
+   fill-countries message ("1 row has no coordinates"). Completes the fix started in v2.4.1
+   which covered footer stats and viewer hero stats.
+
 ## [v2.4.1] - 2026-05-29
 
 ### Fixed — Editor

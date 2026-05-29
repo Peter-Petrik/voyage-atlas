@@ -1056,7 +1056,7 @@ function fillChapterCountries(chNum) {
         if (completed < total) {
           if (statusEl) statusEl.innerHTML = `<span class="status-active">Geocoding ${completed}/${total}…</span> (1/sec rate limit)`;
         } else {
-          if (statusEl) statusEl.innerHTML = `<span class="status-active">Geocoded ${filled}/${total} waypoints</span>`;
+          if (statusEl) statusEl.innerHTML = `<span class="status-active">Geocoded ${filled}/${total} ${total === 1 ? 'waypoint' : 'waypoints'}</span>`;
           updateChapterCountries(chNum);
         }
       });
@@ -1067,7 +1067,7 @@ function fillChapterCountries(chNum) {
     const noCoords = ch.waypoints.filter(w => !w.lat || !w.lon).length;
     const statusEl = document.getElementById('status-text');
     let msg = 'All waypoints with coordinates already have countries';
-    if (noCoords > 0) msg += ` (${noCoords} rows have no coordinates)`;
+    if (noCoords > 0) msg += ` (${noCoords} ${noCoords === 1 ? 'row has' : 'rows have'} no coordinates)`;
     if (statusEl) statusEl.innerHTML = `<span class="status-active">${msg}</span>`;
   } else {
     const statusEl = document.getElementById('status-text');
@@ -1501,7 +1501,7 @@ function renderWaypointPanel(ch) {
       <button class="btn btn-sm" onclick="openBulkModal(${ch.num})">+ Add N Rows</button>
       <button class="btn btn-sm" onclick="openPasteModal(${ch.num})">Paste</button>
       <button class="btn btn-sm" onclick="fillChapterCountries(${ch.num})" title="Auto-fill empty country fields via reverse geocoding">Fill countries</button>
-      <span class="wpt-count">${ch.waypoints.length} rows · ${namedCount} named</span>
+      <span class="wpt-count">${ch.waypoints.length} ${ch.waypoints.length === 1 ? 'row' : 'rows'} · ${namedCount} named</span>
     </div>
     <div class="wpt-table-wrap">
       <table class="wpt-table">
@@ -1647,7 +1647,7 @@ function selectChapter(chNum) {
   // Update status
   const ch = getChapter(chNum);
   document.getElementById('status-text').innerHTML =
-    `<span class="status-active">Ch ${ch.num}: ${esc(ch.name)}</span> · ${ch.waypoints.length} waypoints · ${chapterNm(ch).toLocaleString()} nm`;
+    `<span class="status-active">Ch ${ch.num}: ${esc(ch.name)}</span> · ${ch.waypoints.length} ${ch.waypoints.length === 1 ? 'waypoint' : 'waypoints'} · ${chapterNm(ch).toLocaleString()} nm`;
 }
 
 function toggleMeta(chNum, btn) {
