@@ -38,3 +38,9 @@ node_modules/
 # Archives
 *.tar.gz
 *.zip
+
+# Historical Artifacts
+grace-voyage-map.html
+grace-voyage-map.json
+grace-voyage-framework.gpx
+kml-to-json.py
