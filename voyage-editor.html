@@ -218,6 +218,17 @@ html, body {
 .ch-era.current { background: rgba(45,122,58,0.15); color: var(--success); }
 .ch-era.future { background: rgba(107,123,140,0.12); color: var(--muted); }
 .ch-nm { font-size: 10px; color: var(--muted); flex-shrink: 0; white-space: nowrap; }
+.ch-sync {
+  flex-shrink: 0; font-size: 11px; line-height: 1;
+  background: none; border: none; padding: 0 2px; cursor: default;
+}
+.ch-sync.linked { color: var(--accent); opacity: 0.65; }
+.ch-sync.pull {
+  cursor: pointer; color: var(--hazard);
+  border: 1px solid var(--border-strong); border-radius: 3px;
+  padding: 1px 4px; transition: background 0.15s;
+}
+.ch-sync.pull:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .ch-toggles { display: flex; gap: 4px; flex-shrink: 0; }
 .ch-toggle {
   font-size: 13px; width: 26px; height: 26px;
@@ -511,7 +522,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 waypoints · 0 nm</span>
-  <span>Voyage Route Editor v2.4</span>
+  <span>Voyage Route Editor v2.5</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -787,8 +798,13 @@ function updateMapChapter(chNum) {
     });
     for (let i = 0; i < validPts.length - 1; i++) {
       const a = validPts[i], b = validPts[i + 1];
-      const midLat = (a.lat + b.lat) / 2;
-      const midLon = (a.lon + b.lon) / 2;
+      // Pixel-space midpoint lands on the rendered straight line (Mercator-correct),
+      // unlike an arithmetic lat/lon mean which drifts off the line on long legs.
+      const pA = map.latLngToLayerPoint([a.lat, a.lon]);
+      const pB = map.latLngToLayerPoint([b.lat, b.lon]);
+      const midLL = map.layerPointToLatLng(L.point((pA.x + pB.x) / 2, (pA.y + pB.y) / 2));
+      const midLat = midLL.lat;
+      const midLon = midLL.lng;
       const insertAfterIdx = a.idx; // insert after this waypoint index
 
       const ghost = L.circleMarker([midLat, midLon], {
@@ -1227,6 +1243,32 @@ function haversineNm(lat1, lon1, lat2, lon2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+/* Returns the chapter that this chapter follows in the voyage sequence.
+   Today: the chapter with num one less (linear chain). When forks/variants (#34)
+   are added, this becomes the single seam to change — switch to an explicit
+   `follows` field here and all NM/sync logic adapts without further edits. */
+function getPredecessorChapter(ch) {
+  if (!ch) return null;
+  const sorted = [...STATE.chapters].sort((a, b) => a.num - b.num);
+  const i = sorted.findIndex(c => c.num === ch.num);
+  return i > 0 ? sorted[i - 1] : null;
+}
+
+/* Distance from the predecessor chapter's last waypoint to this chapter's first
+   waypoint — the "getting to the start point" leg. Raw distance (no pad multiplier),
+   since it's a delivery passage, not cruising-ground exploration. Zero when chapters
+   share an endpoint (the common case); non-zero only across a genuine gap. */
+function chapterApproachNm(ch) {
+  const prev = getPredecessorChapter(ch);
+  if (!prev) return 0;
+  const prevPts = prev.waypoints.filter(w => w.lat && w.lon);
+  const thisPts = ch.waypoints.filter(w => w.lat && w.lon);
+  if (prevPts.length === 0 || thisPts.length === 0) return 0;
+  const last = prevPts[prevPts.length - 1];
+  const first = thisPts[0];
+  return Math.round(haversineNm(last.lat, last.lon, first.lat, first.lon));
+}
+
 function chapterNmBase(ch) {
   let total = 0;
   const pts = ch.waypoints.filter(w => w.lat && w.lon);
@@ -1237,7 +1279,8 @@ function chapterNmBase(ch) {
 }
 
 function chapterNm(ch) {
-  return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1));
+  // Padded within-chapter sailing distance + raw approach leg from predecessor
+  return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1)) + chapterApproachNm(ch);
 }
 
 function updateSettings() {
@@ -1424,6 +1467,16 @@ function createChapterElement(ch) {
   div.id = `ch-${ch.num}`;
 
   const nm = chapterNm(ch);
+  const prev = getPredecessorChapter(ch);
+  const approach = chapterApproachNm(ch);
+  let syncEl = '';
+  if (prev) {
+    if (approach < 1) {
+      syncEl = `<span class="ch-sync linked" title="Start point matches Ch ${prev.num}'s endpoint">🔗</span>`;
+    } else {
+      syncEl = `<button class="ch-sync pull" title="Pull start from Ch ${prev.num}'s endpoint (${approach.toLocaleString()} nm gap)" onclick="event.stopPropagation();pullFromPrevious(${ch.num})">⇄</button>`;
+    }
+  }
 
   div.innerHTML = `
     <div class="ch-header" onclick="selectChapter(${ch.num})" ondblclick="dblClickChapter(${ch.num})">
@@ -1431,6 +1484,7 @@ function createChapterElement(ch) {
       <span class="ch-num">${ch.num}</span>
       <span class="ch-name">${esc(ch.name)}</span>
       <span class="ch-era ${ch.era}">${ch.era}</span>
+      ${syncEl}
       <span class="ch-nm">${nm.toLocaleString()} nm</span>
       <div class="ch-toggles" onclick="event.stopPropagation()">
         <button class="ch-toggle" title="Chapter metadata" onclick="toggleMeta(${ch.num}, this)">📋</button>
@@ -1703,6 +1757,35 @@ function addChapter() {
   STATE.chapters.push(makeChapter(num));
   renderAllChapters();
   selectChapter(num);
+}
+
+function pullFromPrevious(chNum) {
+  const ch = getChapter(chNum);
+  const prev = getPredecessorChapter(ch);
+  if (!ch || !prev) return;
+  const prevPts = prev.waypoints.filter(w => w.lat && w.lon);
+  if (prevPts.length === 0) return;
+  const last = prevPts[prevPts.length - 1];
+  const firstIdx = ch.waypoints.findIndex(w => w.lat && w.lon);
+  if (firstIdx === -1) {
+    // No coordinate waypoint yet — prepend a copy of the predecessor's endpoint
+    ch.waypoints.unshift({
+      name: last.name || '', lat: last.lat, lon: last.lon,
+      major: false, decision: false, gateway: false,
+      country: last.country || '', notes: ''
+    });
+  } else {
+    const w = ch.waypoints[firstIdx];
+    w.lat = last.lat;
+    w.lon = last.lon;
+    if (!w.name || !w.name.trim()) w.name = last.name || '';
+    if (!w.country || !w.country.trim()) w.country = last.country || '';
+  }
+  renderChapterWaypoints(chNum);
+  updateMapChapter(chNum);
+  updateChapterCountries(chNum);
+  renderAllChapters(); // refresh sync indicators + NM across chapters
+  selectChapter(chNum);
 }
 
 function deleteChapter(chNum) {
@@ -2128,7 +2211,8 @@ function buildExportJSON() {
   let totalNm = 0, totalWpts = 0;
   const chapters = STATE.chapters.map(ch => {
     const nmBase = chapterNmBase(ch);
-    const nm = Math.round(nmBase * (ch.padMultiplier || 1));
+    const nmApproach = chapterApproachNm(ch);
+    const nm = Math.round(nmBase * (ch.padMultiplier || 1)) + nmApproach;
     totalNm += nm;
     const named = ch.waypoints.filter(w => w.name && w.name.trim());
     totalWpts += named.length;
@@ -2137,7 +2221,7 @@ function buildExportJSON() {
       notes: ch.notes || '',
       countries: ch.countries, keyDestinations: ch.keyDestinations,
       blogUrl: ch.blogUrl || null, padMultiplier: ch.padMultiplier,
-      nm, nmBase,
+      nm, nmBase, nmApproach,
       waypoints: ch.waypoints.map((w, i) => ({
         order: i + 1, name: w.name, lat: w.lat, lon: w.lon,
         major: w.major, decision: w.decision, gateway: w.gateway,
@@ -2157,7 +2241,7 @@ function buildExportJSON() {
   return JSON.stringify({
     meta: {
       title: s.voyageTitle || (s.vesselName ? `${s.vesselName} Voyage` : 'Voyage Route Data'),
-      version: '2.3',
+      version: '2.5',
       generatedAt: new Date().toISOString(),
       hero: { nm: displayNm, chapters: chapters.length, waypoints: totalWpts, nations, territories },
       settings: {

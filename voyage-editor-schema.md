@@ -1,4 +1,4 @@
-# Voyage Editor — Data Schema (v2.3)
+# Voyage Editor — Data Schema (v2.5)
 
 This document defines the data contract between the **editor** (`voyage-editor.html`) and the
 **viewer** (`grace-voyage-map.html`). Any tool that produces data in this schema can feed the
@@ -74,7 +74,7 @@ CSVs are the human-editable source.
 {
   "meta": {
     "title": "string — auto from vessel name, or user-defined",
-    "version": "2.3",
+    "version": "2.5",
     "generatedAt": "ISO 8601 datetime",
     "hero": {
       "nm": 81051,
@@ -104,6 +104,7 @@ CSVs are the human-editable source.
       "padMultiplier": 1.20,
       "nm": 6000,
       "nmBase": 5000,
+      "nmApproach": 0,
       "waypoints": [
         {
           "order": 1,
@@ -147,11 +148,16 @@ precedence over the auto-count.
 3. `decision` and `gateway` fields added
 4. `country` and `notes` per waypoint
 5. `nm` and `nmBase` are included for convenience but are always recomputable from waypoints +
-   `padMultiplier`
-6. `hero.waypoints` counts only named waypoints (non-empty name); shaping vertices excluded
-7. `hero.nations` and `hero.territories` added (v2.3)
-8. `meta.settings` block added (v2.3) — vessel name, title, NM/nations/territories overrides
-9. `routing`, `bailout`, `prose` consolidated into `notes` (v2.0.2)
+   `padMultiplier`. As of v2.5, `nm` = `nmBase` × `padMultiplier` + `nmApproach`.
+6. `nmApproach` (v2.5) — the "getting to the start point" leg: raw distance (no pad) from the
+   predecessor chapter's last waypoint to this chapter's first waypoint. Zero when chapters share
+   an endpoint (the common case); non-zero across a genuine gap (e.g., the NZ→Japan repositioning).
+   The predecessor is resolved via `getPredecessorChapter()` — positional (num−1) today, fork-aware
+   when variant chapters (#34) are added.
+7. `hero.waypoints` counts only named waypoints (non-empty name); shaping vertices excluded
+8. `hero.nations` and `hero.territories` added (v2.3)
+9. `meta.settings` block added (v2.3) — vessel name, title, NM/nations/territories overrides
+10. `routing`, `bailout`, `prose` consolidated into `notes` (v2.0.2)
 
 **v1 → v2 import logic (handled by the editor):**
 1. Route segments concatenated in order; shared endpoints deduplicated (tolerance: 0.0001°)

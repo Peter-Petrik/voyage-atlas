@@ -11,6 +11,32 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.5] - 2026-05-29
+
+### Added — Editor
+1. Inter-chapter NM attribution — each chapter's total now includes the "approach leg" from the
+   predecessor chapter's last waypoint to its own first waypoint (raw distance, no pad multiplier —
+   it's a delivery passage, not cruising-ground exploration). Zero for chapters that share an
+   endpoint (the common case); for GRACE this correctly adds the previously-uncounted 628 nm
+   NZ→Japan repositioning to Ch 17.
+2. Endpoint sync — explicit ⇄ "pull from previous" button on each chapter (except the first).
+   When a chapter's start point doesn't match the predecessor's endpoint, the button snaps it
+   into place (copying coordinates, and name/country if blank). A 🔗 indicator shows when the
+   endpoint already matches.
+3. `getPredecessorChapter()` helper — single seam for "which chapter precedes this one." Returns
+   the num−1 chapter today (linear chain); becomes fork-aware when variant chapters (#34) are
+   added, without touching the NM or sync logic built on top of it.
+
+### Changed
+1. Ghost midpoints now land on the rendered leg line — computed in pixel space (Mercator-correct)
+   instead of arithmetic lat/lon mean, which drifted off-line on long/high-latitude legs.
+2. JSON export adds `nmApproach` per chapter for transparency. Schema version bumped to 2.5.
+   `nm` = `nmBase` × `padMultiplier` + `nmApproach`.
+
+### Verified (no change needed)
+1. Viewer D/G markers — circles always render in the waypoint layer; diamond/star layer on top
+   when toggled. Circle remains visible when D/G is unchecked, as intended.
+
 ## [v2.4.4] - 2026-05-29
 
 ### Fixed — Editor (from deep structural review)
