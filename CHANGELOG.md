@@ -11,6 +11,22 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.2] - 2026-05-29
+
+### Added
+1. Forward geocode on name entry — typing a waypoint name into an empty row (no lat/lon)
+   triggers Nominatim lookup to auto-populate coordinates and country.
+2. Country auto-populate on rapid-click — waypoints added via map click now auto-reverse-geocode.
+3. Geocoding completion message — status bar shows "Geocoded X/Y waypoints" when batch finishes.
+4. Modal keyboard shortcuts — Enter = submit, ESC = cancel on all modals (bulk add, paste, CSV).
+
+### Fixed
+1. Help text tooltips — replaced CSS pseudo-elements with JS-based fixed-position tooltips that
+   escape scroll container overflow. Tips auto-flip to show above when near viewport bottom.
+2. Viewer footer — removed redundant "Load different file" link (same as header button).
+   Footer now shows viewer version and data version.
+3. Editor and viewer footers now show consistent version numbers.
+
 ## [v2.1] - 2026-05-28
 
 ### Added — Voyage Map Viewer (`voyage-viewer.html`)

@@ -351,27 +351,16 @@ html, body {
   font-family: 'Fraunces', serif;
 }
 .hi:hover { color: var(--accent); border-color: var(--accent); }
-.hi:hover::after {
-  content: attr(data-tip);
-  position: absolute; top: 100%; left: 0;
-  margin-top: 6px;
+th .hi { margin-left: 2px; }
+.hi-tooltip {
+  position: fixed; z-index: 9000; pointer-events: none;
   background: var(--panel-solid); color: var(--ink);
   border: 1px solid var(--border-strong); border-radius: 4px;
   box-shadow: var(--shadow); padding: 6px 9px;
-  font-size: 10px; font-style: normal; font-weight: 400;
+  font-size: 10px; font-weight: 400;
   font-family: 'Spline Sans Mono', monospace;
-  text-transform: none;
   line-height: 1.4; width: 220px; white-space: normal;
-  z-index: 3000; pointer-events: none;
 }
-.hi:hover::before {
-  content: ''; position: absolute; top: 100%;
-  left: 8px;
-  border: 5px solid transparent;
-  border-bottom-color: var(--border-strong);
-  margin-top: -4px; z-index: 3001;
-}
-th .hi { margin-left: 2px; }
 
 /* ═══════════ MODAL ═══════════ */
 .modal-overlay {
@@ -469,7 +458,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 waypoints · 0 nm</span>
-  <span>Voyage Route Editor v2.0.8</span>
+  <span>Voyage Route Editor v2.2</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -588,6 +577,9 @@ function onMapClick(e) {
   renderChapterWaypoints(activeChapterNum);
   updateMapChapter(activeChapterNum);
   updateHeroStats();
+  // Auto-populate country for the new waypoint
+  const newIdx = ch.waypoints.length - 1;
+  reverseGeocodeWaypoint(activeChapterNum, newIdx);
 }
 
 function updateMapAll() {
@@ -972,25 +964,36 @@ function reverseGeocodeWaypoint(chNum, idx) {
 function fillChapterCountries(chNum) {
   const ch = getChapter(chNum);
   if (!ch) return;
-  let count = 0;
+  let total = 0, completed = 0, filled = 0;
   ch.waypoints.forEach((w, idx) => {
     if (w.lat && w.lon && (!w.country || w.country.trim() === '')) {
-      count++;
+      total++;
       reverseGeocode(w.lat, w.lon, function(country) {
+        completed++;
         if (country) {
+          filled++;
           w.country = country;
           const input = document.querySelector(`#wpt-country-${chNum}-${idx}`);
           if (input) input.value = country;
         }
-        count--;
-        if (count === 0) updateChapterCountries(chNum);
+        // Update status
+        const statusEl = document.getElementById('status-text');
+        if (completed < total) {
+          if (statusEl) statusEl.innerHTML = `<span class="status-active">Geocoding ${completed}/${total}…</span> (1/sec rate limit)`;
+        } else {
+          if (statusEl) statusEl.innerHTML = `<span class="status-active">Geocoded ${filled}/${total} waypoints</span>`;
+          updateChapterCountries(chNum);
+        }
       });
     }
   });
-  if (count === 0) updateChapterCountries(chNum);
-  else {
+  if (total === 0) {
+    updateChapterCountries(chNum);
     const statusEl = document.getElementById('status-text');
-    if (statusEl) statusEl.innerHTML = `<span class="status-active">Geocoding ${count} waypoints…</span> (1/sec rate limit)`;
+    if (statusEl) statusEl.innerHTML = `<span class="status-active">All waypoints already have countries</span>`;
+  } else {
+    const statusEl = document.getElementById('status-text');
+    if (statusEl) statusEl.innerHTML = `<span class="status-active">Geocoding 0/${total}…</span> (1/sec rate limit)`;
   }
 }
 
@@ -1003,13 +1006,41 @@ function updateChapterCountries(chNum) {
       .map(w => w.country.trim())
   )];
   ch.countries = countries;
-  // Update metadata form if visible
   const metaPanel = document.getElementById(`ch-meta-${chNum}`);
   if (metaPanel && metaPanel.classList.contains('open')) {
     const input = metaPanel.querySelector('input[onchange*="countries"]');
     if (input) input.value = countries.join(', ');
   }
   updateHeroStats();
+}
+
+function forwardGeocodeWaypoint(chNum, idx, name) {
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&limit=1&addressdetails=1`, {
+    headers: { 'Accept-Language': 'en' }
+  })
+    .then(r => r.json())
+    .then(results => {
+      if (!results || results.length === 0) return;
+      const r = results[0];
+      const ch = getChapter(chNum);
+      if (!ch || !ch.waypoints[idx]) return;
+      const w = ch.waypoints[idx];
+      if (w.lat || w.lon) return; // don't overwrite if coords were set meanwhile
+      w.lat = Math.round(parseFloat(r.lat) * 100000) / 100000;
+      w.lon = Math.round(parseFloat(r.lon) * 100000) / 100000;
+      if (r.address && r.address.country && !w.country) w.country = r.address.country;
+      // Update table inputs
+      const latInput = document.querySelector(`#wpt-lat-${chNum}-${idx}`);
+      const lonInput = document.querySelector(`#wpt-lon-${chNum}-${idx}`);
+      const countryInput = document.querySelector(`#wpt-country-${chNum}-${idx}`);
+      if (latInput) latInput.value = w.lat;
+      if (lonInput) lonInput.value = w.lon;
+      if (countryInput && w.country) countryInput.value = w.country;
+      updateMapChapter(chNum);
+      updateChapterCountries(chNum);
+      updateHeroStats();
+    })
+    .catch(() => {});
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1365,6 +1396,11 @@ function updateWpt(chNum, idx, field, value) {
     if (row) {
       const isShaping = !value || value.trim() === '';
       row.className = isShaping ? 'shaping' : '';
+    }
+    // Forward geocode if name entered but no coordinates
+    const w = ch.waypoints[idx];
+    if (value && value.trim() && !w.lat && !w.lon) {
+      forwardGeocodeWaypoint(chNum, idx, value.trim());
     }
   }
   if (field === 'lat' || field === 'lon') {
@@ -2066,15 +2102,52 @@ document.addEventListener('DOMContentLoaded', function() {
   initMap();
   renderAllChapters();
   updateHeroStats();
-  isDirty = false; // initial render triggers updateHeroStats; reset
+  isDirty = false;
 });
 
 window.addEventListener('beforeunload', function(e) {
-  if (isDirty) {
-    e.preventDefault();
-    e.returnValue = '';
+  if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
+/* Global modal keyboard: Enter = submit, ESC = cancel */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (document.getElementById('bulk-modal').classList.contains('open')) closeBulkModal();
+    if (document.getElementById('paste-modal').classList.contains('open')) closePasteModal();
+    if (document.getElementById('csv-step2-modal').classList.contains('open')) closeCSVStep2();
+    closeDropdowns();
+  }
+  if (e.key === 'Enter' && !e.shiftKey) {
+    if (document.getElementById('bulk-modal').classList.contains('open')) { e.preventDefault(); doBulkAdd(); }
+    if (document.getElementById('csv-step2-modal').classList.contains('open')) { e.preventDefault(); document.getElementById('file-csv-waypoints').click(); }
   }
 });
+
+/* JS-based tooltips (escape overflow containers) */
+(function() {
+  let tipEl = null;
+  document.addEventListener('mouseover', function(e) {
+    const hi = e.target.closest('.hi');
+    if (!hi || !hi.dataset.tip) return;
+    if (tipEl) tipEl.remove();
+    tipEl = document.createElement('div');
+    tipEl.className = 'hi-tooltip';
+    tipEl.textContent = hi.dataset.tip;
+    document.body.appendChild(tipEl);
+    const r = hi.getBoundingClientRect();
+    const tipH = tipEl.offsetHeight;
+    const spaceBelow = window.innerHeight - r.bottom;
+    if (spaceBelow < tipH + 12) {
+      tipEl.style.top = (r.top - tipH - 6) + 'px';
+    } else {
+      tipEl.style.top = (r.bottom + 6) + 'px';
+    }
+    tipEl.style.left = Math.max(4, Math.min(r.left, window.innerWidth - 232)) + 'px';
+  });
+  document.addEventListener('mouseout', function(e) {
+    if (e.target.closest('.hi') && tipEl) { tipEl.remove(); tipEl = null; }
+  });
+})();
 </script>
 </body>
 </html>

@@ -320,8 +320,8 @@
 </div><!-- /stage -->
 
 <div id="footer">
-  <span id="footer-ver">Voyage Map Viewer v2.0</span>
-  <span><a id="load-link" onclick="document.getElementById('file-input').click()">Load different file</a></span>
+  <span id="footer-ver">Voyage Map Viewer v2.2</span>
+  <span id="footer-data"></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -499,7 +499,7 @@ function loadVoyageData(raw) {
 
   // Footer
   const ver = (DATA.meta && DATA.meta.version) || '';
-  document.getElementById('footer-ver').textContent = ver ? `Data v${ver}` : 'Voyage Map Viewer';
+  document.getElementById('footer-data').textContent = ver ? `Data v${ver}` : '';
 
   const stroke = document.body.classList.contains('dark') ? '#0b1622' : '#fbf8f1';
 
