@@ -465,12 +465,12 @@ th .hi { margin-left: 2px; }
             <input type="number" id="set-nm" value="" placeholder="(auto)" onchange="updateSettings()">
           </div>
           <div class="meta-field">
-            <label>Nations <span class="hi" data-tip="Count of sovereign nations in the voyage. Auto-calculated from chapter countries. Override here if the auto-count is incorrect (e.g., some entries are territories, not nations).">i</span></label>
+            <label>Nations <span class="hi" data-tip="Sovereign nations in the voyage. Auto-calculated by classifying waypoint countries against a built-in territory reference list (~65 entries). Override here if the auto-count is wrong.">i</span></label>
             <input type="number" id="set-nations" value="" placeholder="(auto)" onchange="updateSettings()">
           </div>
           <div class="meta-field">
-            <label>Territories <span class="hi" data-tip="Count of overseas territories, dependencies, or autonomous regions. Not auto-calculated — enter manually. The distinction between a nation and a territory is a judgment call (e.g., French Polynesia, Svalbard, Bermuda).">i</span></label>
-            <input type="number" id="set-territories" value="" placeholder="0" onchange="updateSettings()">
+            <label>Territories <span class="hi" data-tip="Overseas territories, dependencies, and autonomous regions. Auto-calculated from the same reference list (e.g., French Polynesia, Bermuda, Svalbard). Override here if needed. See FAQ for the full territory reference list.">i</span></label>
+            <input type="number" id="set-territories" value="" placeholder="(auto)" onchange="updateSettings()">
           </div>
         </div>
       </div>
@@ -597,7 +597,7 @@ function chapterColor(num) {
 /* ═══════════════════════════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════════════════════════ */
-let STATE = { chapters: [], settings: { vesselName: '', voyageTitle: '', nmOverride: null, nationsOverride: null, territories: 0 } };
+let STATE = { chapters: [], settings: { vesselName: '', voyageTitle: '', nmOverride: null, nationsOverride: null, territoriesOverride: null } };
 let activeChapterNum = null;  // which chapter is "selected" on the map
 let rapidClickMode = false;
 let pendingCSVChapters = null; // temp storage during 2-step CSV import
@@ -754,8 +754,8 @@ function updateMapChapter(chNum) {
     }
 
     // Tooltip
-    const tip = hasName ? `${w.name}${w.major ? ' ★' : ''}${w.decision ? ' ◆' : ''}${w.gateway ? ' ⚑' : ''}`
-      : `routing vertex #${idx + 1}`;
+    const tip = hasName ? `${w.name}${w.major ? ' ★' : ''}${w.decision ? ' ◆' : ''}${w.gateway ? ' ⚑' : ''}${isActive ? '\nright-click to delete' : ''}`
+      : `routing vertex #${idx + 1}${isActive ? '\nright-click to delete' : ''}`;
     marker.bindTooltip(tip, { permanent: false, direction: 'top', offset: [0, -6] });
 
     // Draggable behavior for active chapter
@@ -1115,6 +1115,53 @@ function forwardGeocodeWaypoint(chNum, idx, name) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   TERRITORY REFERENCE LIST (for auto nation/territory classification)
+   Names match Nominatim reverse geocoding country field output.
+   ═══════════════════════════════════════════════════════════════ */
+const TERRITORIES = new Set([
+  // UK overseas territories
+  'Anguilla','Bermuda','British Indian Ocean Territory','British Virgin Islands',
+  'Cayman Islands','Falkland Islands','Gibraltar','Montserrat','Pitcairn Islands',
+  'Saint Helena, Ascension and Tristan da Cunha','South Georgia and the South Sandwich Islands',
+  'Turks and Caicos Islands',
+  // France overseas
+  'French Polynesia','French Southern Territories','Mayotte','New Caledonia',
+  'Réunion','Saint Barthélemy','Saint Martin','Saint Pierre and Miquelon',
+  'Wallis and Futuna',
+  // Netherlands overseas
+  'Aruba','Bonaire, Sint Eustatius and Saba','Curaçao','Sint Maarten',
+  // US territories
+  'American Samoa','Guam','Northern Mariana Islands','Puerto Rico','U.S. Virgin Islands',
+  'United States Minor Outlying Islands','US Virgin Islands',
+  // Denmark autonomous
+  'Faroe Islands','Greenland',
+  // Norway dependent
+  'Svalbard and Jan Mayen','Svalbard','Jan Mayen','Bouvet Island',
+  // Australia external
+  'Christmas Island','Cocos (Keeling) Islands','Norfolk Island',
+  // New Zealand associated
+  'Cook Islands','Niue','Tokelau',
+  // Portugal autonomous (Nominatim typically returns "Portugal")
+  'Azores','Madeira',
+  // Spain autonomous (Nominatim typically returns "Spain")
+  'Canary Islands',
+  // China SARs
+  'Hong Kong','Macau','Macao',
+  // Other
+  'Åland Islands','Isle of Man','Jersey','Guernsey',
+  'American Samoa','Northern Mariana Islands',
+]);
+
+function classifyCountries(allCountries) {
+  const nations = [], territories = [];
+  allCountries.forEach(c => {
+    if (TERRITORIES.has(c)) territories.push(c);
+    else nations.push(c);
+  });
+  return { nations, territories };
+}
+
+/* ═══════════════════════════════════════════════════════════════
    DATA HELPERS
    ═══════════════════════════════════════════════════════════════ */
 function getChapter(num) {
@@ -1165,7 +1212,7 @@ function updateSettings() {
   s.voyageTitle = document.getElementById('set-title').value.trim();
   s.nmOverride = parseFloat(document.getElementById('set-nm').value) || null;
   s.nationsOverride = parseInt(document.getElementById('set-nations').value) || null;
-  s.territories = parseInt(document.getElementById('set-territories').value) || 0;
+  s.territoriesOverride = parseInt(document.getElementById('set-territories').value) || null;
   // Update page title
   const title = s.vesselName ? `${s.vesselName} Voyage Planner` : 'Voyage Route Editor';
   document.querySelector('#header h1').textContent = title;
@@ -1180,7 +1227,7 @@ function loadSettings() {
   document.getElementById('set-title').value = s.voyageTitle || '';
   document.getElementById('set-nm').value = s.nmOverride || '';
   document.getElementById('set-nations').value = s.nationsOverride || '';
-  document.getElementById('set-territories').value = s.territories || '';
+  document.getElementById('set-territories').value = s.territoriesOverride || '';
   // Update page title
   const title = s.vesselName ? `${s.vesselName} Voyage Planner` : 'Voyage Route Editor';
   document.querySelector('#header h1').textContent = title;
@@ -1198,8 +1245,15 @@ function updateHeroStats() {
   });
   const s = STATE.settings || {};
   const displayNm = s.nmOverride || totalNm;
-  const nations = s.nationsOverride || allCountries.size;
-  const territories = s.territories || 0;
+  // Auto-classify nations vs territories
+  const classified = classifyCountries(allCountries);
+  const nations = s.nationsOverride || classified.nations.length;
+  const territories = s.territoriesOverride || classified.territories.length;
+  // Update settings placeholders
+  const nInput = document.getElementById('set-nations');
+  const tInput = document.getElementById('set-territories');
+  if (nInput && !s.nationsOverride) nInput.placeholder = `(${classified.nations.length} auto)`;
+  if (tInput && !s.territoriesOverride) tInput.placeholder = `(${classified.territories.length} auto)`;
   let statsText = `${STATE.chapters.length} chapters · ${totalWpts} waypoints · ${displayNm.toLocaleString()} nm`;
   if (nations) statsText += ` · ${nations} nations`;
   if (territories) statsText += ` · ${territories} territories`;
@@ -1864,7 +1918,7 @@ function loadFromV1JSON(data) {
     // v1: extract what we can from hero stats
     const h = data.meta.hero;
     if (h.nations) STATE.settings.nationsOverride = h.nations;
-    if (h.territories) STATE.settings.territories = h.territories;
+    if (h.territories) STATE.settings.territoriesOverride = h.territories;
   }
   if (data.meta && data.meta.title) {
     STATE.settings.voyageTitle = data.meta.title;
@@ -2042,29 +2096,31 @@ function exportJSON() {
   });
 
   const s = STATE.settings || {};
-  const displayNm = s.nmOverride || totalNm;
   const allCountries = new Set();
   STATE.chapters.forEach(ch => (ch.countries || []).forEach(c => { if (c) allCountries.add(c); }));
-  const nations = s.nationsOverride || allCountries.size;
+  const classified = classifyCountries(allCountries);
+  const displayNm = s.nmOverride || totalNm;
+  const nations = s.nationsOverride || classified.nations.length;
+  const territories = s.territoriesOverride || classified.territories.length;
 
   const out = {
     meta: {
       title: s.voyageTitle || (s.vesselName ? `${s.vesselName} Voyage` : 'Voyage Route Data'),
-      version: '2.2',
+      version: '2.3',
       generatedAt: new Date().toISOString(),
       hero: {
         nm: displayNm,
         chapters: chapters.length,
         waypoints: totalWpts,
         nations: nations,
-        territories: s.territories || 0
+        territories: territories
       },
       settings: {
         vesselName: s.vesselName || '',
         voyageTitle: s.voyageTitle || '',
         nmOverride: s.nmOverride || null,
         nationsOverride: s.nationsOverride || null,
-        territories: s.territories || 0
+        territoriesOverride: s.territoriesOverride || null
       }
     },
     chapters

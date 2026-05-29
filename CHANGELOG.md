@@ -11,6 +11,21 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.3.1] - 2026-05-29
+
+### Added
+1. Territory auto-classification — built-in reference list of ~65 overseas territories
+   (UK, France, Netherlands, US, Denmark, Norway, Australia, NZ, Portugal, Spain, China).
+   Waypoint countries are auto-classified as nation or territory. Both counts show in footer
+   stats and Voyage Settings with dynamic placeholder showing auto-calculated values.
+2. Right-click delete tooltip hint — marker tooltips now show "right-click to delete" on the
+   active chapter's waypoints.
+
+### Changed
+1. Nations and Territories fields in Voyage Settings are now both auto-calculated with override.
+   Previously territories was manual-only. Settings field renamed from `territories` to
+   `territoriesOverride` for consistency.
+
 ## [v2.3] - 2026-05-29
 
 ### Added — Editor
