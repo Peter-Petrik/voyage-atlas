@@ -428,13 +428,14 @@ th .hi { margin-left: 2px; }
         <button onclick="importCSV()">Import CSVs (chapters + waypoints)…</button>
       </div>
     </div>
+    <button class="btn btn-accent" onclick="saveDefault()" title="Save as voyage-data.json">Save</button>
     <div class="dropdown">
-      <button class="btn btn-accent" onclick="toggleDropdown('export-menu')">Export ▾</button>
+      <button class="btn" onclick="toggleDropdown('export-menu')">Save As ▾</button>
       <div id="export-menu" class="dropdown-menu">
-        <button onclick="exportJSON()">Export JSON</button>
-        <button onclick="exportChaptersCSV()">Export chapters.csv</button>
-        <button onclick="exportWaypointsCSV()">Export waypoints.csv</button>
-        <button onclick="exportKML()">Export KML</button>
+        <button onclick="exportJSON()">JSON (timestamped)</button>
+        <button onclick="exportChaptersCSV()">chapters.csv</button>
+        <button onclick="exportWaypointsCSV()">waypoints.csv</button>
+        <button onclick="exportKML()">KML</button>
       </div>
     </div>
     <button class="btn" onclick="toggleTheme()" title="Toggle light/dark theme">◐</button>
@@ -511,7 +512,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 waypoints · 0 nm</span>
-  <span>Voyage Route Editor v2.2</span>
+  <span>Voyage Route Editor v2.4</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1260,9 +1261,9 @@ function updateHeroStats() {
   const tInput = document.getElementById('set-territories');
   if (nInput && !s.nationsOverride) nInput.placeholder = `(${classified.nations.length} auto)`;
   if (tInput && !s.territoriesOverride) tInput.placeholder = `(${classified.territories.length} auto)`;
-  let statsText = `${displayNm.toLocaleString()} nm`;
-  if (nations) statsText += ` · ${nations} nations`;
-  if (territories) statsText += ` · ${territories} territories`;
+  let statsText = `${displayNm.toLocaleString()} nm${s.nmOverride ? ' ⚙' : ''}`;
+  if (nations) statsText += ` · ${nations} nations${s.nationsOverride ? ' ⚙' : ''}`;
+  if (territories) statsText += ` · ${territories} territories${s.territoriesOverride ? ' ⚙' : ''}`;
   statsText += ` · ${STATE.chapters.length} chapters · ${totalWpts} waypoints`;
   document.getElementById('hero-stats').textContent = statsText;
 }
@@ -2077,8 +2078,20 @@ function mergeCSVImport(chapRows, wptRows) {
 /* ═══════════════════════════════════════════════════════════════
    EXPORT — JSON
    ═══════════════════════════════════════════════════════════════ */
-function exportJSON() {
+function saveDefault() {
   closeDropdowns();
+  const jsonStr = buildExportJSON();
+  // Save as voyage-data.json (no timestamp — overwrite pattern)
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'voyage-data.json';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  isDirty = false;
+}
+
+function buildExportJSON() {
   let totalNm = 0, totalWpts = 0;
   const chapters = STATE.chapters.map(ch => {
     const nmBase = chapterNmBase(ch);
@@ -2087,26 +2100,15 @@ function exportJSON() {
     const named = ch.waypoints.filter(w => w.name && w.name.trim());
     totalWpts += named.length;
     return {
-      num: ch.num,
-      name: ch.name,
-      when: ch.when,
-      era: ch.era,
+      num: ch.num, name: ch.name, when: ch.when, era: ch.era,
       notes: ch.notes || '',
-      countries: ch.countries,
-      keyDestinations: ch.keyDestinations,
-      blogUrl: ch.blogUrl || null,
-      padMultiplier: ch.padMultiplier,
+      countries: ch.countries, keyDestinations: ch.keyDestinations,
+      blogUrl: ch.blogUrl || null, padMultiplier: ch.padMultiplier,
       nm, nmBase,
       waypoints: ch.waypoints.map((w, i) => ({
-        order: i + 1,
-        name: w.name,
-        lat: w.lat,
-        lon: w.lon,
-        major: w.major,
-        decision: w.decision,
-        gateway: w.gateway,
-        country: w.country || '',
-        notes: w.notes || ''
+        order: i + 1, name: w.name, lat: w.lat, lon: w.lon,
+        major: w.major, decision: w.decision, gateway: w.gateway,
+        country: w.country || '', notes: w.notes || ''
       }))
     };
   });
@@ -2119,30 +2121,25 @@ function exportJSON() {
   const nations = s.nationsOverride || classified.nations.length;
   const territories = s.territoriesOverride || classified.territories.length;
 
-  const out = {
+  return JSON.stringify({
     meta: {
       title: s.voyageTitle || (s.vesselName ? `${s.vesselName} Voyage` : 'Voyage Route Data'),
       version: '2.3',
       generatedAt: new Date().toISOString(),
-      hero: {
-        nm: displayNm,
-        chapters: chapters.length,
-        waypoints: totalWpts,
-        nations: nations,
-        territories: territories
-      },
+      hero: { nm: displayNm, chapters: chapters.length, waypoints: totalWpts, nations, territories },
       settings: {
-        vesselName: s.vesselName || '',
-        voyageTitle: s.voyageTitle || '',
-        nmOverride: s.nmOverride || null,
-        nationsOverride: s.nationsOverride || null,
+        vesselName: s.vesselName || '', voyageTitle: s.voyageTitle || '',
+        nmOverride: s.nmOverride || null, nationsOverride: s.nationsOverride || null,
         territoriesOverride: s.territoriesOverride || null
       }
     },
     chapters
-  };
+  }, null, 2);
+}
 
-  downloadFile('voyage-data.json', JSON.stringify(out, null, 2), 'application/json');
+function exportJSON() {
+  closeDropdowns();
+  downloadFile('voyage-data.json', buildExportJSON(), 'application/json');
   isDirty = false;
 }
 
@@ -2335,11 +2332,17 @@ document.addEventListener('click', function(e) {
    ═══════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function() {
   initMap();
-  // Prevent native browser context menu on map so right-click delete works
   document.getElementById('map').addEventListener('contextmenu', function(e) { e.preventDefault(); });
   renderAllChapters();
   updateHeroStats();
   isDirty = false;
+  // Auto-load voyage-data.json from same directory if present
+  fetch('./voyage-data.json').then(r => {
+    if (r.ok) return r.json();
+    throw new Error('not found');
+  }).then(data => {
+    loadFromJSON(data);
+  }).catch(() => { /* no auto-load file, start empty */ });
 });
 
 window.addEventListener('beforeunload', function(e) {

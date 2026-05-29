@@ -11,6 +11,20 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.4] - 2026-05-29
+
+### Added
+1. Auto-load — both editor and viewer attempt to load `voyage-data.json` from the same directory
+   on page load. If found, data loads silently. If not found, editor starts empty and viewer shows
+   the landing prompt. This enables the hosting model: drop voyage-data.json + viewer HTML in a
+   directory → working map with no code changes.
+2. Save button — primary "Save" button downloads `voyage-data.json` (fixed name, browser
+   overwrites previous). "Save As ▾" dropdown exposes timestamped JSON, CSVs, KML.
+3. Override indicator — footer stats show ⚙ next to any value overridden in Voyage Settings
+   (NM, nations, or territories).
+4. Export JSON refactored to shared `buildExportJSON()` function — Save and Save As use the same
+   serialization logic (no duplication).
+
 ## [v2.3.2] - 2026-05-29
 
 ### Fixed — Editor

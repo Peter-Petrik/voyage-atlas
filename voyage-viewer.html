@@ -321,7 +321,7 @@
 
 <div id="footer">
   <span id="footer-data"></span>
-  <span id="footer-ver">Voyage Map Viewer v2.2</span>
+  <span id="footer-ver">Voyage Map Viewer v2.4</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -708,6 +708,14 @@ const _origSetBase = setBase;
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeInfo(); closeDrawer(); }
 });
+
+/* Auto-load voyage-data.json from same directory if present */
+fetch('./voyage-data.json').then(r => {
+  if (r.ok) return r.json();
+  throw new Error('not found');
+}).then(data => {
+  loadVoyageData(data);
+}).catch(() => { /* no auto-load file — landing state stays visible */ });
 </script>
 </body>
 </html>
