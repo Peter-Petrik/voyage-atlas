@@ -11,6 +11,28 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Viewer refactor to runtime JSON loading
 3. GPX import and export
 
+## [v2.4.3] - 2026-05-29
+
+### Changed — Editor
+1. CSV export consolidated — single "CSVs (chapters + waypoints)" action downloads both files
+   sequentially instead of two separate menu items.
+2. Routing vertex count added to footer stats (e.g., "27 vertices") — previously only named
+   waypoints were shown.
+
+### Investigated
+1. KML Svalbard criss-cross — confirmed correct. Ch 7 out-and-back route (Tromsø → Bear Island →
+   Longyearbyen → west Svalbard → return) naturally produces overlapping lines. The three-line
+   appearance in Google Earth was from two separate KML exports loaded simultaneously.
+2. CSV When format — composeWhen consistently outputs en-dash (–). Parser accepts en-dash,
+   em-dash, and hyphen on input, normalizing all to en-dash. No inconsistency.
+
+### Documentation
+1. Added to backlog: self-contained HTML export (#20) — bake JSON into viewer for single-file
+   hosting/sharing.
+2. Added to backlog: KML fly-over export configuration (#21) — animated Google Earth tour with
+   configurable camera parameters.
+3. Backlog renumbered 1–36.
+
 ## [v2.4.2] - 2026-05-29
 
 ### Fixed

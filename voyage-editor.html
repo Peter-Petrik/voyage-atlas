@@ -433,8 +433,7 @@ th .hi { margin-left: 2px; }
       <button class="btn btn-accent" onclick="toggleDropdown('export-menu')" style="border-radius:0 4px 4px 0;padding:5px 6px;">▾</button>
       <div id="export-menu" class="dropdown-menu">
         <button onclick="exportJSON()">JSON (timestamped)</button>
-        <button onclick="exportChaptersCSV()">chapters.csv</button>
-        <button onclick="exportWaypointsCSV()">waypoints.csv</button>
+        <button onclick="exportCSVs()">CSVs (chapters + waypoints)</button>
         <button onclick="exportKML()">KML</button>
       </div>
     </div>
@@ -1246,11 +1245,14 @@ function loadSettings() {
 
 function updateHeroStats() {
   isDirty = true;
-  let totalNm = 0, totalWpts = 0;
+  let totalNm = 0, totalWpts = 0, totalVertices = 0;
   const allCountries = new Set();
   STATE.chapters.forEach(ch => {
     totalNm += chapterNm(ch);
-    totalWpts += ch.waypoints.filter(w => w.name && w.name.trim()).length;
+    ch.waypoints.forEach(w => {
+      if (w.name && w.name.trim()) totalWpts++;
+      else if (w.lat && w.lon) totalVertices++;
+    });
     (ch.countries || []).forEach(c => { if (c) allCountries.add(c); });
   });
   const s = STATE.settings || {};
@@ -1268,6 +1270,7 @@ function updateHeroStats() {
   if (nations) statsText += ` · ${nations} ${nations === 1 ? 'nation' : 'nations'}${s.nationsOverride ? ' ⚙' : ''}`;
   if (territories) statsText += ` · ${territories} ${territories === 1 ? 'territory' : 'territories'}${s.territoriesOverride ? ' ⚙' : ''}`;
   statsText += ` · ${STATE.chapters.length} ${STATE.chapters.length === 1 ? 'chapter' : 'chapters'} · ${totalWpts} ${totalWpts === 1 ? 'waypoint' : 'waypoints'}`;
+  if (totalVertices) statsText += ` · ${totalVertices} ${totalVertices === 1 ? 'vertex' : 'vertices'}`;
   document.getElementById('hero-stats').textContent = statsText;
 }
 
@@ -2151,6 +2154,12 @@ function exportJSON() {
 /* ═══════════════════════════════════════════════════════════════
    EXPORT — CSV
    ═══════════════════════════════════════════════════════════════ */
+function exportCSVs() {
+  closeDropdowns();
+  exportChaptersCSV();
+  setTimeout(() => exportWaypointsCSV(), 500); // slight delay so browser doesn't block second download
+}
+
 function exportChaptersCSV() {
   closeDropdowns();
   const rows = STATE.chapters.map(ch => ({
