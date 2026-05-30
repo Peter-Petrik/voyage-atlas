@@ -529,7 +529,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v2.7</span>
+  <span>Voyage Atlas Editor v2.7.1</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -610,6 +610,26 @@ function chapterColor(num) {
   const assign = [0,0,1,2,3,4,5,6,7,8,1,5,3,6,0,4,7,2,8,5];
   const idx = (num >= 0 && num < assign.length) ? assign[num] : ((num - 1) % TOL_PALETTE.length);
   return TOL_PALETTE[idx] || TOL_PALETTE[0];
+}
+
+// Split a polyline at the ±180° antimeridian so dateline-crossing legs don't draw "the long way".
+function splitAtDateline(coords) {
+  const segs = []; let seg = [coords[0]];
+  for (let i = 1; i < coords.length; i++) {
+    const [la0, lo0] = coords[i-1], [la1, lo1] = coords[i];
+    if (Math.abs(lo1 - lo0) > 180) {
+      const lo1c = lo1 + (lo1 - lo0 > 0 ? -360 : 360);
+      const seam = lo1c > lo0 ? 180 : -180;
+      const t = (seam - lo0) / (lo1c - lo0);
+      seg.push([la0 + (la1 - la0) * t, seam]);
+      segs.push(seg);
+      seg = [[la0 + (la1 - la0) * t, -seam], [la1, lo1]];
+    } else {
+      seg.push([la1, lo1]);
+    }
+  }
+  segs.push(seg);
+  return segs;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -708,7 +728,7 @@ function updateMapChapter(chNum) {
   // Route line
   let line = null;
   if (coords.length >= 2) {
-    line = L.polyline(coords, {
+    line = L.polyline(splitAtDateline(coords), {
       color: color,
       weight: isActive ? 3 : 1.5,
       opacity: isActive ? 0.9 : 0.35,
@@ -782,8 +802,8 @@ function updateMapChapter(chNum) {
     }
 
     // Tooltip
-    const tip = hasName ? `${w.name}${w.major ? ' ★' : ''}${w.decision ? ' ◆' : ''}${w.gateway ? ' ⚑' : ''}${isActive ? '\nright-click to delete' : ''}`
-      : `shaping vertex #${idx + 1}${isActive ? '\nright-click to delete' : ''}`;
+    const tip = hasName ? `${w.name}${w.major ? ' ★' : ''}${w.decision ? ' ◆' : ''}${w.gateway ? ' ⚑' : ''}${isActive ? '<br>right-click to delete' : ''}`
+      : `shaping vertex #${idx + 1}${isActive ? '<br>right-click to delete' : ''}`;
     marker.bindTooltip(tip, { permanent: false, direction: 'top', offset: [0, -6] });
 
     // Draggable behavior for active chapter

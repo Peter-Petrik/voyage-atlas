@@ -9,8 +9,19 @@ framework document (`global-voyage-framework.md`) carries its own separate versi
 ## [Unreleased]
 
 Queued improvements tracked in `voyage-atlas-enhancements.md`:
-1. PAZ (avoidance-zone) authoring in the editor — targeted v2.7
+1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
+
+## [v2.7.1] - 2026-05-30
+
+### Fixed
+1. **Dateline-crossing routes no longer draw "the long way" in the editor (#38).** The editor's route
+   preview now splits each leg at the ±180° antimeridian (matching the viewer), so a chapter that
+   crosses the dateline (e.g. a North Pacific passage) is drawn as two segments meeting the map edges
+   rather than a straight line streaking back across the whole map. The viewer was already correct.
+2. **Marker tooltip "right-click to delete" hint moved to its own line (#22).** The hint used a newline
+   character, which a Leaflet tooltip collapses to a space; it now uses `<br>`, so for both named
+   waypoints and shaping vertices the hint sits on a second line instead of running on.
 
 ## [v2.7] - 2026-05-30
 

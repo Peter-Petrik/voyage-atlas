@@ -443,6 +443,24 @@ more intuitive default (e.g. no selection until the user picks a chapter, with a
 The editor only warns about unsaved changes on page-leave; add a persistent visual indicator (e.g. a
 dot or "unsaved" badge) when `isDirty` is true. (Test #36.)
 
+### 60. Guard concurrent "Look up countries" runs
+"Look up countries" geocodes one waypoint per second; nothing stops a second run from starting while
+the first is in flight — clicking the button again mid-run, or running it in two chapters before the
+first finishes, can overlap loops and risk double-counting or tripping Nominatim's rate limit. Disable
+the button (per chapter, and ideally globally) while a lookup is active, with a simple progress/active
+indicator. (v2.7 test pass.)
+
+### 61. Surface the hero stats in the editor header
+The viewer shows the totals (distance, nations, territories, chapters, waypoints) prominently in its
+header; the editor tucks the same figures into the bottom status bar. Mirror the viewer and present
+them in the editor header so the headline numbers are visible without hunting. (v2.7 test pass.)
+
+### 62. Report JSON load errors to the user
+A malformed or unreadable JSON file currently fails quietly on load (a console error at best, a blank
+map at worst). Both tools should catch the parse/validation failure and show a clear, human message
+("Couldn't read this file — it may be malformed or not a Voyage Atlas JSON") rather than failing
+silently. (v2.7 test pass.)
+
 ---
 
 ## Explicitly out of scope
