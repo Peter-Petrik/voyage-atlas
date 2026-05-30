@@ -361,6 +361,11 @@ from chapters/waypoints on load, apply the explicit overrides (`nmOverride` / `n
 trusted for display. Mirrors the on-the-fly unit conversion already in place. Net: only the overrides
 are authoritative; everything else is always live.
 
+**Completed in v2.8:** the generated snapshot is no longer written at all — `meta.hero` and the
+per-chapter `nm`/`nmBase`/`nmApproach` fields are gone from the file, and a chapter's country list
+likewise derives on load (with an optional per-chapter `countriesOverride`). Calculated data is no
+longer stored in any form; data version bumped 2.6 → 2.7.
+
 ### 45. Unify "Load" vs "Import" nomenclature — ✓ shipped v2.7
 Pick one verb. **Load** = opening a JSON file (both tools); **Import** = merging tabular CSV data.
 Today the editor says "Import" for JSON while the viewer's landing says "Load JSON…" — inconsistent.

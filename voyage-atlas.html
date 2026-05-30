@@ -314,7 +314,7 @@
 
 <div id="footer">
   <span id="footer-data"></span>
-  <span id="footer-ver">Voyage Atlas v2.7.1</span>
+  <span id="footer-ver">Voyage Atlas v2.8</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -502,6 +502,19 @@ function chapterNm(ch) {
   // Padded within-chapter sailing distance + raw approach leg from the predecessor chapter.
   return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1)) + chapterApproachNm(ch);
 }
+
+// Effective country list for a chapter: explicit per-chapter override if set, else derived on the
+// fly from the waypoints' country fields (first-appearance order). Matches the editor.
+function deriveCountriesFromWaypoints(ch) {
+  return [...new Set(
+    (ch.waypoints || [])
+      .filter(w => w.country && w.country.trim())
+      .map(w => w.country.trim())
+  )];
+}
+function chapterCountries(ch) {
+  return (ch.countriesOverride && ch.countriesOverride.length) ? ch.countriesOverride : deriveCountriesFromWaypoints(ch);
+}
 let polylines = {};
 let activeNum = null;
 
@@ -531,7 +544,7 @@ function normalizeData(data) {
       .map(w => [w.lat, w.lon]);
     ch.routes = coords.length >= 2 ? [coords] : [];
     // Ensure arrays (defensive against hand-authored data)
-    if (typeof ch.countries === 'string') ch.countries = ch.countries.split(',').map(s => s.trim()).filter(Boolean);
+    if (typeof ch.countriesOverride === 'string') ch.countriesOverride = ch.countriesOverride.split(',').map(s => s.trim()).filter(Boolean);
     if (typeof ch.keyDestinations === 'string') ch.keyDestinations = ch.keyDestinations.split(',').map(s => s.trim()).filter(Boolean);
   });
   return data;
@@ -574,7 +587,7 @@ function loadVoyageData(raw) {
   (DATA.chapters || []).forEach(ch => {
     heroNm += chapterNm(ch);
     (ch.waypoints || []).forEach(w => { if (w.name && w.name.trim()) heroWpts++; });
-    (ch.countries || []).forEach(c => { if (c) heroCountries.add(c); });
+    chapterCountries(ch).forEach(c => { if (c) heroCountries.add(c); });
   });
   const heroClass = classifyCountries(heroCountries);
   const heroDisplayNm = settings.nmOverride || heroNm;
@@ -764,7 +777,7 @@ function selectChapter(num) {
     notesBlock.style.display = 'none';
   }
 
-  document.getElementById('info-countries').textContent = (ch.countries||[]).join(' · ');
+  document.getElementById('info-countries').textContent = chapterCountries(ch).join(' · ');
   document.getElementById('info').classList.add('show');
 }
 

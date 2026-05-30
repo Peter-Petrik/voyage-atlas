@@ -12,6 +12,30 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v2.8] - 2026-05-30
+
+### Changed
+1. **Calculated data is no longer stored in the file (completes #44).** Building on v2.7's
+   recompute-on-load, the editor now stops *writing* derived figures entirely: `meta.hero` (the
+   totals) and every per-chapter `nm`/`nmBase`/`nmApproach` are gone from the JSON. Both tools compute
+   them on load. Files saved before v2.8 keep working — the old fields are ignored.
+2. **Chapter countries auto-derive, with a per-chapter override.** A chapter's country list is now
+   derived on load from its waypoints' `country` fields. The chapter's Countries field is an override:
+   blank means automatic (shown as a greyed placeholder), and typing a list stores a `countriesOverride`
+   that replaces the derived list for that chapter. The voyage total is the classified union of every
+   chapter's effective list, and the editor and viewer derive identically.
+3. **Data version 2.6 → 2.7.** The JSON shape changed (calculated fields removed, `countries` replaced
+   by an optional `countriesOverride`), so the stamped data version moves to 2.7.
+
+### Migration
+1. On load, a pre-existing chapter `countries` list is **ignored, not promoted to an override** —
+   chapters start clean and derive from waypoints (reading zero until "Look up countries" populates the
+   per-waypoint countries, or an override is set).
+
+### Fixed
+1. Removed a redundant duplicate pair from the editor's territory reference list — no functional effect
+   (it's a `Set`), but the editor and viewer lists are now byte-identical.
+
 ## [v2.7.1] - 2026-05-30
 
 ### Fixed

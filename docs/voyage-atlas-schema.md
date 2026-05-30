@@ -1,4 +1,4 @@
-# Voyage Atlas — Data Schema (v2.6)
+# Voyage Atlas — Data Schema (v2.7)
 
 This document defines the data contract between the **editor** (`voyage-atlas-editor.html`) and the
 **viewer** (`voyage-atlas.html`). Any tool that produces data in this schema can feed the
@@ -20,7 +20,7 @@ quoted multiline cells.
 | `when` | string | yes | Time window (e.g., "Feb 2026 – Dec 2026") |
 | `era` | enum | yes | One of: `past`, `current`, `future` |
 | `notes` | string | no | Free-form chapter notes (routing, bail-out options, summary, etc.) |
-| `countries` | string | no | Comma-separated list of countries/territories |
+| `countries` | string | no | Per-chapter country **override** (comma-separated); blank = auto-derived from waypoint countries |
 | `keyDestinations` | string | no | Comma-separated list of key destinations |
 | `blogUrl` | string | no | URL to blog post collection for this chapter |
 | `padMultiplier` | float | yes | nm padding factor (default 1.20) |
@@ -74,15 +74,8 @@ CSVs are the human-editable source.
 {
   "meta": {
     "title": "string — user-defined voyage title, or default 'Voyage Atlas'",
-    "version": "2.6",
+    "version": "2.7",
     "generatedAt": "ISO 8601 datetime",
-    "hero": {
-      "nm": 81051,
-      "chapters": 19,
-      "waypoints": 275,
-      "nations": 39,
-      "territories": 15
-    },
     "settings": {
       "voyageTitle": "S/Y GRACE Global Voyage",
       "distanceUnit": "nm",
@@ -98,13 +91,10 @@ CSVs are the human-editable source.
       "when": "Month Year – Month Year",
       "era": "past | current | future",
       "notes": "Free-form chapter notes",
-      "countries": ["Country1", "Country2"],
+      "countriesOverride": ["Country1", "Country2"],
       "keyDestinations": ["Dest1", "Dest2"],
       "blogUrl": "https://... | null",
       "padMultiplier": 1.20,
-      "nm": 6000,
-      "nmBase": 5000,
-      "nmApproach": 0,
       "waypoints": [
         {
           "order": 1,
@@ -123,48 +113,48 @@ CSVs are the human-editable source.
 }
 ```
 
-**`meta.hero` fields:**
-- `nm` — total nautical miles (global override if set, otherwise sum of chapter NMs)
-- `chapters` — count of chapters
-- `waypoints` — count of named waypoints (shaping vertices excluded)
-- `nations` — count of sovereign nations (auto-classified or overridden)
-- `territories` — count of overseas territories (auto-classified or overridden)
-
-> **`meta.hero` is a write-on-save snapshot, not a source of truth (v2.7).** Both the editor and the
-> viewer recompute every figure above from the chapters/waypoints on load and apply any overrides on
-> top; the stored block is never read for display. It exists so other tools can read the totals
-> without reimplementing the math. A hand-edited file therefore can't drift — the displayed numbers
-> always match the data.
+**Computed figures (v2.7 — not stored).** The hero totals (total nm, chapter count, named-waypoint
+count, nations, territories) and every per-chapter distance (`nm`, `nmBase`, `nmApproach`) are **not
+written to the file**. Both the editor and the viewer recompute them on load from the chapters and
+waypoints, applying any overrides on top. Only source data and explicit overrides are stored, so a
+hand-edited file can't drift — the displayed numbers always match the data. (Files through v2.6 may
+still carry a `meta.hero` block and per-chapter `nm` fields; these are ignored on load.)
 
 **`meta.settings` fields:**
 - `voyageTitle` — the voyage title shown in page titles, the viewer header, and exports; if blank, defaults to "Voyage Atlas"
-- `distanceUnit` (v2.6) — display unit for all on-screen distances: `"nm"` (default), `"km"`, or `"mi"`. Display-only; stored distances (`hero.nm`, chapter `nm`/`nmBase`/`nmApproach`, `nmOverride`) and all exports (JSON, CSV, KML) remain canonical nautical miles
-- `nmOverride` — if set (number), replaces the auto-calculated total nm in hero stats
-- `nationsOverride` — if set (integer), replaces the auto-classified nations count
-- `territoriesOverride` — if set (integer), replaces the auto-classified territories count
+- `distanceUnit` (v2.6) — display unit for all on-screen distances: `"nm"` (default), `"km"`, or `"mi"`. Display-only; `nmOverride` and all exports (JSON, CSV, KML) remain canonical nautical miles, and all distances are computed in nm before conversion
+- `nmOverride` — if set (number), replaces the recomputed total nm
+- `nationsOverride` — if set (integer), replaces the recomputed nations count
+- `territoriesOverride` — if set (integer), replaces the recomputed territories count
 
-**Nation/territory auto-classification:** the editor contains a built-in reference list of ~65
-overseas territories (see FAQ for the full list). Each distinct country name from waypoint data
-is checked against this list: match = territory, no match = nation. Overrides in settings take
-precedence over the auto-count.
+**Country handling (v2.7).** A chapter's country list is **derived on load** from its waypoints'
+`country` fields (first-appearance order), deduplicated. A chapter may carry an optional
+`countriesOverride` (array) that replaces the derived list for that chapter; it is written only when
+set. The voyage nations/territories split is the classified union of every chapter's effective list
+(override where set, derived otherwise), with `nationsOverride`/`territoriesOverride` capping the
+final totals.
+
+**Nation/territory auto-classification:** the editor and viewer share a built-in reference list of
+~65 overseas territories (see FAQ for the full list). Each distinct country name is checked against
+this list: match = territory, no match = nation. Overrides take precedence over the auto-count.
 
 **Key differences from v1 JSON:**
 1. No `routes[]` array — route geometry is derived from the waypoint list in order
 2. No `routingLabel` field — replaced by the three independent boolean flags
 3. `decision` and `gateway` fields added
 4. `country` and `notes` per waypoint
-5. `nm` and `nmBase` are included for convenience but are always recomputable from waypoints +
-   `padMultiplier`. As of v2.5, `nm` = `nmBase` × `padMultiplier` + `nmApproach`.
+5. Per-chapter distances (`nm`, `nmBase`, `nmApproach`) and the hero totals are computed on load, not stored (v2.7). The math: `nmBase` = haversine sum of a chapter's waypoints in order; `nm` = `nmBase × padMultiplier + nmApproach`.
 6. `nmApproach` (v2.5) — the "getting to the start point" leg: raw distance (no pad) from the
    predecessor chapter's last waypoint to this chapter's first waypoint. Zero when chapters share
    an endpoint (the common case); non-zero across a genuine gap (e.g., the NZ→Japan repositioning).
    The predecessor is resolved via `getPredecessorChapter()` — positional (num−1) today, fork-aware
    when variant chapters (#34) are added.
-7. `hero.waypoints` counts only named waypoints (non-empty name); shaping vertices excluded
-8. `hero.nations` and `hero.territories` added (v2.3)
-9. `meta.settings` block added (v2.3) — vessel name, title, nm/nations/territories overrides
+7. The waypoints total counts only named waypoints (non-empty name); shaping vertices excluded
+8. Nations/territories classification added (v2.3)
+9. `meta.settings` block added (v2.3) — title, nm/nations/territories overrides
 10. `routing`, `bailout`, `prose` consolidated into `notes` (v2.0.2)
-11. `distanceUnit` added to `meta.settings` (v2.6); `vesselName` removed (v2.6) — titles now derive from `voyageTitle` alone, then `meta.title`, then the default. Data `version` stamped `"2.6"`.
+11. `distanceUnit` added to `meta.settings` (v2.6); `vesselName` removed (v2.6) — titles derive from `voyageTitle`, then `meta.title`, then the default
+12. Calculated data is no longer stored (v2.7): `meta.hero` and per-chapter `nm`/`nmBase`/`nmApproach` removed; per-chapter `countries` replaced by an optional `countriesOverride`; data `version` stamped `"2.7"`
 
 **v1 → v2 import logic (handled by the editor):**
 1. Route segments concatenated in order; shared endpoints deduplicated (tolerance: 0.0001°)

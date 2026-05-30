@@ -529,7 +529,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v2.7.1</span>
+  <span>Voyage Atlas Editor v2.8</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1186,19 +1186,30 @@ function fillChapterCountries(chNum) {
   }
 }
 
-function updateChapterCountries(chNum) {
-  const ch = getChapter(chNum);
-  if (!ch) return;
-  const countries = [...new Set(
-    ch.waypoints
+// Effective country list for a chapter: an explicit per-chapter override if set, else derived on the
+// fly from the waypoints' country fields (first-appearance order). Countries are never stored.
+function deriveCountriesFromWaypoints(ch) {
+  return [...new Set(
+    (ch.waypoints || [])
       .filter(w => w.country && w.country.trim())
       .map(w => w.country.trim())
   )];
-  ch.countries = countries;
+}
+function chapterCountries(ch) {
+  return (ch.countriesOverride && ch.countriesOverride.length) ? ch.countriesOverride : deriveCountriesFromWaypoints(ch);
+}
+
+// Waypoint countries changed: refresh the chapter's auto placeholder (when not overridden) + the hero.
+function updateChapterCountries(chNum) {
+  const ch = getChapter(chNum);
+  if (!ch) return;
   const metaPanel = document.getElementById(`ch-meta-${chNum}`);
   if (metaPanel && metaPanel.classList.contains('open')) {
-    const input = metaPanel.querySelector('input[onchange*="countries"]');
-    if (input) input.value = countries.join(', ');
+    const input = metaPanel.querySelector('input[onchange*="countriesOverride"]');
+    if (input) {
+      const auto = deriveCountriesFromWaypoints(ch).join(', ');
+      input.placeholder = auto ? `${auto} (auto)` : 'auto from waypoint countries';
+    }
   }
   updateHeroStats();
 }
@@ -1296,7 +1307,6 @@ const TERRITORIES = new Set([
   'Hong Kong','Macau','Macao',
   // Other
   'Åland Islands','Isle of Man','Jersey','Guernsey',
-  'American Samoa','Northern Mariana Islands',
 ]);
 
 function classifyCountries(allCountries) {
@@ -1322,7 +1332,7 @@ function makeWaypoint() {
 function makeChapter(num) {
   return {
     num, name: 'New Chapter', when: '', era: 'future',
-    notes: '', countries: '',
+    notes: '', countriesOverride: null,
     keyDestinations: '', blogUrl: '', padMultiplier: 1.20,
     waypoints: []
   };
@@ -1433,7 +1443,7 @@ function updateHeroStats() {
       if (w.name && w.name.trim()) totalWpts++;
       else if (w.lat && w.lon) totalVertices++;
     });
-    (ch.countries || []).forEach(c => { if (c) allCountries.add(c); });
+    chapterCountries(ch).forEach(c => { if (c) allCountries.add(c); });
   });
   const s = STATE.settings || {};
   const displayNm = s.nmOverride || totalNm;
@@ -1642,7 +1652,8 @@ function createChapterElement(ch) {
 }
 
 function renderMetaForm(ch) {
-  const countries = Array.isArray(ch.countries) ? ch.countries.join(', ') : (ch.countries || '');
+  const countriesOverride = (ch.countriesOverride && ch.countriesOverride.length) ? ch.countriesOverride.join(', ') : '';
+  const countriesAuto = deriveCountriesFromWaypoints(ch).join(', ');
   const keyDest = Array.isArray(ch.keyDestinations) ? ch.keyDestinations.join(', ') : (ch.keyDestinations || '');
   return `
     <div class="meta-grid">
@@ -1677,8 +1688,8 @@ function renderMetaForm(ch) {
         <textarea style="min-height:80px;" onchange="updateMeta(${ch.num},'notes',this.value)">${esc(ch.notes || '')}</textarea>
       </div>
       <div class="meta-field full">
-        <label>Countries <span class="hi" data-tip="Countries and territories in this chapter. Auto-populated from waypoint countries (first-appearance order along the route). Editable.">i</span></label>
-        <input type="text" value="${esc(countries)}" onchange="updateMeta(${ch.num},'countries',this.value)">
+        <label>Countries <span class="hi" data-tip="Auto-derived from this chapter's waypoint countries (first-appearance order). Leave blank to keep it automatic; type a comma-separated list to override.">i</span></label>
+        <input type="text" value="${esc(countriesOverride)}" placeholder="${esc(countriesAuto ? countriesAuto + ' (auto)' : 'auto from waypoint countries')}" onchange="updateMeta(${ch.num},'countriesOverride',this.value)">
       </div>
       <div class="meta-field full">
         <label>Key Destinations <span class="hi" data-tip="Highlight destinations for this chapter (comma-separated). Shown in the viewer drawer and summary displays.">i</span></label>
@@ -1695,7 +1706,10 @@ function renderMetaForm(ch) {
 function updateMeta(chNum, field, value) {
   const ch = getChapter(chNum);
   if (!ch) return;
-  if (field === 'countries' || field === 'keyDestinations') {
+  if (field === 'countriesOverride') {
+    const list = typeof value === 'string' ? value.split(',').map(s => s.trim()).filter(Boolean) : value;
+    ch.countriesOverride = (list && list.length) ? list : null;
+  } else if (field === 'keyDestinations') {
     ch[field] = typeof value === 'string' ? value.split(',').map(s => s.trim()).filter(Boolean) : value;
   } else {
     ch[field] = value;
@@ -2120,7 +2134,7 @@ function loadFromV2JSON(data) {
       ch.bailout ? `Bail-out: ${ch.bailout}` : '',
       ch.prose || ''
     ].filter(Boolean).join('\n\n') || '',
-    countries: ch.countries || [],
+    countriesOverride: ch.countriesOverride || null,
     keyDestinations: ch.keyDestinations || [],
     blogUrl: ch.blogUrl || null,
     padMultiplier: ch.padMultiplier || 1.2,
@@ -2210,7 +2224,7 @@ function mergeCSVImport(chapRows, wptRows) {
         r.bailout ? `Bail-out: ${r.bailout}` : '',
         r.prose || ''
       ].filter(Boolean).join('\n\n') || '',
-      countries: r.countries ? r.countries.split(',').map(s => s.trim()).filter(Boolean) : [],
+      countriesOverride: r.countries ? r.countries.split(',').map(s => s.trim()).filter(Boolean) : null,
       keyDestinations: r.keyDestinations ? r.keyDestinations.split(',').map(s => s.trim()).filter(Boolean) : [],
       blogUrl: r.blogUrl || null,
       padMultiplier: parseFloat(r.padMultiplier) || 1.2,
@@ -2263,42 +2277,27 @@ function saveDefault() {
 }
 
 function buildExportJSON() {
-  let totalNm = 0, totalWpts = 0;
-  const chapters = STATE.chapters.map(ch => {
-    const nmBase = chapterNmBase(ch);
-    const nmApproach = chapterApproachNm(ch);
-    const nm = Math.round(nmBase * (ch.padMultiplier || 1)) + nmApproach;
-    totalNm += nm;
-    const named = ch.waypoints.filter(w => w.name && w.name.trim());
-    totalWpts += named.length;
-    return {
-      num: ch.num, name: ch.name, when: ch.when, era: ch.era,
-      notes: ch.notes || '',
-      countries: ch.countries, keyDestinations: ch.keyDestinations,
-      blogUrl: ch.blogUrl || null, padMultiplier: ch.padMultiplier,
-      nm, nmBase, nmApproach,
-      waypoints: ch.waypoints.map((w, i) => ({
-        order: i + 1, name: w.name, lat: w.lat, lon: w.lon,
-        major: w.major, decision: w.decision, gateway: w.gateway,
-        country: w.country || '', notes: w.notes || ''
-      }))
-    };
-  });
+  const chapters = STATE.chapters.map(ch => ({
+    num: ch.num, name: ch.name, when: ch.when, era: ch.era,
+    notes: ch.notes || '',
+    ...((ch.countriesOverride && ch.countriesOverride.length) ? { countriesOverride: ch.countriesOverride } : {}),
+    keyDestinations: ch.keyDestinations,
+    blogUrl: ch.blogUrl || null, padMultiplier: ch.padMultiplier,
+    waypoints: ch.waypoints.map((w, i) => ({
+      order: i + 1, name: w.name, lat: w.lat, lon: w.lon,
+      major: w.major, decision: w.decision, gateway: w.gateway,
+      country: w.country || '', notes: w.notes || ''
+    }))
+  }));
 
   const s = STATE.settings || {};
-  const allCountries = new Set();
-  STATE.chapters.forEach(ch => (ch.countries || []).forEach(c => { if (c) allCountries.add(c); }));
-  const classified = classifyCountries(allCountries);
-  const displayNm = s.nmOverride || totalNm;
-  const nations = s.nationsOverride || classified.nations.length;
-  const territories = s.territoriesOverride || classified.territories.length;
-
+  // Calculated figures (totals, per-chapter distances, country lists) are NOT stored — both tools
+  // recompute them on load. Only source data and explicit overrides are written.
   return JSON.stringify({
     meta: {
       title: s.voyageTitle || 'Voyage Atlas',
-      version: '2.6',
+      version: '2.7',
       generatedAt: new Date().toISOString(),
-      hero: { nm: displayNm, chapters: chapters.length, waypoints: totalWpts, nations, territories },
       settings: {
         voyageTitle: s.voyageTitle || '',
         nmOverride: s.nmOverride || null, nationsOverride: s.nationsOverride || null,
@@ -2333,7 +2332,7 @@ function exportChaptersCSV() {
     when: ch.when,
     era: ch.era,
     notes: ch.notes || '',
-    countries: Array.isArray(ch.countries) ? ch.countries.join(', ') : ch.countries,
+    countries: (ch.countriesOverride && ch.countriesOverride.length) ? ch.countriesOverride.join(', ') : '',
     keyDestinations: Array.isArray(ch.keyDestinations) ? ch.keyDestinations.join(', ') : ch.keyDestinations,
     blogUrl: ch.blogUrl || '',
     padMultiplier: ch.padMultiplier

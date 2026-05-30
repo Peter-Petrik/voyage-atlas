@@ -125,13 +125,16 @@ chapter's approach leg.
 ## How are nations and territories counted?
 
 The hero stats distinguish **nations** (sovereign countries) from **territories** (overseas
-territories and dependencies). Each distinct country value across all waypoints is classified
+territories and dependencies). Each distinct country across all chapters' effective lists is classified
 automatically against a built-in reference list of ~65 territories (UK, French, Dutch, US, Danish,
 Norwegian, Australian, NZ, Portuguese, Spanish, and Chinese overseas territories, plus the Crown
 Dependencies). Anything not on the territory list counts as a nation.
 
 Both counts can be overridden in Voyage Settings if the automatic classification isn't what you
-want.
+want. Separately, each chapter's country list is derived from its own waypoints' countries and can be
+replaced with a per-chapter override (the chapter's Countries field) — useful for a curated list that
+differs from what the waypoints imply. The voyage total is the classified union of every chapter's
+effective list.
 
 **Caveat:** the country values come from Nominatim geocoding, which sometimes returns the
 *parent nation* rather than the territory — e.g., a waypoint in the Azores may come back as
@@ -341,11 +344,11 @@ route and marker colors are tuned to read on both.
 ## What the hero stats mean
 
 The header shows total distance, the nations and territories touched, the chapter count, and the
-named-waypoint count. **Both tools recompute these from the chapters and waypoints every time a file
-loads** — they are never read from the stored `meta.hero` block, so the headline numbers always match
+named-waypoint count. **Both tools compute these from the chapters and waypoints every time a file
+loads** — they are not stored in the file at all (as of v2.7), so the headline numbers always match
 the drawn routes, even if you hand-edit the JSON (add a waypoint, change a country, remove a chapter).
-Any explicit override set in Voyage Settings is applied on top. The `meta.hero` block in the file is a
-write-on-save snapshot for other tools to read; the app ignores it for display.
+Any explicit override set in Voyage Settings is applied on top. (Files saved before v2.7 may still
+contain a `meta.hero` block; it is ignored on load.)
 
 ## Self-hosting
 
