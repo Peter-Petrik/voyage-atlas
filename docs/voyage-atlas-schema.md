@@ -130,6 +130,12 @@ CSVs are the human-editable source.
 - `nations` — count of sovereign nations (auto-classified or overridden)
 - `territories` — count of overseas territories (auto-classified or overridden)
 
+> **`meta.hero` is a write-on-save snapshot, not a source of truth (v2.7).** Both the editor and the
+> viewer recompute every figure above from the chapters/waypoints on load and apply any overrides on
+> top; the stored block is never read for display. It exists so other tools can read the totals
+> without reimplementing the math. A hand-edited file therefore can't drift — the displayed numbers
+> always match the data.
+
 **`meta.settings` fields:**
 - `voyageTitle` — the voyage title shown in page titles, the viewer header, and exports; if blank, defaults to "Voyage Atlas"
 - `distanceUnit` (v2.6) — display unit for all on-screen distances: `"nm"` (default), `"km"`, or `"mi"`. Display-only; stored distances (`hero.nm`, chapter `nm`/`nmBase`/`nmApproach`, `nmOverride`) and all exports (JSON, CSV, KML) remain canonical nautical miles

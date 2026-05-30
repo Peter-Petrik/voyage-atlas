@@ -20,8 +20,8 @@
   --ink:     #1d2b3a;
   --muted:   #54616e;
   --faint:   #5e6f81;
-  --accent:  #8e622b;
-  --accent-soft: rgba(154,106,47,0.12);
+  --accent:  #a32e38;
+  --accent-soft: rgba(163,46,56,0.12);
   --border:  rgba(29,43,58,0.16);
   --border-strong: rgba(29,43,58,0.30);
   --hazard:  #9b2d20;
@@ -29,7 +29,7 @@
   --shadow:  0 4px 16px rgba(29,43,58,0.12);
   --tile-bg: #e9e3d4;
   --row-alt: rgba(29,43,58,0.03);
-  --row-hover: rgba(154,106,47,0.08);
+  --row-hover: rgba(163,46,56,0.08);
   --shaping-bg: rgba(29,43,58,0.05);
 }
 body.dark {
@@ -39,17 +39,17 @@ body.dark {
   --ink:     #eaf0f7;
   --muted:   #8a9bb0;
   --faint:   #6b8198;
-  --accent:  #d8b15a;
-  --accent-soft: rgba(216,177,90,0.14);
-  --border:  rgba(216,177,90,0.22);
-  --border-strong: rgba(216,177,90,0.40);
+  --accent:  #d4626c;
+  --accent-soft: rgba(212,98,108,0.14);
+  --border:  rgba(212,98,108,0.22);
+  --border-strong: rgba(212,98,108,0.40);
   --hazard:  #e2574a;
   --success: #4caf6a;
   --shadow:  0 4px 16px rgba(0,0,0,0.45);
   --tile-bg: #061018;
-  --row-alt: rgba(216,177,90,0.04);
-  --row-hover: rgba(216,177,90,0.10);
-  --shaping-bg: rgba(216,177,90,0.06);
+  --row-alt: rgba(212,98,108,0.04);
+  --row-hover: rgba(212,98,108,0.10);
+  --shaping-bg: rgba(212,98,108,0.06);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -436,9 +436,9 @@ th .hi { margin-left: 2px; }
   </div>
   <div class="hdr-actions">
     <div class="dropdown">
-      <button class="btn" onclick="toggleDropdown('import-menu')">Import ▾</button>
+      <button class="btn" onclick="toggleDropdown('import-menu')">Load ▾</button>
       <div id="import-menu" class="dropdown-menu">
-        <button onclick="importJSON()">Import JSON…</button>
+        <button onclick="importJSON()">Load JSON…</button>
         <button onclick="importCSV()">Import CSVs (chapters + waypoints)…</button>
       </div>
     </div>
@@ -528,8 +528,8 @@ th .hi { margin-left: 2px; }
 
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
-  <span id="hero-stats">0 chapters · 0 waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v2.6.1</span>
+  <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
+  <span>Voyage Atlas Editor v2.7</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -783,7 +783,7 @@ function updateMapChapter(chNum) {
 
     // Tooltip
     const tip = hasName ? `${w.name}${w.major ? ' ★' : ''}${w.decision ? ' ◆' : ''}${w.gateway ? ' ⚑' : ''}${isActive ? '\nright-click to delete' : ''}`
-      : `routing vertex #${idx + 1}${isActive ? '\nright-click to delete' : ''}`;
+      : `shaping vertex #${idx + 1}${isActive ? '\nright-click to delete' : ''}`;
     marker.bindTooltip(tip, { permanent: false, direction: 'top', offset: [0, -6] });
 
     // Draggable behavior for active chapter
@@ -1429,8 +1429,8 @@ function updateHeroStats() {
   let statsText = `${fmtDist(displayNm)}${s.nmOverride ? ' ⚙' : ''}`;
   if (nations) statsText += ` · ${nations} ${nations === 1 ? 'nation' : 'nations'}${s.nationsOverride ? ' ⚙' : ''}`;
   if (territories) statsText += ` · ${territories} ${territories === 1 ? 'territory' : 'territories'}${s.territoriesOverride ? ' ⚙' : ''}`;
-  statsText += ` · ${STATE.chapters.length} ${STATE.chapters.length === 1 ? 'chapter' : 'chapters'} · ${totalWpts} ${totalWpts === 1 ? 'waypoint' : 'waypoints'}`;
-  if (totalVertices) statsText += ` · ${totalVertices} ${totalVertices === 1 ? 'vertex' : 'vertices'}`;
+  statsText += ` · ${STATE.chapters.length} ${STATE.chapters.length === 1 ? 'chapter' : 'chapters'} · ${totalWpts} ${totalWpts === 1 ? 'named waypoint' : 'named waypoints'}`;
+  if (totalVertices) statsText += ` · ${totalVertices} ${totalVertices === 1 ? 'shaping vertex' : 'shaping vertices'}`;
   document.getElementById('hero-stats').textContent = statsText;
 }
 
@@ -1733,7 +1733,7 @@ function renderWaypointRow(chNum, w, idx) {
     <tr class="${isShaping ? 'shaping' : ''}" data-idx="${idx}">
       <td class="wpt-row-drag">≡</td>
       <td class="wpt-row-num" title="Center map on this waypoint" onclick="centerMapOnWaypoint(${chNum},${idx})">${idx + 1}</td>
-      <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" value="${esc(w.name)}" placeholder="(routing vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
+      <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" value="${esc(w.name)}" placeholder="(shaping vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
       <td class="col-lat"><input type="number" step="any" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="updateWpt(${chNum},${idx},'lat',parseFloat(this.value)||null)"></td>
       <td class="col-lon"><input type="number" step="any" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="updateWpt(${chNum},${idx},'lon',parseFloat(this.value)||null)"></td>
       <td class="col-cb"><input type="checkbox" ${w.major?'checked':''} onchange="updateWpt(${chNum},${idx},'major',this.checked)"></td>
@@ -1821,7 +1821,7 @@ function confirmDeleteWaypoint(chNum, idx) {
   const ch = getChapter(chNum);
   if (!ch || !ch.waypoints[idx]) return;
   const w = ch.waypoints[idx];
-  const name = w.name && w.name.trim() ? w.name : `routing vertex #${idx + 1}`;
+  const name = w.name && w.name.trim() ? w.name : `shaping vertex #${idx + 1}`;
   document.getElementById('delete-wpt-msg').textContent = `Delete "${name}" from Ch ${chNum}?`;
   pendingDeleteWpt = { chNum, idx };
   document.getElementById('delete-wpt-modal').classList.add('open');

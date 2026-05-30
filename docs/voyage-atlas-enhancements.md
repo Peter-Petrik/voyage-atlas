@@ -346,6 +346,105 @@ no-build architecture; mainly a Pages config + a link from the README.
 
 ---
 
+## From the v2.6.1 test pass — v2.7 candidates
+
+Surfaced during the v2.6.1 test pass. The first four (44–47) **shipped in v2.7**; the rest are
+captured ideas. The recompute model, the Load/Import verb, and the waypoint/vertex naming formed a
+natural v2.7 cluster.
+
+### 44. Recompute derived stats on load (stop trusting stored hero figures) — ✓ shipped v2.7
+`meta.hero` (distance, chapters, waypoints, nations, territories) is *derived* data; storing it lets
+it drift the moment anyone hand-edits the JSON. Approach: editor and viewer recompute all base figures
+from chapters/waypoints on load, apply the explicit overrides (`nmOverride` / `nationsOverride` /
+`territoriesOverride`) on top, and treat `meta.hero` as a generated snapshot — written on save, never
+trusted for display. Mirrors the on-the-fly unit conversion already in place. Net: only the overrides
+are authoritative; everything else is always live.
+
+### 45. Unify "Load" vs "Import" nomenclature — ✓ shipped v2.7
+Pick one verb. **Load** = opening a JSON file (both tools); **Import** = merging tabular CSV data.
+Today the editor says "Import" for JSON while the viewer's landing says "Load JSON…" — inconsistent.
+Rename so JSON is always "Load." Ties to #49 (the `?import=yes` override must match the chosen verb).
+**Shipped:** the editor's data menu reads **Load ▾ → Load JSON…**; **Import CSVs…** is unchanged.
+
+### 46. Waypoint / named-waypoint / shaping-vertex nomenclature — ✓ shipped v2.7
+Keep **waypoint** as the generic term for any row/point on the map. Use **named waypoint** for labeled
+rows that render as markers and **shaping vertex** for the unnamed route-benders. Stats and help text
+should say which they count (the chapter row-count toggle, the hero "waypoints" figure). Apply
+consistently across UI labels, tooltips, and docs.
+**Shipped:** the editor status line reads "N named waypoints · M shaping vertices" and unnamed-point
+labels say "shaping vertex"; the viewer hero stat keeps the generic "Waypoints" (it renders no vertices).
+
+### 47. Brand colour `#a32e38` as the accent — ✓ shipped v2.7
+Adopt the sailingamazinggrace.com brand crimson `#a32e38` as the light-theme accent (replacing
+`#8e622b`). Contrast (computed): on light backgrounds `#a32e38` is **6.1–6.6:1** — passes AA-normal
+with *more* headroom than the current brass (4.7–5.0:1); white-on-crimson is 7.0:1, so accent-filled
+buttons are fine. On the dark theme `#a32e38` **fails** (2.4–2.6:1, below the 3:1 floor), so dark must
+keep a *lightened* crimson rather than the raw brand colour — candidate `#d4626c` (5.0:1 bg / 4.7:1
+panel, AA-normal) or `#de7882` (6.2 / 5.8, more headroom), replacing the current gold `#d8b15a`.
+**Shipped:** light `#a32e38`, dark `#d4626c` (the AA-passing lightened crimson); accent-derived
+tints and the dark theme's borders follow the new hue.
+
+### 48. Footer version → CHANGELOG link
+Make the version footer in both tools a link to the matching CHANGELOG entry (per the approach used on
+the Turkey Pump-Out project — implementation details to be supplied or rebuilt; not in this project's
+context). (Test #2.)
+
+### 49. `?import=yes` power-user override
+A query-param that forces the load/import UI even when `voyage-data.json` is present and auto-loaded,
+so a user can open a different file without removing the default. Must use whichever verb #45 settles
+on. (Test #4 — the "Easter egg.")
+
+### 50. Editor → Viewer preview link
+A subtle link in the editor to `voyage-atlas.html` (same directory) so an editing user can preview the
+rendered result. (Test #4.)
+
+### 51. "Project of S/Y GRACE" website backlink
+A prominent-but-restrained backlink in the viewer (and editor) to the project website (URL TBD),
+giving users a "home" to learn more about the project. (Test #4.)
+
+### 52. CSV distance-unit note
+Label the exported CSV distances as nautical miles (a header note or column suffix) so the unit is
+unambiguous outside the app. (Test #16.)
+
+### 53. Visual flag for a manually-set country
+Indicate when a country was hand-entered (and so will be skipped by "Look up countries"), so the user
+can see which cells the automation won't touch. (Tests #21 / #26.)
+
+### 54. Re-geocode a named waypoint by name
+For named waypoints imported without coordinates, provide a way to populate lat/lon (and country) from
+the name; editing an existing name should re-trigger the lookup. Currently there's no path to geocode a
+coord-less named row. (Test #23.)
+
+### 55. CMD/CTRL+Enter = Add Rows in the paste box
+In the bulk-paste textarea, Enter inserts a newline; bind CMD/CTRL+Enter to the "Add Rows" action so
+keyboard users don't have to reach for the button. (Test #28.)
+
+### 56. Selected-waypoint feedback — focus, row highlight, and map-marker highlight
+Past ~15 rows, adding a waypoint (map or table) should focus the *new* row, not jump to the first. A
+single "selected waypoint" state should show in two places at once: (1) a persistent, high-visibility
+row highlight in the list (e.g. inverted colours), and (2) a matching highlight of that waypoint's
+marker on the map — a temporary colour/size change or a distinct pin — so that with many nearby points
+it's obvious which one is selected. The state is shared by add, sequence-number click, row focus, and
+marker click: clicking a sequence number both centres the map *and* highlights the marker; clicking a
+marker both highlights it *and* scrolls/flashes the row. (Tests #28 / #34 — #34 specifically asked for
+the on-map discernment, "pin temporarily? change colour? both?", which the original row-only capture
+missed.)
+
+### 57. Second Escape clears the search box
+In the place search, a first Escape dismisses the results; a second Escape should clear the typed
+query. (Test #37.)
+
+### 58. Rethink the default chapter selection
+On load the first chapter is auto-selected, so map clicks / searches silently add to chapter 1. Find a
+more intuitive default (e.g. no selection until the user picks a chapter, with a clear prompt).
+(Test #37.)
+
+### 59. Visible unsaved-changes indicator
+The editor only warns about unsaved changes on page-leave; add a persistent visual indicator (e.g. a
+dot or "unsaved" badge) when `isDirty` is true. (Test #36.)
+
+---
+
 ## Explicitly out of scope
 
 ### 41. Live GPS position / "where are we now" tracking

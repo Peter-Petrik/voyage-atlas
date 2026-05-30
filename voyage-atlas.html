@@ -20,8 +20,8 @@
     --ink:     #1d2b3a;
     --muted:   #54616e;
     --faint:   #5e6f81;
-    --accent:  #8e622b;
-    --accent-soft: rgba(154,106,47,0.12);
+    --accent:  #a32e38;
+    --accent-soft: rgba(163,46,56,0.12);
     --border:  rgba(29,43,58,0.16);
     --border-strong: rgba(29,43,58,0.30);
     --hazard:  #9b2d20;
@@ -35,10 +35,10 @@
     --ink:     #eaf0f7;
     --muted:   #8a9bb0;
     --faint:   #6b8198;
-    --accent:  #d8b15a;
-    --accent-soft: rgba(216,177,90,0.14);
-    --border:  rgba(216,177,90,0.22);
-    --border-strong: rgba(216,177,90,0.40);
+    --accent:  #d4626c;
+    --accent-soft: rgba(212,98,108,0.14);
+    --border:  rgba(212,98,108,0.22);
+    --border-strong: rgba(212,98,108,0.40);
     --hazard:  #e2574a;
     --shadow:  0 6px 28px rgba(0,0,0,0.55);
     --tile-bg: #061018;
@@ -314,7 +314,7 @@
 
 <div id="footer">
   <span id="footer-data"></span>
-  <span id="footer-ver">Voyage Atlas v2.6.1</span>
+  <span id="footer-ver">Voyage Atlas v2.7</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -420,6 +420,88 @@ function fmtDist(nm) {
   const u = viewerUnit();
   return Math.round((nm || 0) * NM_TO[u]).toLocaleString() + ' ' + u;
 }
+
+/* ======================== Derived-stat machinery (mirrors the editor) ========================
+   The viewer recomputes the hero figures and every per-chapter distance from the chapters and
+   waypoints on load, applying any overrides in meta.settings on top. The stored meta.hero and the
+   per-chapter nm/nmBase/nmApproach are write-on-save snapshots only — never trusted for display —
+   so a hand-edited JSON (added waypoint, changed country, removed chapter) can never drift from
+   what's drawn. The functions below are ported verbatim from the editor so the two tools agree. */
+const TERRITORIES = new Set([
+  // UK overseas territories
+  'Anguilla','Bermuda','British Indian Ocean Territory','British Virgin Islands',
+  'Cayman Islands','Falkland Islands','Gibraltar','Montserrat','Pitcairn Islands',
+  'Saint Helena, Ascension and Tristan da Cunha','South Georgia and the South Sandwich Islands',
+  'Turks and Caicos Islands',
+  // France overseas
+  'French Polynesia','French Southern Territories','Mayotte','New Caledonia',
+  'Réunion','Saint Barthélemy','Saint Martin','Saint Pierre and Miquelon',
+  'Wallis and Futuna',
+  // Netherlands overseas
+  'Aruba','Bonaire, Sint Eustatius and Saba','Curaçao','Sint Maarten',
+  // US territories
+  'American Samoa','Guam','Northern Mariana Islands','Puerto Rico','U.S. Virgin Islands',
+  'United States Minor Outlying Islands','US Virgin Islands',
+  // Denmark autonomous
+  'Faroe Islands','Greenland',
+  // Norway dependent
+  'Svalbard and Jan Mayen','Svalbard','Jan Mayen','Bouvet Island',
+  // Australia external
+  'Christmas Island','Cocos (Keeling) Islands','Norfolk Island',
+  // New Zealand associated
+  'Cook Islands','Niue','Tokelau',
+  // Portugal autonomous (Nominatim typically returns "Portugal")
+  'Azores','Madeira',
+  // Spain autonomous (Nominatim typically returns "Spain")
+  'Canary Islands',
+  // China SARs
+  'Hong Kong','Macau','Macao',
+  // Other
+  'Åland Islands','Isle of Man','Jersey','Guernsey',
+]);
+function classifyCountries(allCountries) {
+  const nations = [], territories = [];
+  allCountries.forEach(c => {
+    if (TERRITORIES.has(c)) territories.push(c);
+    else nations.push(c);
+  });
+  return { nations, territories };
+}
+function haversineNm(lat1, lon1, lat2, lon2) {
+  const R = 3440.065;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+function getPredecessorChapter(ch) {
+  if (!ch || !DATA) return null;
+  const sorted = [...(DATA.chapters || [])].sort((a, b) => a.num - b.num);
+  const i = sorted.findIndex(c => c.num === ch.num);
+  return i > 0 ? sorted[i - 1] : null;
+}
+function chapterApproachNm(ch) {
+  const prev = getPredecessorChapter(ch);
+  if (!prev) return 0;
+  const prevPts = (prev.waypoints || []).filter(w => w.lat && w.lon);
+  const thisPts = (ch.waypoints || []).filter(w => w.lat && w.lon);
+  if (prevPts.length === 0 || thisPts.length === 0) return 0;
+  const last = prevPts[prevPts.length - 1];
+  const first = thisPts[0];
+  return Math.round(haversineNm(last.lat, last.lon, first.lat, first.lon));
+}
+function chapterNmBase(ch) {
+  let total = 0;
+  const pts = (ch.waypoints || []).filter(w => w.lat && w.lon);
+  for (let i = 1; i < pts.length; i++) {
+    total += haversineNm(pts[i-1].lat, pts[i-1].lon, pts[i].lat, pts[i].lon);
+  }
+  return Math.round(total);
+}
+function chapterNm(ch) {
+  // Padded within-chapter sailing distance + raw approach leg from the predecessor chapter.
+  return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1)) + chapterApproachNm(ch);
+}
 let polylines = {};
 let activeNum = null;
 
@@ -486,15 +568,24 @@ function loadVoyageData(raw) {
   document.title = title;
   document.querySelector('.head-sub').textContent = 'Click any route, waypoint, or chapter to explore';
 
-  // Hero stats
-  const h = DATA.meta && DATA.meta.hero ? DATA.meta.hero : {};
+  // Hero stats — recomputed live from chapters/waypoints; meta.hero is a snapshot, never trusted.
+  let heroNm = 0, heroWpts = 0;
+  const heroCountries = new Set();
+  (DATA.chapters || []).forEach(ch => {
+    heroNm += chapterNm(ch);
+    (ch.waypoints || []).forEach(w => { if (w.name && w.name.trim()) heroWpts++; });
+    (ch.countries || []).forEach(c => { if (c) heroCountries.add(c); });
+  });
+  const heroClass = classifyCountries(heroCountries);
+  const heroDisplayNm = settings.nmOverride || heroNm;
+  const heroNations = settings.nationsOverride || heroClass.nations.length;
+  const heroTerritories = settings.territoriesOverride || heroClass.territories.length;
   const heroItems = [];
-  if (h.nm) heroItems.push([Math.round(Number(h.nm) * NM_TO[viewerUnit()]).toLocaleString(), UNIT_LABEL[viewerUnit()]]);
-  if (h.nations) heroItems.push([h.nations, h.nations === 1 ? 'Nation' : 'Nations']);
-  if (h.territories) heroItems.push([h.territories, h.territories === 1 ? 'Territory' : 'Territories']);
-  if (h.chapters) heroItems.push([h.chapters, h.chapters === 1 ? 'Chapter' : 'Chapters']);
-  if (h.waypoints) heroItems.push([h.waypoints, h.waypoints === 1 ? 'Waypoint' : 'Waypoints']);
-  if (h.years) heroItems.push([h.years, h.years === 1 ? 'Year' : 'Years']);
+  if (heroDisplayNm) heroItems.push([Math.round(heroDisplayNm * NM_TO[viewerUnit()]).toLocaleString(), UNIT_LABEL[viewerUnit()]]);
+  if (heroNations) heroItems.push([heroNations, heroNations === 1 ? 'Nation' : 'Nations']);
+  if (heroTerritories) heroItems.push([heroTerritories, heroTerritories === 1 ? 'Territory' : 'Territories']);
+  if (DATA.chapters && DATA.chapters.length) heroItems.push([DATA.chapters.length, DATA.chapters.length === 1 ? 'Chapter' : 'Chapters']);
+  if (heroWpts) heroItems.push([heroWpts, heroWpts === 1 ? 'Waypoint' : 'Waypoints']);
   document.getElementById('hero').innerHTML = heroItems.map(
     ([v,l]) => `<div class="stat"><span class="stat-val">${v}</span><span class="stat-lbl">${l}</span></div>`
   ).join('');
@@ -661,7 +752,7 @@ function selectChapter(num) {
   document.getElementById('info-when').textContent = ch.when || '';
   document.getElementById('info-name').textContent = ch.name;
   document.getElementById('info-meta').innerHTML =
-    `<span class="info-chip">${fmtDist(ch.nm || ch.nmBase || 0)}</span>`;
+    `<span class="info-chip">${fmtDist(chapterNm(ch))}</span>`;
 
   // Notes
   const notes = ch.notes || '';

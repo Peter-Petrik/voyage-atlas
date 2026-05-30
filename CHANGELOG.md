@@ -12,6 +12,36 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor — targeted v2.7
 2. GPX import and export
 
+## [v2.7] - 2026-05-30
+
+### Changed
+1. **Derived stats are recomputed on load, never trusted from the file (#44).** The viewer now
+   recomputes the hero totals (distance, chapters, waypoints, nations, territories) and every
+   per-chapter distance directly from the chapters and waypoints when a file loads, applying any
+   explicit overrides (`nmOverride` / `nationsOverride` / `territoriesOverride`) on top — matching
+   the editor, which already recomputed on load. The stored `meta.hero` and per-chapter
+   `nm` / `nmBase` / `nmApproach` are now write-on-save snapshots only and are never read for
+   display, so a hand-edited JSON (added waypoint, changed country, removed chapter) can no longer
+   show stale figures. The JSON format is unchanged (data version stays 2.6).
+2. **"Load" vs "Import" verb unified (#45).** Opening a JSON file is now consistently called
+   **Load** in both tools — the editor's data-input menu offers "Load JSON…" (was "Import JSON…"),
+   matching the viewer's "Load JSON…". **Import** is reserved for merging tabular CSV data, so the
+   editor's "Import CSVs (chapters + waypoints)…" is unchanged.
+3. **Waypoint / shaping-vertex nomenclature clarified (#46).** "Waypoint" stays the generic term for
+   any point on the map. Where a count or an unnamed point is shown, the editor now names the
+   subtype: the status line reads "N named waypoints · M shaping vertices" (was "N waypoints · M
+   vertices"), and an unnamed point's marker tooltip and name-field placeholder read "shaping vertex"
+   (was "routing vertex"), matching the Name column's help text. Generic labels (Paste Waypoints, the
+   waypoint-table toggle, the CSV columns) are unchanged. The viewer hero stat still reads
+   "Waypoints" (the viewer renders no shaping vertices, so the count is unambiguous there).
+4. **Brand colour adopted (#47).** The accent is now the sailingamazinggrace.com brand crimson:
+   `#a32e38` in the light theme (replacing the brass `#8e622b`) and a lightened `#d4626c` in the dark
+   theme (replacing the gold `#d8b15a` — the raw brand crimson is too dark on the deep-sea
+   background). Accent-derived tints (soft hover fills, and the dark theme's borders and row shading)
+   follow the new hue; the light theme's ink-based borders are unchanged. Contrast is AA-compliant in
+   both themes: accent text and links run 6.1–6.6:1 (light) and 5.0:1 (dark); accent-filled buttons
+   6.3:1 (light) and 4.7:1 (dark).
+
 ## [v2.6.1] - 2026-05-30
 
 ### Fixed

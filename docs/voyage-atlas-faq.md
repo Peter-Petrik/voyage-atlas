@@ -50,11 +50,11 @@ colors each chapter distinctly so the arc of the voyage reads at a glance.
 
 ## What is a "shaping vertex"?
 
-Every chapter is a single ordered list of points. A point is one of two things:
+Every chapter is a single ordered list of waypoints. Each waypoint is one of two kinds:
 
-1. **A waypoint** — it has a name. It renders as a marker on the map and counts in the waypoint
-   total.
-2. **A shaping vertex** — it has coordinates but *no name* (the row shows "(routing vertex)" in
+1. **A named waypoint** — it has a name. It renders as a marker on the map and counts in the
+   named-waypoint total.
+2. **A shaping vertex** — it has coordinates but *no name* (the row shows "(shaping vertex)" in
    the editor). It draws no marker; it only shapes the route line so the path bends correctly
    (around a cape, along a coast, through a strait).
 
@@ -163,7 +163,7 @@ There are several ways to populate the atlas:
 
 1. **Auto-load.** If a file named `voyage-data.json` sits in the same directory as the editor, it
    loads automatically on open. This is the normal way to resume work on a hosted or local copy.
-2. **Import JSON.** Load any atlas JSON (v2). The legacy v1 baked-map format is no longer
+2. **Load JSON.** Open any atlas JSON (v2). The legacy v1 baked-map format is no longer
    supported — the editor rejects a v1 file with a clear message rather than risk mangling its
    geometry.
 3. **Import CSV.** Load the chapters and waypoints CSVs.
@@ -296,8 +296,8 @@ import:
 
 ## Footer stats
 
-The footer shows the live totals: distance, nations, territories, chapter count, waypoint count,
-and routing-vertex count. These recompute as you edit. An override from Voyage Settings is marked.
+The footer shows the live totals: distance, nations, territories, chapter count, named-waypoint
+count, and shaping-vertex count. These recompute as you edit. An override from Voyage Settings is marked.
 
 ---
 
@@ -340,12 +340,12 @@ route and marker colors are tuned to read on both.
 
 ## What the hero stats mean
 
-The header shows total distance, voyage duration, and the nations / territories touched. **These
-are the values as of the last export from the editor** — the viewer displays what's baked into the
-JSON's stats block; it does not recompute. If you edit in the editor, re-export so the viewer's
-stats reflect the change. (If you hand-edit the JSON and change waypoints without updating the
-stats block, the headline numbers and the drawn routes can disagree — re-export from the editor to
-reconcile.)
+The header shows total distance, the nations and territories touched, the chapter count, and the
+named-waypoint count. **Both tools recompute these from the chapters and waypoints every time a file
+loads** — they are never read from the stored `meta.hero` block, so the headline numbers always match
+the drawn routes, even if you hand-edit the JSON (add a waypoint, change a country, remove a chapter).
+Any explicit override set in Voyage Settings is applied on top. The `meta.hero` block in the file is a
+write-on-save snapshot for other tools to read; the app ignores it for display.
 
 ## Self-hosting
 
