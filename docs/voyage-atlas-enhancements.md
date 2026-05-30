@@ -277,7 +277,8 @@ successors, 12b → two successors); deep nesting. Candidate models to weigh, no
 (1) alpha suffix (12a/12b) — intuitive but collapses under nesting; (2) decimal/dotted (12.1,
 12.1.1) — handles nesting but reads as version numbers; (3) a **variant label decoupled from the
 sequence number** — the chapter keeps a stable id while a separate label expresses its branch
-position. This is a fork-feature decision; capture only, do not resolve here.
+position. Chapter *identity* is now decided (see **#63**: UUID id, array-order sequence, name as the
+label); the branch-label scheme above stays open until forks are built.
 
 ---
 
@@ -460,6 +461,16 @@ A malformed or unreadable JSON file currently fails quietly on load (a console e
 map at worst). Both tools should catch the parse/validation failure and show a clear, human message
 ("Couldn't read this file — it may be malformed or not a Voyage Atlas JSON") rather than failing
 silently. (v2.7 test pass.)
+
+### 63. Chapter identity: UUID, not positional number (for forks)
+Chapters are identified today by an integer `num` that doubles as identity *and* implied order — the
+source of the #10 "deleted Ch 1 left the first as #2" oddity. When the fork feature (**#34**) lands,
+forks must reference a chapter by a stable id that survives delete/reorder and is never reused, so the
+identifier should become a **UUID**, with ordering taken from array position and the human label being
+the chapter **name** (no second visible number). Deferred, not speculative plumbing: only worth doing
+when #34 is actually built, since nothing references chapters by id until forks exist. This resolves
+the *identity* half of the open numbering question noted under #34; the branch-label scheme there
+(12a vs 12.1 vs a decoupled label) stays open for that build.
 
 ---
 
