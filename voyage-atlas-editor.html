@@ -529,7 +529,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v2.6</span>
+  <span>Voyage Atlas Editor v2.6.1</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -618,7 +618,7 @@ function chapterColor(num) {
 function defaultSettings() {
   return { voyageTitle: '', nmOverride: null, nationsOverride: null, territoriesOverride: null, distanceUnit: 'nm' };
 }
-let STATE = { chapters: [], settings: defaultSettings() };
+let STATE = { chapters: [], settings: defaultSettings(), metaTitle: '' };
 
 // Distance display units. Data, CSV, and KML always store canonical nautical miles; the selected
 // unit only changes what's shown on screen (and the Distance Override field's value).
@@ -1361,9 +1361,9 @@ function chapterNm(ch) {
 }
 
 function computeEditorTitle(s) {
-  // Mirror the viewer's precedence: explicit voyage title, then default.
-  if (s.voyageTitle) return `${s.voyageTitle} — Editor`;
-  return 'Voyage Atlas — Editor';
+  // Mirror the viewer's precedence: explicit voyage title, then the imported meta.title, then default.
+  const base = s.voyageTitle || STATE.metaTitle || 'Voyage Atlas';
+  return `${base} — Editor`;
 }
 
 function updateSettings() {
@@ -1712,9 +1712,9 @@ function renderWaypointPanel(ch) {
           <th class="col-name">Name <span class="hi" data-tip="Waypoint name. Leave empty for a shaping vertex (route geometry only, no marker on map).">i</span></th>
           <th class="col-lat">Lat <span class="hi" data-tip="Latitude in decimal degrees. Set via search, map click, or manual entry. Drag map markers to adjust.">i</span></th>
           <th class="col-lon">Lon <span class="hi" data-tip="Longitude in decimal degrees.">i</span></th>
-          <th class="col-cb" title="Major">M <span class="hi" data-tip="Major: provisioning hub, spares, repairs, or extended stay. Larger circle marker on map.">i</span></th>
-          <th class="col-cb" title="Decision">D <span class="hi" data-tip="Decision: routing fork or go/no-go point. Diamond marker on map.">i</span></th>
-          <th class="col-cb" title="Gateway">G <span class="hi" data-tip="Gateway: customs entry or strategic staging port. Star marker on map.">i</span></th>
+          <th class="col-cb">M <span class="hi" data-tip="Major: provisioning hub, spares, repairs, or extended stay. Larger circle marker on map.">i</span></th>
+          <th class="col-cb">D <span class="hi" data-tip="Decision: routing fork or go/no-go point. Diamond marker on map.">i</span></th>
+          <th class="col-cb">G <span class="hi" data-tip="Gateway: customs entry or strategic staging port. Star marker on map.">i</span></th>
           <th class="col-country">Country <span class="hi" data-tip="Looked up from the waypoint's coordinates. Editable. Feeds the chapter-level countries list.">i</span></th>
           <th class="col-notes">Notes</th>
           <th style="width:24px"></th>
@@ -2126,7 +2126,9 @@ function loadFromV2JSON(data) {
   }
   // voyageTitle comes only from settings (the user's explicit title). meta.title is the computed
   // display title and must NOT be copied back into the editable field, or a blank (auto) title
-  // would hardcode itself into voyageTitle on every export→import round-trip.
+  // would hardcode itself into voyageTitle on every export→import round-trip. We retain it
+  // separately so the page/tab title can fall back to it (display only) when voyageTitle is blank.
+  STATE.metaTitle = (data.meta && data.meta.title) || '';
   loadSettings();
   updateHeroStats();
   isDirty = false;

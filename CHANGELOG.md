@@ -12,6 +12,21 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor — targeted v2.7
 2. GPX import and export
 
+## [v2.6.1] - 2026-05-30
+
+### Fixed
+1. **Editor page/tab title fallback.** The page header and the browser-tab title now share the
+   viewer's full precedence (voyage title → imported `meta.title` → default). A file with a blank
+   Voyage Title but a populated `meta.title` (e.g. a v2.5 export) now shows that title consistently
+   in both the header and the tab instead of the two disagreeing; the editable Voyage Title field
+   still stays blank in that case (the computed title is never written back into it).
+2. **Viewer landing flash.** The "Load JSON…" landing panel no longer flashes on load when a
+   `voyage-data.json` is present to auto-load — the landing starts hidden and is shown only if the
+   auto-load finds no file.
+3. **Duplicate column-header tooltips.** The Major / Decision / Gateway header cells no longer show
+   two overlapping tooltips (a native browser tooltip on top of the custom one); only the
+   descriptive custom tooltip remains.
+
 ## [v2.6] - 2026-05-30
 
 A consolidated fix-and-feature batch. Distance is now unit-agnostic (nm/km/mi), the editor's
