@@ -18,9 +18,9 @@
     --panel:   #fbf8f1;
     --panel-solid: #f7f2e7;
     --ink:     #1d2b3a;
-    --muted:   #6b7b8c;
-    --faint:   #9aa7b5;
-    --accent:  #9a6a2f;
+    --muted:   #54616e;
+    --faint:   #5e6f81;
+    --accent:  #8e622b;
     --accent-soft: rgba(154,106,47,0.12);
     --border:  rgba(29,43,58,0.16);
     --border-strong: rgba(29,43,58,0.30);
@@ -34,7 +34,7 @@
     --panel-solid: #0f1d2c;
     --ink:     #eaf0f7;
     --muted:   #8a9bb0;
-    --faint:   #5d7186;
+    --faint:   #6b8198;
     --accent:  #d8b15a;
     --accent-soft: rgba(216,177,90,0.14);
     --border:  rgba(216,177,90,0.22);
@@ -84,13 +84,6 @@
   .stat { text-align: center; }
   .stat-val { font-family: 'Fraunces', serif; font-size: 16px; color: var(--accent); display: block; line-height: 1.1; }
   .stat-lbl { font-size: 8.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
-  #load-btn {
-    background: none; border: 1px solid var(--border-strong);
-    color: var(--ink); border-radius: 4px; padding: 5px 10px;
-    font-family: inherit; font-size: 10px; cursor: pointer;
-    transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
-  }
-  #load-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
 
   /* ---- Map ---- */
   #stage { position: relative; flex: 1; min-height: 0; }
@@ -256,7 +249,6 @@
     <div class="head-sub">Load a voyage atlas to explore</div>
   </div>
   <div class="head-stats" id="hero"></div>
-  <button id="load-btn" onclick="document.getElementById('file-input').click()">Load JSON…</button>
   <button id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark theme" style="background:none;border:1px solid var(--border-strong);color:var(--ink);border-radius:4px;width:34px;height:34px;cursor:pointer;font-size:15px;flex-shrink:0;">◐</button>
 </div>
 
@@ -322,7 +314,7 @@
 
 <div id="footer">
   <span id="footer-data"></span>
-  <span id="footer-ver">Voyage Atlas v2.5.2</span>
+  <span id="footer-ver">Voyage Atlas v2.6</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -418,6 +410,16 @@ const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlng
 
 /* ========================= State ========================= */
 let DATA = null;
+
+// Distance display units — honor the editor's saved unit. The data and KML stay in nautical miles;
+// this only changes what's shown. Mirrors the editor's conversion (1 nm = 1.852 km = 1.150779 mi).
+const NM_TO = { nm: 1, km: 1.852, mi: 1.150779 };
+const UNIT_LABEL = { nm: 'Nautical Miles', km: 'Kilometers', mi: 'Miles' };
+function viewerUnit() { return (DATA && DATA.meta && DATA.meta.settings && DATA.meta.settings.distanceUnit) || 'nm'; }
+function fmtDist(nm) {
+  const u = viewerUnit();
+  return Math.round((nm || 0) * NM_TO[u]).toLocaleString() + ' ' + u;
+}
 let polylines = {};
 let activeNum = null;
 
@@ -440,24 +442,13 @@ function handleFile(e) {
 
 /* ===================== Schema normalization ==================== */
 function normalizeData(data) {
-  // Detect v1 (separate routes/waypoints) vs v2 (unified waypoints)
   data.chapters.forEach(ch => {
-    // v2 → generate routes from waypoints for rendering
-    if (!ch.routes || ch.routes.length === 0) {
-      const coords = (ch.waypoints || [])
-        .filter(w => w.lat && w.lon)
-        .map(w => [w.lat, w.lon]);
-      ch.routes = coords.length >= 2 ? [coords] : [];
-    }
-    // v1 backward compat: build notes from routing/bailout if not present
-    if (!ch.notes && (ch.routing || ch.bailout)) {
-      ch.notes = [
-        ch.routing ? 'Routing: ' + ch.routing : '',
-        ch.bailout ? 'Bail-out: ' + ch.bailout : '',
-        ch.prose || ''
-      ].filter(Boolean).join('\n\n');
-    }
-    // Ensure arrays
+    // Build the render route from the unified waypoint list (named + shaping vertices, in order).
+    const coords = (ch.waypoints || [])
+      .filter(w => w.lat && w.lon)
+      .map(w => [w.lat, w.lon]);
+    ch.routes = coords.length >= 2 ? [coords] : [];
+    // Ensure arrays (defensive against hand-authored data)
     if (typeof ch.countries === 'string') ch.countries = ch.countries.split(',').map(s => s.trim()).filter(Boolean);
     if (typeof ch.keyDestinations === 'string') ch.keyDestinations = ch.keyDestinations.split(',').map(s => s.trim()).filter(Boolean);
   });
@@ -466,6 +457,12 @@ function normalizeData(data) {
 
 /* ====================== Load + render ======================== */
 function loadVoyageData(raw) {
+  // Legacy v1 files (separate routes[] per chapter) are no longer supported. Reject before
+  // clearing the current view so a bad file doesn't blank the map.
+  if (raw && raw.chapters && raw.chapters.length > 0 && raw.chapters[0].routes !== undefined) {
+    alert('This file uses the legacy v1 format, which is no longer supported.');
+    return;
+  }
   // Clear previous
   routesLayer.clearLayers();
   wptsLayer.clearLayers();
@@ -480,11 +477,9 @@ function loadVoyageData(raw) {
 
   DATA = normalizeData(raw);
 
-  // Title — prioritize: custom voyageTitle > vessel name > meta.title > default
+  // Title — prioritize: custom voyageTitle > meta.title > default
   const settings = (DATA.meta && DATA.meta.settings) || {};
-  const vesselName = settings.vesselName || '';
   const title = settings.voyageTitle
-    || (vesselName ? `${vesselName} Voyage Atlas` : null)
     || (DATA.meta && DATA.meta.title)
     || 'Voyage Atlas';
   document.getElementById('page-title').textContent = title;
@@ -494,7 +489,7 @@ function loadVoyageData(raw) {
   // Hero stats
   const h = DATA.meta && DATA.meta.hero ? DATA.meta.hero : {};
   const heroItems = [];
-  if (h.nm) heroItems.push([Number(h.nm).toLocaleString(), 'Nautical Miles']);
+  if (h.nm) heroItems.push([Math.round(Number(h.nm) * NM_TO[viewerUnit()]).toLocaleString(), UNIT_LABEL[viewerUnit()]]);
   if (h.nations) heroItems.push([h.nations, h.nations === 1 ? 'Nation' : 'Nations']);
   if (h.territories) heroItems.push([h.territories, h.territories === 1 ? 'Territory' : 'Territories']);
   if (h.chapters) heroItems.push([h.chapters, h.chapters === 1 ? 'Chapter' : 'Chapters']);
@@ -666,9 +661,9 @@ function selectChapter(num) {
   document.getElementById('info-when').textContent = ch.when || '';
   document.getElementById('info-name').textContent = ch.name;
   document.getElementById('info-meta').innerHTML =
-    `<span class="info-chip">${Number(ch.nm || ch.nmBase || 0).toLocaleString()} nm</span>`;
+    `<span class="info-chip">${fmtDist(ch.nm || ch.nmBase || 0)}</span>`;
 
-  // Notes (v2) or routing/bailout (v1)
+  // Notes
   const notes = ch.notes || '';
   const notesBlock = document.getElementById('info-notes-block');
   if (notes) {

@@ -8,10 +8,84 @@ framework document (`global-voyage-framework.md`) carries its own separate versi
 
 ## [Unreleased]
 
-Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
-1. Chapter endpoint synchronization
-2. Viewer refactor to runtime JSON loading
-3. GPX import and export
+Queued improvements tracked in `voyage-atlas-enhancements.md`:
+1. PAZ (avoidance-zone) authoring in the editor — targeted v2.7
+2. GPX import and export
+
+## [v2.6] - 2026-05-30
+
+A consolidated fix-and-feature batch. Distance is now unit-agnostic (nm/km/mi), the editor's
+interaction rough edges are smoothed, the settings model and palette are generalized, and legacy
+v1 data support is retired. Two long-standing editor bugs (right-click delete, voyage-title sync)
+are fixed.
+
+### Added
+1. **Distance units (nm / km / mi).** A Distance Units selector in Voyage Settings switches every
+   on-screen distance — hero total, per-chapter figures, the gap tooltip, the status line, and the
+   Distance Override field — between nautical miles, kilometers, and miles. Storage is unaffected:
+   the canonical unit is always nautical miles, and exported JSON, CSV, and KML always carry nm. The
+   selected unit is saved in `meta.settings.distanceUnit` (default `nm`).
+2. **Map ↔ list focus sync.** Clicking a waypoint's sequence number centers the map on it; clicking
+   a map marker scrolls to and flashes its row (when that chapter's list is open) and focuses the
+   name field.
+3. **Keyboard navigation in the place search.** Arrow keys move through Nominatim results (no wrap),
+   Enter adds the highlighted result (or the top one if none is highlighted), Escape dismisses.
+4. **Open-source release.** The project is now public on GitHub under the **GPL-3.0-or-later**
+   license — `LICENSE` carries the verbatim GPLv3 text, and the README's apply-boilerplate elects
+   "version 3 … or (at your option) any later version". The release also adds a `README`, a `docs/`
+   layout, and a sample `voyage-data.json`.
+
+### Changed
+1. **Distance nomenclature standardized.** The nautical-mile unit is lowercase `nm` throughout, with
+   "distance" used for the unit-agnostic concept. The editor's "NM Override" field is now "Distance
+   Override".
+2. **Country auto-fill is now free-only.** A country is filled automatically only when it already
+   rides along in a geocoding response the action triggers anyway — typing a place name, pasting
+   name-only rows (each forward-geocoded for coordinates), or picking a search result. Actions that
+   would need a *dedicated* reverse-geocode (adding a point by map click, editing coordinates) leave
+   the country to the **Look up countries** button (renamed from "Fill countries"). In every case the
+   country is filled only when the field is empty — a hand-entered value is never overwritten.
+3. **Unified geocoding status.** Forward and reverse geocoding now share one progress indicator
+   ("Geocoding X/Y… (1/sec rate limit)"), so coordinate lookups show progress that was previously
+   silent.
+4. **Voyage Settings consolidated to a single "Voyage Title".** The separate "Vessel Name" field is
+   gone; the title is free text that can include a vessel, vehicle, or anything the user likes — or
+   nothing, in which case it defaults to "Voyage Atlas". This completes the move to a vehicle-agnostic
+   atlas begun by the distance-units work. See Removed for the data-model effect.
+5. **Light and dark palette meets WCAG AA.** Text/background pairs that fell short of the 4.5:1
+   normal-text ratio were darkened (light theme: `--muted`, `--faint`, `--accent`) or lightened (dark
+   theme: `--faint`) while preserving the ink › muted › faint hierarchy and the admiralty-chart
+   character.
+6. **Viewer loading simplified.** The redundant toolbar "Load JSON…" button was removed; loading a
+   file lives only on the no-data landing screen.
+
+### Fixed
+1. **Right-click delete no longer corrupts the next waypoint.** Deleting via right-click previously
+   left a drag armed, so the next (shifted) waypoint would begin dragging on the following
+   interaction. Marker mousedown now ignores non-primary buttons, and any pending drag is cancelled
+   on delete.
+2. **Voyage Title updates live and round-trips cleanly.** Editing the title now updates the page
+   header and browser tab immediately. Separately, the computed display title no longer copies itself
+   back into the editable field on export→import, which had made the auto-title "sticky".
+3. **Ghost (midpoint) drag cleanup.** A dragged midpoint handle is now explicitly removed when the
+   drag ends, eliminating stray off-route segments when the layer list was briefly out of sync.
+4. **⇄ pull keeps panels open.** Pulling a chapter's start from the previous chapter's endpoint no
+   longer collapses any open chapter panels.
+5. **Vertex → waypoint refresh.** Giving a shaping vertex a name (promoting it to a waypoint) now
+   updates the chapter's waypoint count and redraws the route immediately.
+6. **Marker click no longer dirties the project.** Clicking a marker without moving it no longer
+   marks the project as having unsaved changes.
+
+### Removed
+1. **Legacy v1 JSON support.** The v1 format (per-chapter `routes[]` + `waypoints[]`) is no longer
+   converted on load. Both editor and viewer now reject a v1 file with a clear message instead of
+   silently mangling its geometry. Work uses the unified v2 waypoint model exclusively.
+2. **`vesselName` removed from the data model.** Titles derive from `voyageTitle`, then `meta.title`,
+   then the default. Files that still contain `vesselName` are read without error and the field is
+   dropped on the next save; a voyage whose title had been auto-built from a vessel name shows the
+   default until a title is set.
+3. **Dead code.** The unused `reverseGeocodeWaypoint` function (editor) and `#load-btn` styles
+   (viewer) were removed.
 
 ## [v2.5.2] - 2026-05-29
 
@@ -48,7 +122,7 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 ## [v2.5] - 2026-05-29
 
 ### Added — Editor
-1. Inter-chapter NM attribution — each chapter's total now includes the "approach leg" from the
+1. Inter-chapter distance attribution — each chapter's total now includes the "approach leg" from the
    predecessor chapter's last waypoint to its own first waypoint (raw distance, no pad multiplier —
    it's a delivery passage, not cruising-ground exploration). Zero for chapters that share an
    endpoint (the common case); for GRACE this correctly adds the previously-uncounted 628 nm
@@ -59,7 +133,7 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
    endpoint already matches.
 3. `getPredecessorChapter()` helper — single seam for "which chapter precedes this one." Returns
    the num−1 chapter today (linear chain); becomes fork-aware when variant chapters (#34) are
-   added, without touching the NM or sync logic built on top of it.
+   added, without touching the nm or sync logic built on top of it.
 
 ### Changed
 1. Ghost midpoints now land on the rendered leg line — computed in pixel space (Mercator-correct)
@@ -151,15 +225,15 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 2. Save button — primary "Save" button downloads `voyage-data.json` (fixed name, browser
    overwrites previous). "Save As ▾" dropdown exposes timestamped JSON, CSVs, KML.
 3. Override indicator — footer stats show ⚙ next to any value overridden in Voyage Settings
-   (NM, nations, or territories).
+   (nm, nations, or territories).
 4. Export JSON refactored to shared `buildExportJSON()` function — Save and Save As use the same
    serialization logic (no duplication).
 
 ## [v2.3.2] - 2026-05-29
 
 ### Fixed — Editor
-1. NM display now updates after forward geocode populates coordinates — chapter header and footer
-   stats reflect the new distance immediately.
+1. Distance (nm) display now updates after forward geocode populates coordinates — chapter header
+   and footer stats reflect the new distance immediately.
 2. Ghost midpoint no longer persists after rapid-click — added guard to skip rapid-click add when
    ghost drag is active.
 3. Nations and territories recalculate when waypoints are deleted — deleteWpt now calls
@@ -170,13 +244,13 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
    reverse geocode for coordinates without country.
 6. Right-click delete now works — native browser context menu prevented on map container so
    Leaflet's contextmenu event fires on markers.
-7. Stats order standardized: NM, Nations, Territories, Chapters, Waypoints (editor footer and
+7. Stats order standardized: nm, Nations, Territories, Chapters, Waypoints (editor footer and
    viewer header).
 
 ### Fixed — Viewer
 1. Vessel name now appears in viewer title — title priority: custom voyageTitle > vessel name
    derived > meta.title > default. Previously meta.title always took precedence.
-2. Hero stats order matches editor: NM, Nations, Territories, Chapters, Waypoints.
+2. Hero stats order matches editor: nm, Nations, Territories, Chapters, Waypoints.
 
 ## [v2.3.1] - 2026-05-29
 
@@ -197,8 +271,8 @@ Queued improvements tracked in `grace-voyage-map-future-enhancements.md`:
 
 ### Added — Editor
 1. Voyage Settings panel — collapsible section above chapters with: vessel name (drives page
-   titles), voyage title, global NM override, nations count (auto-calculated with override),
-   and territories count. Settings persist in JSON exports and load on import.
+   titles), Voyage Title, global Distance Override, Nations count (auto-calculated with override),
+   and Territories count. Settings persist in JSON exports and load on import.
 2. Right-click waypoint delete on map — right-click any marker on the active chapter to open a
    confirmation modal. Enter confirms, ESC cancels.
 3. Delete confirmation modal with keyboard support (Enter/ESC).

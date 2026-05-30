@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Example Voyage Atlas",
-    "version": "2.5",
+    "version": "2.6",
     "generatedAt": "2026-05-29",
     "hero": {
       "nm": 137,
@@ -11,8 +11,8 @@
       "territories": 0
     },
     "settings": {
-      "vesselName": "Example",
-      "voyageTitle": "",
+      "voyageTitle": "Example Voyage Atlas",
+      "distanceUnit": "nm",
       "nmOverride": null,
       "nationsOverride": null,
       "territoriesOverride": null

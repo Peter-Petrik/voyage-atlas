@@ -77,12 +77,12 @@ They are independent and combinable — a port can be Major *and* Gateway. When 
 set, the visual priority is **Decision > Gateway > Major** for the marker shape, and Major adds
 size. The flags are optional; a plain named waypoint with no flags is a normal circle.
 
-## How is distance (NM) calculated?
+## How is distance (nm) calculated?
 
 Each chapter's distance has two components:
 
 1. **Within-chapter distance** — the sum of great-circle (haversine) legs between the chapter's
-   points, in order, multiplied by the chapter's **pad multiplier**. The pad accounts for the real
+   points, in order, multiplied by the chapter's **Pad Multiplier**. The pad accounts for the real
    sailing a straight-line track undercounts: tacking, exploration within a cruising ground,
    detours, and gunkholing. A delivery passage might use 1.05; a season of loch-hopping in Scotland
    might use 3.00.
@@ -90,8 +90,11 @@ Each chapter's distance has two components:
    distance from the previous chapter's last waypoint to this chapter's first waypoint. It is raw
    (no pad) because it's a delivery passage between regions, not exploration.
 
-So: **chapter NM = (within-chapter base × pad) + approach leg.** The voyage total is the sum of all
+So: **chapter nm = (within-chapter base × pad) + approach leg.** The voyage total is the sum of all
 chapters.
+
+Distances are always computed and stored in nautical miles; the on-screen unit (nm, kilometers, or
+miles) is a display-only choice in Voyage Settings and never changes the stored data or exports.
 
 When two chapters share an endpoint (the common case — see the next question), the approach leg is
 zero, so it adds nothing. It only contributes when there's a genuine gap between chapters.
@@ -130,7 +133,7 @@ Dependencies). Anything not on the territory list counts as a nation.
 Both counts can be overridden in Voyage Settings if the automatic classification isn't what you
 want.
 
-**Caveat:** the country values come from Nominatim reverse geocoding, which sometimes returns the
+**Caveat:** the country values come from Nominatim geocoding, which sometimes returns the
 *parent nation* rather than the territory — e.g., a waypoint in the Azores may come back as
 "Portugal," and Réunion as "France." When that happens the auto-count reflects the parent nation,
 not the territory. Either correct the country value on the waypoint, or set the territory override
@@ -160,8 +163,9 @@ There are several ways to populate the atlas:
 
 1. **Auto-load.** If a file named `voyage-data.json` sits in the same directory as the editor, it
    loads automatically on open. This is the normal way to resume work on a hosted or local copy.
-2. **Import JSON.** Load any atlas JSON (v2) or the original baked-map JSON (v1 — the editor
-   converts it automatically, splitting the old separate routes/waypoints into the unified model).
+2. **Import JSON.** Load any atlas JSON (v2). The legacy v1 baked-map format is no longer
+   supported — the editor rejects a v1 file with a clear message rather than risk mangling its
+   geometry.
 3. **Import CSV.** Load the chapters and waypoints CSVs.
 4. **Start fresh.** With no `voyage-data.json` present, the editor opens empty; add a chapter and
    begin.
@@ -176,17 +180,22 @@ Within a chapter, there are five ways to add points:
    becomes a row.
 4. **Click on the map** — with **Rapid click** mode ON (toggle above the map), each click on the
    map drops a new waypoint at that location. Turn it OFF to return to normal map interaction.
-5. **Search (Nominatim)** — type a place name in the search box; press **Enter** to search,
-   **Escape** to dismiss results. Selecting a result adds it as a waypoint with coordinates filled.
+5. **Search (Nominatim)** — type a place name in the search box and press **Enter** to search; use
+   the **arrow keys** to move through results, **Enter** to add the highlighted one, **Escape** to
+   dismiss. Adding a result drops a waypoint with coordinates (and country, when empty) filled.
 
 ## Geocoding (name ↔ coordinates)
 
 The editor uses the free Nominatim (OpenStreetMap) service two ways:
 
-1. **Forward** — type a name into a waypoint's Name field and the editor looks up its coordinates,
-   filling lat/lon (and country, if blank) automatically.
-2. **Reverse / Fill countries** — the **Fill countries** button reverse-geocodes every waypoint
-   that has coordinates but no country, filling the country from its position.
+1. **Forward** — type a name into a waypoint's Name field (or pick a search result, or paste a
+   name-only row) and the editor looks up the coordinates. Because the country rides along free in
+   that same lookup, it fills the country too — but only when the country field is empty, so a value
+   you typed by hand is never overwritten.
+2. **Reverse — Look up countries** — for waypoints you placed by coordinates (a map click or typed
+   lat/lon), no country is known yet. The **Look up countries** button reverse-geocodes every such
+   waypoint that has coordinates but no country, filling it from the position. This is the one path
+   that costs a *dedicated* lookup, which is why it's a deliberate button press rather than automatic.
 
 **Rate limit:** Nominatim's usage policy allows one request per second. The editor queues all
 geocoding requests and spaces them accordingly, so a paste of many named rows will fill in
@@ -205,7 +214,7 @@ service to rate-limit or block you. The status line shows progress.
 
 Drag the **≡** handle on a row to reorder waypoints within a chapter. Drag the **≡** handle on a
 chapter header to reorder chapters. Because chapter order defines the voyage sequence, reordering
-chapters changes which chapter is each one's predecessor — and therefore the approach-leg NM and
+chapters changes which chapter is each one's predecessor — and therefore the approach-leg nm and
 the sync indicators (below).
 
 ## Endpoint sync — the ⇄ button and 🔗 indicator
@@ -242,9 +251,9 @@ Open a chapter's metadata panel (the 📋 toggle, or double-click the chapter he
 2. **When** — the season window. Enter it as a range; the editor normalizes separators to an
    en-dash (e.g., "May – Sep 2028"). Month/year dropdowns assist entry.
 3. **Era** — past, current, or future (controls styling and timeline placement).
-4. **Pad multiplier** — the distance multiplier for this chapter (see NM calculation, Part 1).
+4. **Pad Multiplier** — the distance multiplier for this chapter (see distance calculation, Part 1).
 5. **Countries** — auto-aggregated from the chapter's waypoints; editable.
-6. **Key destinations** — highlights for the viewer's chapter summary.
+6. **Key Destinations** — highlights for the viewer's chapter summary.
 7. **Blog URL** — an optional link to a post about this chapter, surfaced in the viewer.
 8. **Notes** — free-form narrative (routing thoughts, bail-out options, anything).
 
@@ -253,12 +262,15 @@ Open a chapter's metadata panel (the 📋 toggle, or double-click the chapter he
 The ⚙ panel above the chapter list holds voyage-level settings, saved into the JSON and reloaded on
 import:
 
-1. **Vessel name** — drives the page titles: "[Vessel] Voyage Atlas — Editor" in the editor and
-   "[Vessel] Voyage Atlas" in the viewer.
-2. **Voyage title** — a custom title; if blank, one is generated from the vessel name.
-3. **Distance override** — force the displayed total to a specific number, overriding the computed
-   sum. The footer marks an active override.
-4. **Nations / territories overrides** — force these counts, overriding the automatic
+1. **Voyage Title** — the title shown in the page titles, the viewer header, and exports. Free
+   text: include a vessel, a vehicle, or anything you like, or leave it blank to fall back to the
+   default "Voyage Atlas".
+2. **Distance Units** — the display unit for every on-screen distance: nautical miles (default),
+   kilometers, or miles. Display-only; the stored data and all exports stay in nautical miles.
+3. **Distance Override** — force the displayed total to a specific number, overriding the computed
+   sum. Entered and shown in the selected display unit, stored as nautical miles. The footer marks
+   an active override.
+4. **Nations / Territories overrides** — force these counts, overriding the automatic
    classification.
 
 ## Saving and exporting
@@ -279,7 +291,8 @@ import:
 
 1. In any dialog (bulk add, paste, CSV import, delete confirmation): **Enter** confirms, **Escape**
    cancels.
-2. In the Nominatim search box: **Enter** searches, **Escape** dismisses results.
+2. In the Nominatim search box: **Enter** searches; once results show, **↑/↓** move through them,
+   **Enter** adds the highlighted result, **Escape** dismisses.
 
 ## Footer stats
 
@@ -297,7 +310,8 @@ and routing-vertex count. These recompute as you edit. An override from Voyage S
 1. **Auto-load.** If `voyage-data.json` is in the same directory as the viewer, it loads
    automatically on open. This is the basis of the self-hosting model (below).
 2. **File picker.** With no data present, the viewer shows a landing screen; pick a voyage JSON
-   (v1 or v2 — both are supported) to load it.
+   (v2) to load it. Loading lives only on this landing screen — once an atlas is shown the viewer is
+   read-only. The legacy v1 format is no longer supported.
 
 ## Reading the map
 

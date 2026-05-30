@@ -47,7 +47,8 @@ tools open to a working example. <!-- TODO: link to the full live example once p
    with distinct map rendering.
 4. **Distance with a pad multiplier** per chapter (accounting for tacking and cruising-ground
    exploration a straight-line track undercounts), plus an inter-chapter "approach leg" attributed
-   to the destination chapter.
+   to the destination chapter. All distances can display in nautical miles, kilometers, or miles
+   (stored canonically as nm).
 5. **Endpoint sync** — chapters connect end-to-start; a one-click pull keeps shared handoff points
    aligned, and an indicator shows when a real gap exists.
 6. **Geocoding** via OpenStreetMap / Nominatim (rate-limited per their usage policy) — type a name

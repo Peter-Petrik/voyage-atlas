@@ -22,8 +22,8 @@ user feedback.
 ### 2. Chapter endpoint synchronization
 Currently, the last waypoint of chapter N and the first waypoint of chapter N+1 can be the same
 point but are stored independently — editing one doesn't update the other. **Locked decision:** the
-connecting leg's NM counts toward the *destination* chapter (captures "getting to the starting
-point"). Implementation options: (a) auto-link visual only (route line connects, NM computed
+connecting leg's nm counts toward the *destination* chapter (captures "getting to the starting
+point"). Implementation options: (a) auto-link visual only (route line connects, nm computed
 including the leg), or (b) remove the duplicate waypoint from N+1 and auto-connect from N's last
 point. Option (a) is simpler and preserves chapter independence.
 
@@ -258,14 +258,14 @@ for the same time window (e.g., "Patagonia via channels" vs "Patagonia via offsh
 model would need a "variant group" field that links alternative chapters. The viewer would show
 them as toggleable branches (only one visible at a time). The editor would allow marking chapters
 as variants of each other and computing hero stats for each combination. Requires careful UX
-design: how do variant chapters affect NM totals, country counts, and timeline display?
+design: how do variant chapters affect nm totals, country counts, and timeline display?
 
-**Fork-readiness (as of v2.5):** NM attribution and endpoint sync are built on a single
+**Fork-readiness (as of v2.5):** distance attribution and endpoint sync are built on a single
 `getPredecessorChapter()` helper rather than hard-coded `num − 1` positional logic. This is the
 seam for forks: when variant chapters arrive, two chapters declaring the same predecessor *is*
 the fork definition. Switching `getPredecessorChapter()` from positional lookup to an explicit
-`follows` field is the only routing change needed — the approach-leg NM math and the ⇄ pull-sync
-both adapt automatically. Total NM will need to become a range (e.g., "75,000–78,000 nm") since
+`follows` field is the only routing change needed — the approach-leg nm math and the ⇄ pull-sync
+both adapt automatically. Total nm will need to become a range (e.g., "75,000–78,000 nm") since
 mutually-exclusive variants must not both be summed. Explicit-pull sync (not auto-bidirectional)
 was chosen specifically because a forked endpoint feeds multiple successors, which has no
 coherent auto-sync answer.
@@ -305,6 +305,22 @@ becomes the visual signature of a fork on the map. Variant connectors should get
 (dash pattern or color) from normal handoffs, and reconvergence (two branches rejoining one
 chapter) needs a rule. Build alongside the fork feature (#34) since the two are visually
 intertwined.
+
+### 43. PAZ (avoidance-zone) authoring in the editor — targeted v2.7
+The viewer already renders a `DATA.paz` array (`{zone, bounds:[s,w,n,e]}`) as dashed bounding-box
+rectangles via the avoidance-zones toggle (dateline-aware), but the editor has no authoring UI —
+zones must be hand-written into the JSON. Add visual authoring so PAZ can be created and edited in
+the editor. **Design (resolved at kickoff, deferred from the v2.6 batch):**
+1. **Geometry — rectangles to start.** Bounding boxes match what the viewer renders today and what
+   the schema documents; polygons can follow later if a real need appears.
+2. **Authoring — draw-on-map + an editable zone table.** Drag a rectangle on the map; a table lists
+   zones with a name and editable bounds, mirroring the chapter/waypoint authoring pattern.
+3. **Storage — a top-level `paz` JSON array** (`[{zone, bounds:[s,w,n,e]}, …]`), the exact shape the
+   viewer already consumes. A `zones.csv` import/export can follow later, paralleling the
+   chapters/waypoints CSVs.
+> **Why deferred from v2.6:** v2.6 was scoped to fixes plus the generalization (units, single Voyage
+> Title, v1 removal); PAZ authoring is net-new UI with its own data-model surface and is better given
+> its own cycle. Hand-authored `paz` keeps rendering in the viewer in the meantime.
 
 ---
 

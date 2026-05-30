@@ -1,4 +1,4 @@
-# Voyage Atlas — Data Schema (v2.5)
+# Voyage Atlas — Data Schema (v2.6)
 
 This document defines the data contract between the **editor** (`voyage-atlas-editor.html`) and the
 **viewer** (`voyage-atlas.html`). Any tool that produces data in this schema can feed the
@@ -23,7 +23,7 @@ quoted multiline cells.
 | `countries` | string | no | Comma-separated list of countries/territories |
 | `keyDestinations` | string | no | Comma-separated list of key destinations |
 | `blogUrl` | string | no | URL to blog post collection for this chapter |
-| `padMultiplier` | float | yes | NM padding factor (default 1.20) |
+| `padMultiplier` | float | yes | nm padding factor (default 1.20) |
 
 **Derived values (not stored in CSV, computed at runtime):**
 - `nmBase` = haversine sum of all chapter waypoints in order (nautical miles)
@@ -60,7 +60,7 @@ sequence. The line passes through every row regardless of `name` being empty or 
 **Chapter endpoint convention:**
 The last waypoint of chapter N and the first waypoint of chapter N+1 may be the same geographic
 point (the transit point between chapters). The connecting leg's distance counts toward chapter
-N+1's NM total (captures "getting to the starting point"). The editor may auto-link these
+N+1's nm total (captures "getting to the starting point"). The editor may auto-link these
 visually but stores them as independent rows.
 
 ---
@@ -73,8 +73,8 @@ CSVs are the human-editable source.
 ```json
 {
   "meta": {
-    "title": "string — auto from vessel name, or user-defined",
-    "version": "2.5",
+    "title": "string — user-defined voyage title, or default 'Voyage Atlas'",
+    "version": "2.6",
     "generatedAt": "ISO 8601 datetime",
     "hero": {
       "nm": 81051,
@@ -84,8 +84,8 @@ CSVs are the human-editable source.
       "territories": 15
     },
     "settings": {
-      "vesselName": "S/Y GRACE",
       "voyageTitle": "S/Y GRACE Global Voyage",
+      "distanceUnit": "nm",
       "nmOverride": null,
       "nationsOverride": null,
       "territoriesOverride": null
@@ -131,9 +131,9 @@ CSVs are the human-editable source.
 - `territories` — count of overseas territories (auto-classified or overridden)
 
 **`meta.settings` fields:**
-- `vesselName` — drives page titles: "[Name] Voyage Atlas — Editor" (editor), "[Name] Voyage Atlas" (viewer)
-- `voyageTitle` — custom title override; if blank, auto-generated from vessel name
-- `nmOverride` — if set (number), replaces the auto-calculated total NM in hero stats
+- `voyageTitle` — the voyage title shown in page titles, the viewer header, and exports; if blank, defaults to "Voyage Atlas"
+- `distanceUnit` (v2.6) — display unit for all on-screen distances: `"nm"` (default), `"km"`, or `"mi"`. Display-only; stored distances (`hero.nm`, chapter `nm`/`nmBase`/`nmApproach`, `nmOverride`) and all exports (JSON, CSV, KML) remain canonical nautical miles
+- `nmOverride` — if set (number), replaces the auto-calculated total nm in hero stats
 - `nationsOverride` — if set (integer), replaces the auto-classified nations count
 - `territoriesOverride` — if set (integer), replaces the auto-classified territories count
 
@@ -156,8 +156,9 @@ precedence over the auto-count.
    when variant chapters (#34) are added.
 7. `hero.waypoints` counts only named waypoints (non-empty name); shaping vertices excluded
 8. `hero.nations` and `hero.territories` added (v2.3)
-9. `meta.settings` block added (v2.3) — vessel name, title, NM/nations/territories overrides
+9. `meta.settings` block added (v2.3) — vessel name, title, nm/nations/territories overrides
 10. `routing`, `bailout`, `prose` consolidated into `notes` (v2.0.2)
+11. `distanceUnit` added to `meta.settings` (v2.6); `vesselName` removed (v2.6) — titles now derive from `voyageTitle` alone, then `meta.title`, then the default. Data `version` stamped `"2.6"`.
 
 **v1 → v2 import logic (handled by the editor):**
 1. Route segments concatenated in order; shared endpoints deduplicated (tolerance: 0.0001°)
