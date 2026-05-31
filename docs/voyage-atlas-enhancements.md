@@ -117,6 +117,13 @@ State-snapshot stack with Ctrl/Cmd+Z (undo) and Ctrl/Cmd+Shift+Z (redo). Capture
 add/delete/move, chapter add/delete/reorder, and bulk operations. Implementation: serialized snapshots
 in a fixed-size ring buffer (~50 actions). Particularly valuable for an accidental move or deletion.
 
+### 64. Split / duplicate a chapter
+`Effort M · Impact Med · editor chapter ops + identity · relates to #63`
+Duplicate a chapter (all waypoints + metadata) as a new chapter, then prune each copy to taste — which
+covers "split" without a dedicated split tool. Duplicate alone is likely sufficient. Needs a new
+chapter created with a fresh identity (see #63) and an insert-after-current placement; on a positional
+numbering scheme the trailing chapters renumber.
+
 ---
 
 ## Phase 3 — Save / load / interchange
@@ -184,6 +191,13 @@ Chapter cards below the map, or a split layout. Today the viewer is map-only.
 ### 33. Waypoint search
 `Effort M · Impact Med · viewer · —`
 Search/filter waypoints across all chapters from the viewer.
+
+### 65. Deep-link to a pre-selected chapter
+`Effort S/M · Impact Med · viewer URL hash + selectChapter · needs #63`
+A shareable URL that opens the viewer with one chapter already selected and framed, e.g.
+`voyage-atlas.html#<chapter>`. The identifier scheme is the open question — a sequence number is
+brittle across edits, the chapter name is readable but mutable, a UUID (see #63) is stable but opaque.
+Resolving #63 (stable chapter identity) is the natural prerequisite.
 
 ---
 
