@@ -12,6 +12,46 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v2.9] - 2026-05-31
+
+### Fixed
+1. **Dateline-crossing chapters fit tightly when selected.** Selecting a chapter that crosses the
+   antimeridian (e.g. a North Pacific leg) zoomed the map almost fully out, exposing the route's world
+   copies. The fit now unwraps the coordinates first — matching the viewer — so it frames the crossing
+   tightly across the antimeridian. (World-copy rendering itself is unchanged; the bug was the fit.)
+2. **Ghost midpoint handles stay on the route and no longer double.** On a dateline-crossing leg the
+   midpoint handle was computed between the raw endpoints and landed mid-map; it is now dateline-aware.
+   Separately, a full map redraw (`updateMapAll`) left the previous handles orphaned, so they
+   accumulated as duplicates after editing — the redraw now clears them.
+3. **Marker tooltip flag glyphs match the marker shapes.** The tooltip showed ★ for Major and ⚑ for
+   Gateway, but the markers draw Major as a circle, Decision as a diamond, and Gateway as a star. The
+   tooltip now reads ● Major / ◆ Decision / ★ Gateway.
+
+### Added
+4. **Unsaved-changes indicator.** The editor header shows an "● Unsaved" marker whenever there are
+   edits not yet saved, alongside the existing on-close warning.
+5. **"Look up all countries" button.** A global action beside the expand/collapse controls reverse-
+   geocodes the country for every coordinate-bearing, country-less waypoint across all chapters, using
+   the same single 1/sec queue as the per-chapter button (already-filled waypoints are skipped).
+
+### Changed
+6. **Country-lookup buttons guard against re-clicks.** The lookup buttons disable while any geocoding
+   is queued or running, and a second click no longer re-queues the same waypoints (previously three
+   clicks queued the work three times over).
+7. **Expand-all / collapse-all is a single state-aware toggle.** The control now expands if any panel
+   is closed and collapses otherwise, so one click does the right thing from a mixed state instead of
+   requiring expand-then-collapse.
+8. **Viewer label "Waters" → "Countries / Territories,"** matching the editor field and keeping the
+   tool sailing-agnostic.
+9. **Exported JSON omits unset overrides.** The settings overrides (`nmOverride`, `nationsOverride`,
+   `territoriesOverride`) are written only when set, rather than as `null` placeholders — matching how
+   `countriesOverride` already behaves. Data version is unchanged (2.7); the loader treats missing as
+   unset, so older files still load.
+10. **Meta-form layout and tooltip polish.** Blog URL now shares a row with Pad Multiplier to use the
+    vertical space better, and the marker tooltip's "right-click to delete" hint is italicised.
+11. **Button labels standardised to sentence case** ("Add chapter", "Add row", "Add N rows", "Add
+    rows"), matching the rest of the UI.
+
 ## [v2.8.1] - 2026-05-31
 
 ### Fixed
