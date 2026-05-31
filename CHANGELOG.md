@@ -12,6 +12,13 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+**Known issues (v2.9, slated for v3.0):** the country look-up "nothing to do" guard reports a spurious
+"1/1" instead of "all filled" (testing items 8/19); flaky named-waypoint map clicks; two chapters can
+stay highlighted at once; the sequence-number zoom fits the whole chapter (useless on long legs); and
+several JSON-model cleanups (drop blank `voyageTitle`, resolve `meta.title` vs `settings.voyageTitle`,
+fix non-importing `meta.title`, rename `nmOverride`). Full agenda in `voyage-atlas-v3.0-plan.md`; test
+record in `voyage-atlas-testing.md`.
+
 ## [v2.9] - 2026-05-31
 
 ### Fixed
