@@ -132,7 +132,7 @@ Dependencies). Anything not on the territory list counts as a nation.
 
 Both counts can be overridden in Voyage Settings if the automatic classification isn't what you
 want. Separately, each chapter's country list is derived from its own waypoints' countries and can be
-replaced with a per-chapter override (the chapter's Countries field) — useful for a curated list that
+replaced with a per-chapter override (the chapter's Countries / Territories field) — useful for a curated list that
 differs from what the waypoints imply. The voyage total is the classified union of every chapter's
 effective list.
 
@@ -177,8 +177,8 @@ There are several ways to populate the atlas:
 
 Within a chapter, there are five ways to add points:
 
-1. **+ Add Row** — appends one blank row to type into directly.
-2. **+ Add N Rows** — appends several blank rows at once (useful before a paste or bulk entry).
+1. **+ Add row** — appends one blank row to type into directly.
+2. **+ Add N rows** — appends several blank rows at once (useful before a paste or bulk entry).
 3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line
    becomes a row.
 4. **Click on the map** — with **Rapid click** mode ON (toggle above the map), each click on the
@@ -197,13 +197,20 @@ The editor uses the free Nominatim (OpenStreetMap) service two ways:
    you typed by hand is never overwritten.
 2. **Reverse — Look up countries** — for waypoints you placed by coordinates (a map click or typed
    lat/lon), no country is known yet. The **Look up countries** button reverse-geocodes every such
-   waypoint that has coordinates but no country, filling it from the position. This is the one path
+   waypoint that has coordinates but no country, filling it from the position. This runs at two
+   scopes — each chapter has its own **Look up countries** button, and a single
+   **🌍 Look up all countries** button above the chapter list does the same sweep across every
+   chapter at once, handy after importing a batch of coordinate-only waypoints. This is the one path
    that costs a *dedicated* lookup, which is why it's a deliberate button press rather than automatic.
 
 **Rate limit:** Nominatim's usage policy allows one request per second. The editor queues all
 geocoding requests and spaces them accordingly, so a paste of many named rows will fill in
 gradually rather than all at once. This is deliberate — firing requests in parallel would get the
 service to rate-limit or block you. The status line shows progress.
+
+While any look-up is in flight, both the per-chapter **Look up countries** and the global
+**🌍 Look up all countries** buttons are disabled, re-enabling only once the queue has drained.
+That stops a second click from stacking a duplicate sweep onto a queue that is already running.
 
 ## Adjusting waypoint positions
 
@@ -255,10 +262,20 @@ Open a chapter's metadata panel (the 📋 toggle, or double-click the chapter he
    en-dash (e.g., "May – Sep 2028"). Month/year dropdowns assist entry.
 3. **Era** — past, current, or future (controls styling and timeline placement).
 4. **Pad Multiplier** — the distance multiplier for this chapter (see distance calculation, Part 1).
-5. **Countries** — auto-aggregated from the chapter's waypoints; editable.
+5. **Countries / Territories** — auto-derived from the chapter's waypoint countries, in
+   first-appearance order. Leave it blank to keep that automatic; type a comma-separated list to
+   override it with a curated set (the override *replaces* the derived list, it does not add to it).
+   Each entry is then classified as a nation or a territory against the built-in reference list,
+   exactly as the voyage totals are.
 6. **Key Destinations** — highlights for the viewer's chapter summary.
 7. **Blog URL** — an optional link to a post about this chapter, surfaced in the viewer.
 8. **Notes** — free-form narrative (routing thoughts, bail-out options, anything).
+
+To open or close every chapter's panels in one go, use the global toggles above the chapter list:
+**📋 Expand all** / **Collapse all** for the metadata panels, and **📍 Expand all** / **Collapse all**
+for the waypoint tables. Each toggle reads the chapters' current state before acting, so a single
+click does the right thing even from a mixed state — the first click opens every panel still closed,
+the next closes them all.
 
 ## Voyage Settings (⚙)
 
@@ -285,6 +302,12 @@ import:
 3. **KML** export produces a Google Earth–compatible file (waypoints + route lines per chapter,
    with styled markers for Major/Decision/Gateway). Useful for viewing the voyage in Google Earth
    Pro.
+
+The header carries an **● Unsaved** marker whenever the document holds edits you haven't written out
+yet — adding, moving, reordering or deleting a waypoint, or changing any chapter or voyage setting all
+set it. It clears the moment you Save (or load a different file). As a backstop, the browser's own
+"leave site?" prompt fires if you try to close or reload the tab while that marker is showing, so an
+accidental close won't quietly discard unsaved work.
 
 > Browsers can't silently write to a fixed file on disk, so "Save" downloads with a fixed name as
 > the practical equivalent of overwriting. (A future enhancement may use the File System Access API
