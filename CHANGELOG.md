@@ -3,7 +3,7 @@
 All notable changes to the Voyage Atlas project (editor + viewer) are recorded here.
 File and product names in entries before v2.5.2 have been updated to current names for
 consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
-[Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR`). The
+[Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
 ## [Unreleased]
@@ -11,6 +11,24 @@ framework document (`global-voyage-framework.md`) carries its own separate versi
 Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
+
+## [v2.8.1] - 2026-05-31
+
+### Fixed
+1. **Chapter Countries / Territories placeholder now refreshes after "Look up countries."** The
+   auto-derived placeholder was only updated while the chapter's metadata panel was open, so a lookup
+   run with the panel collapsed left a stale value the next time it was opened. The placeholder now
+   refreshes regardless of panel state.
+2. **Editor route lines stay continuous across the dateline at any map pan.** Dateline-crossing
+   chapters are now drawn across world copies (matching the viewer) rather than in a single world, so a
+   crossing route no longer breaks at the antimeridian depending on how the map is panned.
+
+### Changed
+3. **Consistent "AUTO:" labelling.** The auto-derived hints on Distance, Nations, Territories, and the
+   chapter Countries / Territories field now share an `AUTO:` prefix followed by the computed value
+   (e.g. `AUTO: 7`, `AUTO: Greece, Italy`). The Distance hint now also shows the computed total.
+4. **Chapter field relabelled "Countries / Territories"** (was "Countries"), matching the hero's
+   nations/territories split.
 
 ## [v2.8] - 2026-05-30
 

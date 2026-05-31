@@ -480,15 +480,15 @@ th .hi { margin-left: 2px; }
           </div>
           <div class="meta-field">
             <label>Distance Override <span class="hi" data-tip="Override the auto-calculated total distance. Entered in the selected display unit but stored and exported as nautical miles. Leave blank to use the sum of all chapter distances (base × pad multiplier).">i</span></label>
-            <input type="number" id="set-nm" value="" placeholder="(auto)" onchange="updateSettings()">
+            <input type="number" id="set-nm" value="" placeholder="AUTO:" onchange="updateSettings()">
           </div>
           <div class="meta-field">
             <label>Nations <span class="hi" data-tip="Sovereign nations in the voyage. Auto-calculated by classifying waypoint countries against a built-in territory reference list (~65 entries). Override here if the auto-count is wrong.">i</span></label>
-            <input type="number" id="set-nations" value="" placeholder="(auto)" onchange="updateSettings()">
+            <input type="number" id="set-nations" value="" placeholder="AUTO:" onchange="updateSettings()">
           </div>
           <div class="meta-field">
             <label>Territories <span class="hi" data-tip="Overseas territories, dependencies, and autonomous regions. Auto-calculated from the same reference list (e.g., French Polynesia, Bermuda, Svalbard). Override here if needed. See FAQ for the full territory reference list.">i</span></label>
-            <input type="number" id="set-territories" value="" placeholder="(auto)" onchange="updateSettings()">
+            <input type="number" id="set-territories" value="" placeholder="AUTO:" onchange="updateSettings()">
           </div>
         </div>
       </div>
@@ -529,7 +529,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v2.8</span>
+  <span>Voyage Atlas Editor v2.8.1</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -632,6 +632,13 @@ function splitAtDateline(coords) {
   return segs;
 }
 
+// World copies so dateline-crossing routes stay continuous regardless of how the map is panned
+// (parity with the viewer). Markers are drawn in a single world only — they're interactive here, so
+// triplicating them would create duplicate draggable/clickable points; worldCopyJump handles their
+// wrapping on pan.
+const WORLD_COPIES = [-360, 0, 360];
+const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlngs;
+
 /* ═══════════════════════════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════════════════════════ */
@@ -657,7 +664,7 @@ let isDirty = false; // unsaved changes flag
    MAP SETUP
    ═══════════════════════════════════════════════════════════════ */
 let map, tileLight, tileDark, isDark = false;
-let mapLayers = {};  // chapterNum -> { line, markers[] }
+let mapLayers = {};  // chapterNum -> { line, markers[], ghosts[] }
 let dragMarkerLink = null; // {chNum, wptIdx} for currently dragged marker
 let markerDidMove = false; // true once a marker drag actually moves, so a plain click doesn't mark dirty
 let ghostDragTarget = null; // currently dragged ghost midpoint marker
@@ -725,15 +732,21 @@ function updateMapChapter(chNum) {
   const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
   const markers = [];
 
-  // Route line
+  // Route line — split at the dateline and repeated across world copies so a crossing chapter stays
+  // continuous at any map pan/center (parity with the viewer).
   let line = null;
   if (coords.length >= 2) {
-    line = L.polyline(splitAtDateline(coords), {
+    const lineOpts = {
       color: color,
       weight: isActive ? 3 : 1.5,
       opacity: isActive ? 0.9 : 0.35,
       dashArray: isActive ? null : '4 4'
-    }).addTo(map);
+    };
+    const parts = [];
+    splitAtDateline(coords).forEach(seg => {
+      WORLD_COPIES.forEach(off => { parts.push(L.polyline(shiftLon(seg, off), lineOpts)); });
+    });
+    line = L.layerGroup(parts).addTo(map);
   }
 
   // Waypoint markers (only named ones, or all for active chapter)
@@ -1200,15 +1213,18 @@ function chapterCountries(ch) {
 }
 
 // Waypoint countries changed: refresh the chapter's auto placeholder (when not overridden) + the hero.
+// The meta form is rendered eagerly into the (CSS-hidden) panel, so the override input exists whether
+// or not the panel is open — refresh the placeholder unconditionally, so a "Look up countries" run with
+// the panel collapsed still updates the field for when it's next opened.
 function updateChapterCountries(chNum) {
   const ch = getChapter(chNum);
   if (!ch) return;
   const metaPanel = document.getElementById(`ch-meta-${chNum}`);
-  if (metaPanel && metaPanel.classList.contains('open')) {
+  if (metaPanel) {
     const input = metaPanel.querySelector('input[onchange*="countriesOverride"]');
     if (input) {
       const auto = deriveCountriesFromWaypoints(ch).join(', ');
-      input.placeholder = auto ? `${auto} (auto)` : 'auto from waypoint countries';
+      input.placeholder = auto ? `AUTO: ${auto}` : 'auto from waypoint countries';
     }
   }
   updateHeroStats();
@@ -1451,11 +1467,13 @@ function updateHeroStats() {
   const classified = classifyCountries(allCountries);
   const nations = s.nationsOverride || classified.nations.length;
   const territories = s.territoriesOverride || classified.territories.length;
-  // Update settings placeholders
+  // Update settings placeholders (AUTO: prefix + the computed value, consistent across all three)
+  const nmInput = document.getElementById('set-nm');
   const nInput = document.getElementById('set-nations');
   const tInput = document.getElementById('set-territories');
-  if (nInput && !s.nationsOverride) nInput.placeholder = `(${classified.nations.length} auto)`;
-  if (tInput && !s.territoriesOverride) tInput.placeholder = `(${classified.territories.length} auto)`;
+  if (nmInput && !s.nmOverride) nmInput.placeholder = `AUTO: ${fmtDist(totalNm)}`;
+  if (nInput && !s.nationsOverride) nInput.placeholder = `AUTO: ${classified.nations.length}`;
+  if (tInput && !s.territoriesOverride) tInput.placeholder = `AUTO: ${classified.territories.length}`;
   let statsText = `${fmtDist(displayNm)}${s.nmOverride ? ' ⚙' : ''}`;
   if (nations) statsText += ` · ${nations} ${nations === 1 ? 'nation' : 'nations'}${s.nationsOverride ? ' ⚙' : ''}`;
   if (territories) statsText += ` · ${territories} ${territories === 1 ? 'territory' : 'territories'}${s.territoriesOverride ? ' ⚙' : ''}`;
@@ -1688,8 +1706,8 @@ function renderMetaForm(ch) {
         <textarea style="min-height:80px;" onchange="updateMeta(${ch.num},'notes',this.value)">${esc(ch.notes || '')}</textarea>
       </div>
       <div class="meta-field full">
-        <label>Countries <span class="hi" data-tip="Auto-derived from this chapter's waypoint countries (first-appearance order). Leave blank to keep it automatic; type a comma-separated list to override.">i</span></label>
-        <input type="text" value="${esc(countriesOverride)}" placeholder="${esc(countriesAuto ? countriesAuto + ' (auto)' : 'auto from waypoint countries')}" onchange="updateMeta(${ch.num},'countriesOverride',this.value)">
+        <label>Countries / Territories <span class="hi" data-tip="Auto-derived from this chapter's waypoint countries (first-appearance order). Leave blank to keep it automatic; type a comma-separated list to override.">i</span></label>
+        <input type="text" value="${esc(countriesOverride)}" placeholder="${esc(countriesAuto ? 'AUTO: ' + countriesAuto : 'auto from waypoint countries')}" onchange="updateMeta(${ch.num},'countriesOverride',this.value)">
       </div>
       <div class="meta-field full">
         <label>Key Destinations <span class="hi" data-tip="Highlight destinations for this chapter (comma-separated). Shown in the viewer drawer and summary displays.">i</span></label>
