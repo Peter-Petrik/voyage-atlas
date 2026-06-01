@@ -144,9 +144,11 @@ in Voyage Settings.
 
 ## What's the difference between the JSON and the CSV exports?
 
-1. **JSON** is the complete, authoritative file. It carries everything — chapters, waypoints,
-   flags, settings, notes, and computed stats — in one structure. This is what the viewer loads and
-   what you keep as your master file (`voyage-data.json`).
+1. **JSON** is the complete, authoritative file. It carries the source data — chapters, waypoints,
+   flags, settings, and notes — in one structure. It does **not** store the computed figures (totals,
+   per-chapter distances, derived country lists); both tools recompute those on load, so a hand-edited
+   file never carries a stale number. This is what the viewer loads and what you keep as your master
+   file (`voyage-data.json`).
 2. **CSV** is a convenience for spreadsheet editing. There are two CSVs — one for chapters, one for
    waypoints — and the editor exports both together in one action. Round-trip through a spreadsheet
    when you want to bulk-edit, then re-import.
@@ -165,10 +167,11 @@ The data schema (field names, types, structure) is documented separately in
 There are several ways to populate the atlas:
 
 1. **Auto-load.** If a file named `voyage-data.json` sits in the same directory as the editor, it
-   loads automatically on open. This is the normal way to resume work on a hosted or local copy.
-2. **Load JSON.** Open any atlas JSON (v2). The legacy v1 baked-map format is no longer
-   supported — the editor rejects a v1 file with a clear message rather than risk mangling its
-   geometry.
+   loads automatically on open — the normal way to resume work on a hosted or local copy. A file that
+   is present but unreadable now shows a clear error rather than silently opening empty.
+2. **Load JSON.** Open any atlas JSON (v2 or v3; a v2 file is migrated to the v3.0 model on load). The
+   legacy v1 baked-map format is no longer supported — the editor rejects a v1 file with a clear
+   message rather than risk mangling its geometry. A malformed file is reported, not silently swallowed.
 3. **Import CSV.** Load the chapters and waypoints CSVs.
 4. **Start fresh.** With no `voyage-data.json` present, the editor opens empty; add a chapter and
    begin.
@@ -203,14 +206,23 @@ The editor uses the free Nominatim (OpenStreetMap) service two ways:
    chapter at once, handy after importing a batch of coordinate-only waypoints. This is the one path
    that costs a *dedicated* lookup, which is why it's a deliberate button press rather than automatic.
 
+Before a long sweep runs, the editor shows a quick confirmation — how many waypoints it will look up
+and a rough time estimate at one per second — so a long run is never a surprise. The
+all-chapters sweep always confirms; a per-chapter sweep confirms only when 30 or more waypoints are
+eligible. While a sweep runs, the status line shows live progress; when it finishes it shows how many
+were actually resolved (for example "Geocoded 4/5") and, when some can't be placed — an open-ocean
+shaping vertex Nominatim has no entry for, say — reports how many were left unresolved rather than
+implying every one succeeded. A country cell that already holds a value is flagged, so it is clear at
+a glance which cells a sweep will skip; it never overwrites a value you typed.
+
 **Rate limit:** Nominatim's usage policy allows one request per second. The editor queues all
 geocoding requests and spaces them accordingly, so a paste of many named rows will fill in
 gradually rather than all at once. This is deliberate — firing requests in parallel would get the
-service to rate-limit or block you. The status line shows progress.
+service to rate-limit or block you.
 
 While any look-up is in flight, both the per-chapter **Look up countries** and the global
-**🌍 Look up all countries** buttons are disabled, re-enabling only once the queue has drained.
-That stops a second click from stacking a duplicate sweep onto a queue that is already running.
+**🌍 Look up all countries** buttons are visibly greyed and disabled, re-enabling only once the queue
+has drained. That stops a second click from stacking a duplicate sweep onto a queue already running.
 
 ## Adjusting waypoint positions
 
@@ -219,6 +231,15 @@ That stops a second click from stacking a duplicate sweep onto a queue that is a
 3. **Drag a ghost midpoint** — each leg shows a faint "ghost" marker at its midpoint; drag it to
    insert a new shaping vertex on that leg, bending the route. (Ghost midpoints sit *on* the
    rendered line, even on long ocean legs.)
+
+## Selecting a waypoint (map ↔ list)
+
+Clicking a **marker** on the map selects that waypoint: the marker grows and turns crimson, and its
+row in the table is highlighted, scrolled into view, and briefly flashed. Clicking a waypoint's
+**sequence number** in the table does the same and also zooms the map to that point and makes its
+chapter active — handy for jumping straight to a point on a long leg. Adding a waypoint selects the
+new row too. Only one waypoint is selected at a time, and the selection clears when you switch to
+another chapter.
 
 ## Reordering
 
@@ -271,11 +292,9 @@ Open a chapter's metadata panel (the 📋 toggle, or double-click the chapter he
 7. **Blog URL** — an optional link to a post about this chapter, surfaced in the viewer.
 8. **Notes** — free-form narrative (routing thoughts, bail-out options, anything).
 
-To open or close every chapter's panels in one go, use the global toggles above the chapter list:
-**📋 Expand all** / **Collapse all** for the metadata panels, and **📍 Expand all** / **Collapse all**
-for the waypoint tables. Each toggle reads the chapters' current state before acting, so a single
-click does the right thing even from a mixed state — the first click opens every panel still closed,
-the next closes them all.
+To open or close every chapter's panels in one go, use the compact controls above the chapter list:
+**📋 ⊞ ⊟** for the metadata panels and **📍 ⊞ ⊟** for the waypoint tables. In each pair the **⊞** opens
+every panel of that kind and the **⊟** closes them all.
 
 ## Voyage Settings (⚙)
 
@@ -303,11 +322,11 @@ import:
    with styled markers for Major/Decision/Gateway). Useful for viewing the voyage in Google Earth
    Pro.
 
-The header carries an **● Unsaved** marker whenever the document holds edits you haven't written out
-yet — adding, moving, reordering or deleting a waypoint, or changing any chapter or voyage setting all
-set it. It clears the moment you Save (or load a different file). As a backstop, the browser's own
-"leave site?" prompt fires if you try to close or reload the tab while that marker is showing, so an
-accidental close won't quietly discard unsaved work.
+The **Save** button reads `Save *` (with an "Unsaved changes" tooltip) whenever the document holds
+edits you haven't written out yet — adding, moving, reordering or deleting a waypoint, or changing any
+chapter or voyage setting all set it. It returns to plain `Save` the moment you Save (or load a
+different file). As a backstop, the browser's own "leave site?" prompt fires if you try to close or
+reload the tab while there are unsaved changes, so an accidental close won't quietly discard your work.
 
 > Browsers can't silently write to a fixed file on disk, so "Save" downloads with a fixed name as
 > the practical equivalent of overwriting. (A future enhancement may use the File System Access API
@@ -334,10 +353,12 @@ count, and shaping-vertex count. These recompute as you edit. An override from V
 ## Loading data
 
 1. **Auto-load.** If `voyage-data.json` is in the same directory as the viewer, it loads
-   automatically on open. This is the basis of the self-hosting model (below).
+   automatically on open — the basis of the self-hosting model (below). A file that is present but
+   unreadable shows an error rather than the empty landing screen.
 2. **File picker.** With no data present, the viewer shows a landing screen; pick a voyage JSON
-   (v2) to load it. Loading lives only on this landing screen — once an atlas is shown the viewer is
-   read-only. The legacy v1 format is no longer supported.
+   (v2 or v3) to load it. Loading lives only on this landing screen — once an atlas is shown the viewer
+   is read-only. The legacy v1 format is no longer supported, and a malformed file is reported rather
+   than silently swallowed.
 
 ## Reading the map
 

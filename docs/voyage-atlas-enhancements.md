@@ -3,7 +3,9 @@
 The forward-looking backlog for the **editor** (`voyage-atlas-editor.html`) and **viewer**
 (`voyage-atlas.html`). Shipped work is **not** listed here — it lives in `CHANGELOG.md` under its
 version. (The ~21 previously-"queued" items that had already shipped were pruned from this doc; all
-were confirmed present in the CHANGELOG first.) Build decisions live in `voyage-atlas-runbook.md`.
+were confirmed present in the CHANGELOG first. The v3.0 release then pruned #53, #56, and #62 — shipped, and
+confirmed in the CHANGELOG — and dropped #52 as moot, since the CSV carries no distance figures to
+label.) Build decisions live in `voyage-atlas-runbook.md`.
 
 Items keep their **original numbers** — cross-references and the runbook depend on them, so the numbers
 are stable IDs, not sequence. They're grouped into **phases** meant to be worked roughly in order, each
@@ -44,16 +46,6 @@ rendered result.
 `Effort S · Impact Low · both UI · dep: project URL TBD`
 A restrained backlink in the viewer (and editor) to the project website — a "home" to learn more.
 
-### 52. CSV distance-unit note
-`Effort S · Impact Low · CSV export · —`
-Label exported CSV distances as nautical miles (header note or column suffix) so the unit is
-unambiguous outside the app.
-
-### 53. Visual flag for a manually-set country
-`Effort S · Impact Low · editor waypoint table · —`
-Indicate when a country was hand-entered (and so skipped by "Look up countries"), so the user can see
-which cells the automation won't touch.
-
 ### 55. CMD/CTRL+Enter = Add Rows in the paste box
 `Effort S · Impact Low · editor paste box · —`
 In the bulk-paste textarea, bind CMD/CTRL+Enter to "Add Rows" (Enter still inserts a newline).
@@ -62,35 +54,39 @@ In the bulk-paste textarea, bind CMD/CTRL+Enter to "Add Rows" (Enter still inser
 `Effort S · Impact Low · editor place search · —`
 First Escape dismisses the results; a second Escape clears the typed query.
 
-### 62. Report JSON load errors to the user
-`Effort S · Impact Med · both load · —`
-A malformed JSON currently fails quietly (console error at best, blank map at worst). Catch the
-parse/validation failure and show a clear message ("Couldn't read this file — it may be malformed or
-not a Voyage Atlas JSON") in both tools.
+### 66. Align Decision/Gateway marker priority across map and KML
+`Effort S · Impact Low · editor marker render + KML export · open: which flag wins`
+A waypoint flagged both Decision and Gateway renders inconsistently: the editor map draws the Decision
+diamond (Decision wins), while the KML export emits the Gateway icon (its styleId is assigned
+major→decision→gateway, last write wins). Pick one precedence and apply it to both paths so a
+Decision+Gateway point looks the same in the editor and in Google Earth. **Open question:** which flag
+wins when both are set.
+
+### 67. Adopt American spelling across all docs and HTML
+`Effort M · Impact Low · all docs + both HTML files · supersedes the earlier British-spelling docs convention`
+Convert spelling to American English across every reference doc and both tool files — reversing the
+earlier British-spelling docs convention. Sweep prose, comments, and user-visible strings for British
+forms (colour→color, centre→center, behaviour→behavior, favour→favor, -ise/-isation→-ize/-ization,
+greyed→grayed, and similar) and change them; leave code identifiers and CSS/JS keywords untouched (the
+CSS `color` property and the like are already American). Touches `voyage-atlas-editor.html`,
+`voyage-atlas.html`, the `docs/` set, and the project-knowledge docs; the project's standing
+British-spelling note should be updated to match.
 
 ---
 
 ## Phase 2 — Editor interaction & state
 
-Cohesive editor work centred on selection/feedback and editing robustness. #56 establishes the shared
-selection state that #35 reuses; #19 is the meatier item.
-
-### 56. Selected-waypoint feedback — focus, row highlight, map-marker highlight
-`Effort M · Impact Med · editor renderChapters + marker selection state · —`
-Past ~15 rows, adding a waypoint should focus the *new* row, not jump to the first. A single
-"selected waypoint" state shows in two places at once: a high-visibility row highlight in the list, and
-a matching highlight of that waypoint's marker on the map (temporary colour/size change or a distinct
-pin) so it's obvious which of many nearby points is selected. Shared by add, sequence-number click, row
-focus, and marker click — clicking a sequence number centres *and* highlights; clicking a marker
-highlights *and* scrolls/flashes the row.
+Cohesive editor work centred on selection/feedback and editing robustness. The shared selection
+state shipped in v3.0 (#56); #35 reuses it, and #19 remains the meatier item.
 
 ### 35. Bulk waypoint select + delete
-`Effort M · Impact Med · editor waypoint table (selection state) · builds on #56`
+`Effort M · Impact Med · editor waypoint table (selection state) · selection model shipped in #56`
 Multi-select rows via CTRL/⌘-click (non-adjacent) and SHIFT-click (range), then delete the selection in
-one action. Needs the selection-state model and a "Delete selected (N)" affordance.
+one action. The single-selection state model shipped with #56 (v3.0); this extends it to multi-select
+plus a "Delete selected (N)" affordance.
 
 ### 58. Rethink the default chapter selection
-`Effort S/M · Impact Med · editor selection · relates to #56`
+`Effort S/M · Impact Med · editor selection · relates to the #56 selection model (shipped)`
 On load the first chapter is auto-selected, so map clicks / searches silently add to chapter 1. Find a
 more intuitive default (e.g. no selection until the user picks, with a clear prompt).
 

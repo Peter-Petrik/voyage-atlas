@@ -314,7 +314,7 @@
 
 <div id="footer">
   <span id="footer-data"></span>
-  <span id="footer-ver">Voyage Atlas v2.9</span>
+  <span id="footer-ver">Voyage Atlas v3.0</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -528,7 +528,7 @@ function handleFile(e) {
       const data = JSON.parse(ev.target.result);
       loadVoyageData(data);
     } catch (err) {
-      alert('Error parsing JSON: ' + err.message);
+      alert("Couldn't read this file — it may be malformed or not a Voyage Atlas JSON.\n\n(Details: " + err.message + ")");
     }
   };
   reader.readAsText(file);
@@ -572,10 +572,12 @@ function loadVoyageData(raw) {
 
   DATA = normalizeData(raw);
 
-  // Title — prioritize: custom voyageTitle > meta.title > default
+  // Title — v3.0: the user title lives at meta.title. Older files put it in settings.voyageTitle
+  // (which wins), or in meta.title — unless that is the bare "Voyage Atlas" constant the old editor wrote.
   const settings = (DATA.meta && DATA.meta.settings) || {};
-  const title = settings.voyageTitle
-    || (DATA.meta && DATA.meta.title)
+  const importedMeta = (DATA.meta && DATA.meta.title) || '';
+  const title = (settings.voyageTitle && settings.voyageTitle.trim())
+    || (importedMeta && importedMeta !== 'Voyage Atlas' ? importedMeta : '')
     || 'Voyage Atlas';
   document.getElementById('page-title').textContent = title;
   document.title = title;
@@ -590,7 +592,7 @@ function loadVoyageData(raw) {
     chapterCountries(ch).forEach(c => { if (c) heroCountries.add(c); });
   });
   const heroClass = classifyCountries(heroCountries);
-  const heroDisplayNm = settings.nmOverride || heroNm;
+  const heroDisplayNm = (settings.distanceOverride != null ? settings.distanceOverride : settings.nmOverride) || heroNm;
   const heroNations = settings.nationsOverride || heroClass.nations.length;
   const heroTerritories = settings.territoriesOverride || heroClass.territories.length;
   const heroItems = [];
@@ -813,10 +815,17 @@ document.addEventListener('keydown', e => {
 
 /* Auto-load voyage-data.json from same directory if present */
 fetch('./voyage-data.json').then(r => {
-  if (r.ok) return r.json();
-  throw new Error('not found');
-}).then(data => {
-  loadVoyageData(data);
+  if (!r.ok) { document.getElementById('landing').classList.remove('hidden'); return; }
+  // The file is present: parse + load. A failure here means it IS there but malformed or not a
+  // Voyage Atlas file — surface it rather than silently falling back to the landing screen.
+  return r.text().then(text => {
+    try {
+      loadVoyageData(JSON.parse(text));
+    } catch (err) {
+      alert("Found voyage-data.json but couldn't read it — it may be malformed or not a Voyage Atlas JSON.\n\n(Details: " + err.message + ")");
+      document.getElementById('landing').classList.remove('hidden');
+    }
+  });
 }).catch(() => { document.getElementById('landing').classList.remove('hidden'); });
 </script>
 </body>

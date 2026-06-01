@@ -91,6 +91,10 @@ html, body {
 .btn-sm { padding: 3px 7px; font-size: 10px; }
 .btn-danger { color: var(--hazard); border-color: var(--hazard); }
 .btn-danger:hover { background: var(--hazard); color: #fff; }
+.lookup-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.lookup-btn:disabled:hover { background: transparent; border-color: var(--border-strong); }
+.toggle-all { display: inline-flex; align-items: center; gap: 3px; }
+.toggle-all-glyph { font-size: 12px; line-height: 1; }
 
 /* Dropdown menus */
 .dropdown { position: relative; display: inline-block; }
@@ -314,6 +318,8 @@ html, body {
 .wpt-row-num { text-align: center; width: 28px; color: var(--muted); font-size: 10px; cursor: pointer; user-select: none; }
 .wpt-row-num:hover { color: var(--accent); }
 .wpt-table tr.row-flash > td { background: var(--accent-soft); }
+.wpt-table tr.wpt-row-selected > td { background: var(--accent-soft); }
+.wpt-table tr.wpt-row-selected > td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 .wpt-table input[type="text"], .wpt-table input[type="number"] {
   font-family: inherit; font-size: 11px;
   padding: 2px 4px; border: 1px solid transparent;
@@ -332,6 +338,7 @@ html, body {
 .wpt-table .col-lat, .wpt-table .col-lon { width: 85px; }
 .wpt-table .col-cb { width: 28px; text-align: center; }
 .wpt-table .col-country { min-width: 80px; }
+.wpt-table td.col-country.country-filled { box-shadow: inset 2px 0 0 var(--success); }
 .wpt-table .col-notes { min-width: 100px; }
 .wpt-del {
   width: 22px; height: 22px; border: none;
@@ -435,7 +442,6 @@ th .hi { margin-left: 2px; }
     <div class="hdr-sub">Chapter &amp; waypoint management</div>
   </div>
   <div class="hdr-actions">
-    <span id="dirty-indicator" title="You have unsaved changes — Save to persist them" style="display:none;align-self:center;font-size:0.78rem;font-weight:600;color:var(--accent);margin-right:6px;white-space:nowrap;">● Unsaved</span>
     <div class="dropdown">
       <button class="btn" onclick="toggleDropdown('import-menu')">Load ▾</button>
       <div id="import-menu" class="dropdown-menu">
@@ -444,7 +450,7 @@ th .hi { margin-left: 2px; }
       </div>
     </div>
     <div class="dropdown" style="display:flex;">
-      <button class="btn btn-accent" onclick="saveDefault()" style="border-radius:4px 0 0 4px;border-right:none;">Save</button>
+      <button class="btn btn-accent" id="save-btn" onclick="saveDefault()" title="Save to voyage-data.json" style="border-radius:4px 0 0 4px;border-right:none;">Save</button>
       <button class="btn btn-accent" onclick="toggleDropdown('export-menu')" style="border-radius:0 4px 4px 0;padding:5px 6px;">▾</button>
       <div id="export-menu" class="dropdown-menu">
         <button onclick="exportJSON()">JSON (timestamped)</button>
@@ -496,8 +502,8 @@ th .hi { margin-left: 2px; }
     </div>
 
     <div style="display:flex;gap:6px;padding:0 0 8px 0;align-items:center;">
-      <button class="btn btn-sm" id="toggle-all-meta" onclick="toggleAllMeta(this)" title="Toggle all metadata panels">📋 Expand all</button>
-      <button class="btn btn-sm" id="toggle-all-wpts" onclick="toggleAllWpts(this)" title="Toggle all waypoint tables">📍 Expand all</button>
+      <span class="toggle-all" title="Metadata panels"><span class="toggle-all-glyph">📋</span><button class="btn btn-sm" onclick="setAllMeta(true)" title="Expand all">⊞</button><button class="btn btn-sm" onclick="setAllMeta(false)" title="Collapse all">⊟</button></span>
+      <span class="toggle-all" title="Waypoint tables"><span class="toggle-all-glyph">📍</span><button class="btn btn-sm" onclick="setAllWpts(true)" title="Expand all">⊞</button><button class="btn btn-sm" onclick="setAllWpts(false)" title="Collapse all">⊟</button></span>
       <button class="btn btn-sm lookup-btn" id="lookup-all-countries" onclick="lookupAllCountries()" title="Look up the country for every waypoint that has coordinates but no country, across all chapters (1/sec rate limit)">🌍 Look up all countries</button>
     </div>
     <div id="chapter-list"></div>
@@ -531,7 +537,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v2.9</span>
+  <span>Voyage Atlas Editor v3.0</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -598,6 +604,18 @@ th .hi { margin-left: 2px; }
   </div>
 </div>
 
+<!-- Country look-up pre-flight confirmation modal (D2) -->
+<div class="modal-overlay" id="lookup-confirm-modal">
+  <div class="modal">
+    <h2>Look Up Countries</h2>
+    <p id="lookup-confirm-msg">This will look up countries for several waypoints.</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeLookupConfirm()">Cancel</button>
+      <button class="btn btn-accent" onclick="proceedLookupConfirm()">Proceed</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════════════════════════════
    CONSTANTS
@@ -658,7 +676,7 @@ const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlng
    STATE
    ═══════════════════════════════════════════════════════════════ */
 function defaultSettings() {
-  return { voyageTitle: '', nmOverride: null, nationsOverride: null, territoriesOverride: null, distanceUnit: 'nm' };
+  return { distanceOverride: null, nationsOverride: null, territoriesOverride: null, distanceUnit: 'nm' };
 }
 let STATE = { chapters: [], settings: defaultSettings(), metaTitle: '' };
 
@@ -671,14 +689,19 @@ function fmtDist(nm) {
   return Math.round((nm || 0) * NM_TO[u]).toLocaleString() + ' ' + u;
 }
 let activeChapterNum = null;  // which chapter is "selected" on the map
+let selectedChapterNum = null, selectedWptIdx = null;  // #56: the one selected waypoint (highlighted on map + in list)
 let rapidClickMode = false;
 let pendingCSVChapters = null; // temp storage during 2-step CSV import
 let isDirty = false; // unsaved changes flag
 // Single setter so the header indicator stays in sync with the flag (#59).
 function setDirty(v) {
   isDirty = v;
-  const el = document.getElementById('dirty-indicator');
-  if (el) el.style.display = v ? 'inline' : 'none';
+  // D1: the Save button itself carries the unsaved marker (the separate header indicator was dropped).
+  const btn = document.getElementById('save-btn');
+  if (btn) {
+    btn.textContent = v ? 'Save *' : 'Save';
+    btn.title = v ? 'Unsaved changes' : 'Save to voyage-data.json';
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -751,6 +774,7 @@ function updateMapChapter(chNum) {
 
   const isActive = chNum === activeChapterNum;
   const color = chapterColor(chNum);
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#a32e38'; // #56 selected-marker colour
   const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
   const markers = [];
 
@@ -762,7 +786,8 @@ function updateMapChapter(chNum) {
       color: color,
       weight: isActive ? 3 : 1.5,
       opacity: isActive ? 0.9 : 0.35,
-      dashArray: isActive ? null : '4 4'
+      dashArray: isActive ? null : '4 4',
+      interactive: false // B2: don't let route lines intercept marker clicks
     };
     const parts = [];
     splitAtDateline(coords).forEach(seg => {
@@ -775,6 +800,7 @@ function updateMapChapter(chNum) {
   ch.waypoints.forEach((w, idx) => {
     if (!w.lat || !w.lon) return;
     const hasName = w.name && w.name.trim() !== '';
+    const isSelected = (chNum === selectedChapterNum && idx === selectedWptIdx); // #56
     // Inactive chapters: only show named waypoints as tiny dots
     if (!isActive && !hasName) return;
 
@@ -785,25 +811,28 @@ function updateMapChapter(chNum) {
       // Circle marker (regular, major, shaping, or inactive)
       let radius = hasName ? (w.major ? 7 : 4) : 2;
       let fillColor = hasName ? color : '#888';
+      let strokeColor = isActive ? '#fff' : color;
+      let cOpacity = opacity, cFillOpacity = isActive ? 0.85 : 0.3;
+      if (isSelected) { radius += 3; fillColor = accent; strokeColor = accent; cOpacity = 1; cFillOpacity = 0.9; } // #56 selected
       marker = L.circleMarker([w.lat, w.lon], {
         radius: radius,
         fillColor: fillColor,
-        color: isActive ? '#fff' : color,
+        color: strokeColor,
         weight: w.major ? 2 : 1,
-        opacity: opacity,
-        fillOpacity: isActive ? 0.85 : 0.3
+        opacity: cOpacity,
+        fillOpacity: cFillOpacity
       }).addTo(map);
     } else {
       // Shaped marker for Decision and/or Gateway (active chapter only)
-      const size = w.major ? 20 : 16;
+      const size = (w.major ? 20 : 16) + (isSelected ? 4 : 0); // #56 selected shape grows
       const half = size / 2;
-      const stroke = isActive ? '#fff' : color;
+      const stroke = isSelected ? accent : (isActive ? '#fff' : color);
       const strokeW = w.major ? 2 : 1.5;
       let svg;
 
       if (w.decision) {
         // Diamond shape
-        const fill = color;
+        const fill = isSelected ? accent : color;
         svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
           <rect x="${half*0.35}" y="${half*0.35}" width="${size*0.65}" height="${size*0.65}"
             transform="rotate(45 ${half} ${half})"
@@ -811,7 +840,7 @@ function updateMapChapter(chNum) {
         </svg>`;
       } else {
         // Star shape (Gateway)
-        const fill = color;
+        const fill = isSelected ? accent : color;
         const r = half * 0.9;
         const ri = r * 0.4;
         let points = '';
@@ -858,10 +887,10 @@ function updateMapChapter(chNum) {
         L.DomEvent.preventDefault(e);
         confirmDeleteWaypoint(chNum, idx);
       });
-      // Click focuses this waypoint's row in the list (when the list is open)
+      // Click selects this waypoint (highlights it, reveals + flashes the row)
       marker.on('click', function(e) {
         L.DomEvent.stopPropagation(e);
-        focusWaypointRow(chNum, idx);
+        selectWaypoint(chNum, idx);
       });
     }
 
@@ -1033,22 +1062,40 @@ function focusMapOnChapter(chNum) {
   map.setView([c.lat, lon], z);
 }
 
-// Map ↔ list focus sync.
-// Clicking a waypoint's sequence number pans the map to it (keeping the current zoom).
-function centerMapOnWaypoint(chNum, idx) {
+// Map ↔ list selection sync (#56). selectWaypoint is the single seam used by marker-click, the
+// sequence-number click, add-waypoint, and row focus. It activates the chapter if needed (clearing the
+// prior selection and redrawing all chapters so the route highlight stays exclusive — B3), records the
+// one selection, optionally zooms to a fixed level (B4), redraws so the selected marker is styled, then
+// reveals and flashes the row.
+function selectWaypoint(chNum, idx, opts = {}) {
   const ch = getChapter(chNum);
   if (!ch || !ch.waypoints[idx]) return;
+  if (chNum !== activeChapterNum) selectChapter(chNum, true); // activate without the fit-jump
+  selectedChapterNum = chNum;
+  selectedWptIdx = idx;
+  updateMapChapter(chNum); // redraw this chapter so the selected marker grows + turns crimson
   const w = ch.waypoints[idx];
-  if (!w.lat || !w.lon) return;
-  map.panTo([w.lat, w.lon]);
+  if (opts.zoom && w.lat && w.lon) {
+    const lon = ((w.lon + 180) % 360 + 360) % 360 - 180; // normalise so a dateline-side waypoint centres correctly
+    map.setView([w.lat, lon], 9); // B4: fixed zoom level 9
+  }
+  revealWaypointRow(chNum, idx);
 }
 
-// Clicking a map waypoint focuses its row in the list — but only when that list is already open.
-function focusWaypointRow(chNum, idx) {
+// Reveal the selected waypoint's row: open the table if collapsed, mark the row selected (clearing any
+// prior), scroll it just into view, flash it briefly, and focus the name field.
+function revealWaypointRow(chNum, idx) {
   const panel = document.getElementById(`ch-wpts-${chNum}`);
-  if (!panel || !panel.classList.contains('open')) return;
+  if (panel && !panel.classList.contains('open')) {
+    panel.classList.add('open');
+    const tgl = document.querySelector(`#ch-${chNum} .ch-toggle[title="Waypoints"]`);
+    if (tgl) tgl.classList.add('open');
+    initWaypointSortable(chNum);
+  }
+  document.querySelectorAll('.wpt-row-selected').forEach(r => r.classList.remove('wpt-row-selected'));
   const row = document.querySelector(`#wpt-body-${chNum} tr[data-idx="${idx}"]`);
   if (!row) return;
+  row.classList.add('wpt-row-selected');
   row.scrollIntoView({ block: 'nearest' });
   row.classList.add('row-flash');
   setTimeout(() => row.classList.remove('row-flash'), 1200);
@@ -1158,7 +1205,7 @@ let revGeoRunning = false;
 
 // Unified geocoding status — reflects pending work across BOTH queues (forward + reverse),
 // so paste/name-entry coordinate lookups show progress just like the country button does.
-let geoTotal = 0, geoDone = 0;
+let geoTotal = 0, geoDone = 0, geoResolved = 0;
 // Count of forward/reverse geocodes queued or in flight. Guards the country-lookup buttons so a
 // second click can't re-queue the same waypoints mid-run (#60).
 function geoPending() {
@@ -1170,10 +1217,13 @@ function renderGeoStatus() {
   const pending = geoPending();
   document.querySelectorAll('.lookup-btn').forEach(b => { b.disabled = pending > 0; });
   if (pending > 0) {
-    statusEl.innerHTML = `<span class="status-active">Geocoding ${geoDone}/${geoTotal}…</span> (1/sec rate limit)`;
+    const mins = etaMinutes(geoTotal - geoDone);
+    statusEl.innerHTML = `<span class="status-active">Geocoding ${geoDone}/${geoTotal}…</span> ~${mins} min remaining`;
   } else if (geoTotal > 0) {
-    statusEl.innerHTML = `<span class="status-active">Geocoded ${geoDone}/${geoTotal}</span>`;
-    geoTotal = 0; geoDone = 0; // reset for the next batch
+    const unresolved = geoTotal - geoResolved;
+    const tail = unresolved > 0 ? ` - ${unresolved} couldn't be resolved` : '';
+    statusEl.innerHTML = `<span class="status-active">Geocoded ${geoResolved}/${geoTotal}${tail}</span>`;
+    geoTotal = 0; geoDone = 0; geoResolved = 0; // reset for the next batch
   }
 }
 
@@ -1194,6 +1244,7 @@ function processRevGeoQueue() {
     .then(r => r.json())
     .then(data => {
       const country = (data.address && data.address.country) || '';
+      if (country) geoResolved++;
       callback(country);
     })
     .catch(() => callback(''))
@@ -1221,7 +1272,7 @@ function queueChapterCountryLookups(ch) {
           const curIdx = ch.waypoints.indexOf(wptRef);
           if (curIdx !== -1) {
             const input = document.querySelector(`#wpt-country-${chNum}-${curIdx}`);
-            if (input) input.value = country;
+            if (input) { input.value = country; syncCountryFlag(input); }
           }
           updateChapterCountries(chNum);
         }
@@ -1231,19 +1282,57 @@ function queueChapterCountryLookups(ch) {
   return n;
 }
 
+// Country look-up pre-flight (D2): count eligible rows, warn before a long rate-limited run, confirm
+// via modal. Per-chapter prompts only past the threshold; the all-chapters run always prompts.
+const LOOKUP_CONFIRM_THRESHOLD = 30; // per-chapter rows; the all-chapters run always confirms
+let pendingLookupAction = null;
+function etaMinutes(rows) { return Math.max(1, Math.ceil(rows * 1.1 / 60)); } // ~1.1s per Nominatim call
+function countChapterEligible(ch) {
+  return ch.waypoints.filter(w => w.lat && w.lon && (!w.country || w.country.trim() === '')).length;
+}
+function showLookupConfirm(n, action) {
+  pendingLookupAction = action;
+  const m = etaMinutes(n);
+  const msg = document.getElementById('lookup-confirm-msg');
+  if (msg) msg.textContent = `This will look up countries for ${n} waypoint${n === 1 ? '' : 's'} at about one per second - roughly ${m} minute${m === 1 ? '' : 's'}.`;
+  document.getElementById('lookup-confirm-modal').classList.add('open');
+}
+function closeLookupConfirm() {
+  document.getElementById('lookup-confirm-modal').classList.remove('open');
+  pendingLookupAction = null;
+}
+function proceedLookupConfirm() {
+  document.getElementById('lookup-confirm-modal').classList.remove('open');
+  const action = pendingLookupAction;
+  pendingLookupAction = null;
+  if (action) action();
+}
+// #53: a filled country cell is one the look-up skips — flag it so that's visible. Kept in sync wherever
+// the value changes (manual edit, reverse look-up, forward geocode); see renderWaypointRow.
+function syncCountryFlag(input) {
+  const cell = input && input.closest('.col-country');
+  if (cell) cell.classList.toggle('country-filled', !!(input.value && input.value.trim()));
+}
+
 function fillChapterCountries(chNum) {
   if (geoPending() > 0) return; // a lookup is already running — ignore the re-click (#60)
   const ch = getChapter(chNum);
   if (!ch) return;
-  const total = queueChapterCountryLookups(ch);
-  // When total > 0, the shared geocoding status (renderGeoStatus) reports progress via the queue.
-  if (total === 0) {
+  const n = countChapterEligible(ch);
+  if (n === 0) {
     updateChapterCountries(chNum);
     const noCoords = ch.waypoints.filter(w => !w.lat || !w.lon).length;
     const statusEl = document.getElementById('status-text');
     let msg = 'All waypoints with coordinates already have countries';
     if (noCoords > 0) msg += ` (${noCoords} ${noCoords === 1 ? 'row has' : 'rows have'} no coordinates)`;
     if (statusEl) statusEl.innerHTML = `<span class="status-active">${msg}</span>`;
+    return;
+  }
+  // Past the threshold, warn before committing to a long rate-limited run (D2).
+  if (n >= LOOKUP_CONFIRM_THRESHOLD) {
+    showLookupConfirm(n, () => queueChapterCountryLookups(ch));
+  } else {
+    queueChapterCountryLookups(ch);
   }
 }
 
@@ -1251,12 +1340,17 @@ function fillChapterCountries(chNum) {
 // 1/sec queue and the same in-run guard as the per-chapter button.
 function lookupAllCountries() {
   if (geoPending() > 0) return;
-  let total = 0;
-  STATE.chapters.forEach(ch => { total += queueChapterCountryLookups(ch); });
-  if (total === 0) {
+  let n = 0;
+  STATE.chapters.forEach(ch => { n += countChapterEligible(ch); });
+  if (n === 0) {
     const statusEl = document.getElementById('status-text');
     if (statusEl) statusEl.innerHTML = '<span class="status-active">All waypoints with coordinates already have countries</span>';
+    return;
   }
+  // The all-chapters run always confirms first — it can be a lot of waypoints (D2).
+  showLookupConfirm(n, () => {
+    STATE.chapters.forEach(ch => queueChapterCountryLookups(ch));
+  });
 }
 
 // Effective country list for a chapter: an explicit per-chapter override if set, else derived on the
@@ -1323,6 +1417,7 @@ function processFwdGeoQueue() {
       if (w.lat || w.lon) return; // coords set meanwhile
       w.lat = Math.round(parseFloat(r.lat) * 100000) / 100000;
       w.lon = Math.round(parseFloat(r.lon) * 100000) / 100000;
+      geoResolved++; // coordinates successfully resolved
       // Country rides along free in this forward response — fill only if empty
       // (never clobber a value typed or pasted by hand).
       if (!w.country && r.address && r.address.country) w.country = r.address.country;
@@ -1332,7 +1427,7 @@ function processFwdGeoQueue() {
       const countryInput = document.querySelector(`#wpt-country-${chNum}-${curIdx}`);
       if (latInput) latInput.value = w.lat;
       if (lonInput) lonInput.value = w.lon;
-      if (countryInput && w.country) countryInput.value = w.country;
+      if (countryInput && w.country) { countryInput.value = w.country; syncCountryFlag(countryInput); }
       updateMapChapter(chNum);
       updateChapterCountries(chNum);
       const chEl = document.getElementById(`ch-${chNum}`);
@@ -1466,21 +1561,22 @@ function chapterNm(ch) {
   return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1)) + chapterApproachNm(ch);
 }
 
-function computeEditorTitle(s) {
-  // Mirror the viewer's precedence: explicit voyage title, then the imported meta.title, then default.
-  const base = s.voyageTitle || STATE.metaTitle || 'Voyage Atlas';
+function computeEditorTitle() {
+  // v3.0: the voyage title is the single user title at meta.title (STATE.metaTitle); the constant
+  // app name is the implied fallback.
+  const base = STATE.metaTitle || 'Voyage Atlas';
   return `${base} — Editor`;
 }
 
 function updateSettings() {
   const s = STATE.settings;
-  s.voyageTitle = document.getElementById('set-title').value.trim();
+  STATE.metaTitle = document.getElementById('set-title').value.trim();
   const ovRaw = parseFloat(document.getElementById('set-nm').value);
-  s.nmOverride = ovRaw ? Math.round(ovRaw / NM_TO[distUnit()]) : null; // stored as canonical nm
+  s.distanceOverride = ovRaw ? Math.round(ovRaw / NM_TO[distUnit()]) : null; // stored as canonical nm
   s.nationsOverride = parseInt(document.getElementById('set-nations').value) || null;
   s.territoriesOverride = parseInt(document.getElementById('set-territories').value) || null;
   // Update page title
-  const title = computeEditorTitle(s);
+  const title = computeEditorTitle();
   document.querySelector('#header h1').textContent = title;
   document.title = title;
   updateHeroStats();
@@ -1491,20 +1587,20 @@ function changeDistanceUnit() {
   STATE.settings.distanceUnit = document.getElementById('set-unit').value;
   const s = STATE.settings;
   // Re-display the override in the new unit; the stored value stays canonical nm.
-  document.getElementById('set-nm').value = s.nmOverride ? Math.round(s.nmOverride * NM_TO[distUnit()]) : '';
+  document.getElementById('set-nm').value = s.distanceOverride ? Math.round(s.distanceOverride * NM_TO[distUnit()]) : '';
   renderAllChapters(); // refresh every distance display (chapters + hero) in the new unit
   setDirty(true);
 }
 
 function loadSettings() {
   const s = STATE.settings || {};
-  document.getElementById('set-title').value = s.voyageTitle || '';
+  document.getElementById('set-title').value = STATE.metaTitle || '';
   document.getElementById('set-unit').value = distUnit();
-  document.getElementById('set-nm').value = s.nmOverride ? Math.round(s.nmOverride * NM_TO[distUnit()]) : '';
+  document.getElementById('set-nm').value = s.distanceOverride ? Math.round(s.distanceOverride * NM_TO[distUnit()]) : '';
   document.getElementById('set-nations').value = s.nationsOverride || '';
   document.getElementById('set-territories').value = s.territoriesOverride || '';
   // Update page title
-  const title = computeEditorTitle(s);
+  const title = computeEditorTitle();
   document.querySelector('#header h1').textContent = title;
   document.title = title;
 }
@@ -1522,7 +1618,7 @@ function updateHeroStats() {
     chapterCountries(ch).forEach(c => { if (c) allCountries.add(c); });
   });
   const s = STATE.settings || {};
-  const displayNm = s.nmOverride || totalNm;
+  const displayNm = s.distanceOverride || totalNm;
   // Auto-classify nations vs territories
   const classified = classifyCountries(allCountries);
   const nations = s.nationsOverride || classified.nations.length;
@@ -1531,10 +1627,10 @@ function updateHeroStats() {
   const nmInput = document.getElementById('set-nm');
   const nInput = document.getElementById('set-nations');
   const tInput = document.getElementById('set-territories');
-  if (nmInput && !s.nmOverride) nmInput.placeholder = `AUTO: ${fmtDist(totalNm)}`;
+  if (nmInput && !s.distanceOverride) nmInput.placeholder = `AUTO: ${fmtDist(totalNm)}`;
   if (nInput && !s.nationsOverride) nInput.placeholder = `AUTO: ${classified.nations.length}`;
   if (tInput && !s.territoriesOverride) tInput.placeholder = `AUTO: ${classified.territories.length}`;
-  let statsText = `${fmtDist(displayNm)}${s.nmOverride ? ' ⚙' : ''}`;
+  let statsText = `${fmtDist(displayNm)}${s.distanceOverride ? ' ⚙' : ''}`;
   if (nations) statsText += ` · ${nations} ${nations === 1 ? 'nation' : 'nations'}${s.nationsOverride ? ' ⚙' : ''}`;
   if (territories) statsText += ` · ${territories} ${territories === 1 ? 'territory' : 'territories'}${s.territoriesOverride ? ' ⚙' : ''}`;
   statsText += ` · ${STATE.chapters.length} ${STATE.chapters.length === 1 ? 'chapter' : 'chapters'} · ${totalWpts} ${totalWpts === 1 ? 'named waypoint' : 'named waypoints'}`;
@@ -1623,37 +1719,26 @@ function onWhenChange(chNum) {
 /* ═══════════════════════════════════════════════════════════════
    EXPAND / COLLAPSE ALL
    ═══════════════════════════════════════════════════════════════ */
-function toggleAllMeta(btn) {
-  // Expand if any panel is closed, otherwise collapse — one click does the right thing even from a
-  // mixed state (#10), rather than relying on the button's current label.
-  const expanding = STATE.chapters.some(ch => {
-    const p = document.getElementById(`ch-meta-${ch.num}`);
-    return p && !p.classList.contains('open');
-  });
+// D4: explicit expand-all / collapse-all (the ⊞/⊟ icon pair), replacing the single state-aware toggles.
+function setAllMeta(open) {
   STATE.chapters.forEach(ch => {
     const panel = document.getElementById(`ch-meta-${ch.num}`);
     const toggle = document.querySelector(`#ch-${ch.num} .ch-toggle[title="Chapter metadata"]`);
-    if (panel) panel.classList.toggle('open', expanding);
-    if (toggle) toggle.classList.toggle('open', expanding);
+    if (panel) panel.classList.toggle('open', open);
+    if (toggle) toggle.classList.toggle('open', open);
   });
-  btn.textContent = expanding ? '📋 Collapse all' : '📋 Expand all';
 }
 
-function toggleAllWpts(btn) {
-  const expanding = STATE.chapters.some(ch => {
-    const p = document.getElementById(`ch-wpts-${ch.num}`);
-    return p && !p.classList.contains('open');
-  });
+function setAllWpts(open) {
   STATE.chapters.forEach(ch => {
     const panel = document.getElementById(`ch-wpts-${ch.num}`);
     const toggle = document.querySelector(`#ch-${ch.num} .ch-toggle[title="Waypoints"]`);
     if (panel) {
-      panel.classList.toggle('open', expanding);
-      if (expanding) initWaypointSortable(ch.num);
+      panel.classList.toggle('open', open);
+      if (open) initWaypointSortable(ch.num);
     }
-    if (toggle) toggle.classList.toggle('open', expanding);
+    if (toggle) toggle.classList.toggle('open', open);
   });
-  btn.textContent = expanding ? '📍 Collapse all' : '📍 Expand all';
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1852,14 +1937,14 @@ function renderWaypointRow(chNum, w, idx) {
   return `
     <tr class="${isShaping ? 'shaping' : ''}" data-idx="${idx}">
       <td class="wpt-row-drag">≡</td>
-      <td class="wpt-row-num" title="Center map on this waypoint" onclick="centerMapOnWaypoint(${chNum},${idx})">${idx + 1}</td>
+      <td class="wpt-row-num" title="Zoom to and select this waypoint" onclick="selectWaypoint(${chNum},${idx},{zoom:true})">${idx + 1}</td>
       <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" value="${esc(w.name)}" placeholder="(shaping vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
       <td class="col-lat"><input type="number" step="any" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="updateWpt(${chNum},${idx},'lat',parseFloat(this.value)||null)"></td>
       <td class="col-lon"><input type="number" step="any" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="updateWpt(${chNum},${idx},'lon',parseFloat(this.value)||null)"></td>
       <td class="col-cb"><input type="checkbox" ${w.major?'checked':''} onchange="updateWpt(${chNum},${idx},'major',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.decision?'checked':''} onchange="updateWpt(${chNum},${idx},'decision',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.gateway?'checked':''} onchange="updateWpt(${chNum},${idx},'gateway',this.checked)"></td>
-      <td class="col-country"><input type="text" id="wpt-country-${chNum}-${idx}" value="${esc(w.country || '')}" onchange="updateWpt(${chNum},${idx},'country',this.value)"></td>
+      <td class="col-country${(w.country && w.country.trim()) ? ' country-filled' : ''}"><input type="text" id="wpt-country-${chNum}-${idx}" value="${esc(w.country || '')}" onchange="updateWpt(${chNum},${idx},'country',this.value);syncCountryFlag(this)"></td>
       <td class="col-notes"><input type="text" value="${esc(w.notes || '')}" onchange="updateWpt(${chNum},${idx},'notes',this.value)"></td>
       <td><button class="wpt-del" onclick="deleteWpt(${chNum},${idx})" title="Delete row">✕</button></td>
     </tr>
@@ -1920,9 +2005,8 @@ function addWaypoint(chNum) {
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
   updateHeroStats();
-  // Scroll to bottom of table
-  const wrap = document.querySelector(`#ch-wpts-${chNum} .wpt-table-wrap`);
-  if (wrap) setTimeout(() => wrap.scrollTop = wrap.scrollHeight, 50);
+  // #56: select the new row so it is highlighted and scrolled into view (universal reveal, no threshold).
+  selectWaypoint(chNum, ch.waypoints.length - 1);
 }
 
 function deleteWpt(chNum, idx) {
@@ -1960,15 +2044,19 @@ function doDeleteWpt() {
 /* ═══════════════════════════════════════════════════════════════
    CHAPTER ACTIONS
    ═══════════════════════════════════════════════════════════════ */
-function selectChapter(chNum) {
+function selectChapter(chNum, skipFit) {
   activeChapterNum = chNum;
+  // #56: a chapter switch clears the waypoint selection (highlight + row).
+  selectedChapterNum = null;
+  selectedWptIdx = null;
+  document.querySelectorAll('.wpt-row-selected').forEach(r => r.classList.remove('wpt-row-selected'));
   // Update active styling
   document.querySelectorAll('.ch-item').forEach(el => {
     el.classList.toggle('active', parseInt(el.dataset.chNum) === chNum);
   });
   // Update map
   updateMapAll();
-  focusMapOnChapter(chNum);
+  if (!skipFit) focusMapOnChapter(chNum); // selectWaypoint activates without the fit-jump
   // Update status
   const ch = getChapter(chNum);
   document.getElementById('status-text').innerHTML =
@@ -2187,7 +2275,7 @@ function handleJSONFile(e) {
       const data = JSON.parse(ev.target.result);
       loadFromJSON(data);
     } catch (err) {
-      alert('Error parsing JSON: ' + err.message);
+      alert("Couldn't read this file — it may be malformed or not a Voyage Atlas JSON.\n\n(Details: " + err.message + ")");
     }
   };
   reader.readAsText(file);
@@ -2244,11 +2332,21 @@ function loadFromV2JSON(data) {
   if (data.meta && data.meta.settings) {
     STATE.settings = { ...STATE.settings, ...data.meta.settings };
   }
-  // voyageTitle comes only from settings (the user's explicit title). meta.title is the computed
-  // display title and must NOT be copied back into the editable field, or a blank (auto) title
-  // would hardcode itself into voyageTitle on every export→import round-trip. We retain it
-  // separately so the page/tab title can fall back to it (display only) when voyageTitle is blank.
-  STATE.metaTitle = (data.meta && data.meta.title) || '';
+  // v3.0 model: a single user voyage title lives at meta.title (STATE.metaTitle), edited in the
+  // settings field and written back verbatim. Migrate older files — a pre-v3.0 settings.voyageTitle
+  // holds the user's title and wins; otherwise fall back to meta.title, unless it is the bare
+  // "Voyage Atlas" constant the old serialiser always wrote (not a real user title).
+  const legacyTitle = data.meta && data.meta.settings && data.meta.settings.voyageTitle;
+  const importedMeta = (data.meta && data.meta.title) || '';
+  STATE.metaTitle = (legacyTitle && legacyTitle.trim())
+    ? legacyTitle.trim()
+    : (importedMeta && importedMeta !== 'Voyage Atlas' ? importedMeta : '');
+  // Migrate legacy keys onto the v3.0 model, then drop them so they are not re-serialised.
+  if (STATE.settings.nmOverride != null && STATE.settings.distanceOverride == null) {
+    STATE.settings.distanceOverride = STATE.settings.nmOverride;
+  }
+  delete STATE.settings.nmOverride;
+  delete STATE.settings.voyageTitle;
   loadSettings();
   updateHeroStats();
   setDirty(false);
@@ -2381,12 +2479,11 @@ function buildExportJSON() {
   // recompute them on load. Only source data and explicit overrides are written.
   return JSON.stringify({
     meta: {
-      title: s.voyageTitle || 'Voyage Atlas',
-      version: '2.7',
+      ...(STATE.metaTitle ? { title: STATE.metaTitle } : {}),
+      version: '3.0',
       generatedAt: new Date().toISOString(),
       settings: {
-        voyageTitle: s.voyageTitle || '',
-        ...(s.nmOverride ? { nmOverride: s.nmOverride } : {}),
+        ...(s.distanceOverride ? { distanceOverride: s.distanceOverride } : {}),
         ...(s.nationsOverride ? { nationsOverride: s.nationsOverride } : {}),
         ...(s.territoriesOverride ? { territoriesOverride: s.territoriesOverride } : {}),
         distanceUnit: s.distanceUnit || 'nm'

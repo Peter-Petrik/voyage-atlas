@@ -12,12 +12,61 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
-**Known issues (v2.9, slated for v3.0):** the country look-up "nothing to do" guard reports a spurious
-"1/1" instead of "all filled" (testing items 8/19); flaky named-waypoint map clicks; two chapters can
-stay highlighted at once; the sequence-number zoom fits the whole chapter (useless on long legs); and
-several JSON-model cleanups (drop blank `voyageTitle`, resolve `meta.title` vs `settings.voyageTitle`,
-fix non-importing `meta.title`, rename `nmOverride`). Full agenda in `voyage-atlas-v3.0-plan.md`; test
-record in `voyage-atlas-testing.md`.
+## [v3.0] - 2026-06-01
+
+### Fixed
+1. **Country look-up "nothing to do" reported a spurious "1/1" (testing 8/19).** The status numerator
+   counted every geocode attempt, so a point Nominatim cannot resolve — for example an open-ocean shaping
+   vertex — still incremented it, showing "1/1" when nothing was actually resolved. The status now counts
+   only the waypoints actually resolved: it reads, for example, "Geocoded 4/5" and names how many could
+   not be resolved. Because the count lives in the shared status line, the forward (name → coordinates)
+   look-up reports honestly too. The "all waypoints with coordinates already have countries" message
+   (nothing eligible) is unchanged.
+2. **Named-waypoint map clicks were hit-or-miss.** A click on a marker could fall through to the map's
+   "add waypoint" handler or be swallowed by an overlapping route line. Marker clicks now route through the
+   selection model and the route lines are non-interactive, so a click reliably reaches the marker beneath.
+3. **Two chapters could stay highlighted at once.** Activating a chapter now redraws every chapter, so only
+   the active chapter's route is drawn in the highlighted style.
+4. **Sequence-number zoom fit the whole chapter (useless on long legs).** Clicking a waypoint's sequence
+   number now zooms to a fixed level centred on that waypoint and activates its chapter, rather than
+   fitting the chapter's full extent.
+5. **A stored `meta.title` no longer fails to import.** Folded into the single-title change below — the
+   loader now reads the stored title into the editable title field.
+
+### Added
+6. **Waypoint selection model (#56).** Clicking a marker on the map, or a waypoint's sequence number in the
+   list, now selects that waypoint: the marker grows and turns the accent colour, and its row is tinted,
+   scrolled into view, and briefly flashed. One waypoint is selected at a time, replaced by the next and
+   cleared when the active chapter changes. Adding a waypoint selects the new row.
+7. **Country look-up pre-flight estimate.** Before a long reverse-geocode run, a confirmation modal shows
+   how many waypoints will be looked up and a rough time estimate (the queue runs at one per second). The
+   all-chapters look-up always confirms; a per-chapter look-up confirms only when 30 or more waypoints are
+   eligible. The running status shows progress with a live "minutes remaining".
+8. **Filled-country cells are flagged (#53).** A country cell that already holds a value carries a small
+   marker, so it is visible at a glance which cells the look-up will skip.
+
+### Changed
+9. **The unsaved-changes marker moved onto the Save button.** The separate header "● Unsaved" indicator is
+   gone; the Save button itself reads `Save *` (tooltip "Unsaved changes") whenever there are unsaved edits.
+10. **Country look-up buttons show disabled styling.** While a geocode run is queued or in flight, the
+    look-up buttons are visibly greyed with a not-allowed cursor, on top of the existing re-click guard.
+11. **Expand-all / collapse-all is now an icon pair.** Each control is a compact `⊞` (expand all) / `⊟`
+    (collapse all) pair behind its glyph — `📋 ⊞ ⊟` for metadata panels, `📍 ⊞ ⊟` for waypoint tables —
+    replacing the single state-aware toggle.
+12. **Single voyage title at `meta.title`.** The user's voyage title now lives only at `meta.title`; the
+    older `settings.voyageTitle` is dropped, and a blank title is no longer written.
+13. **`nmOverride` renamed to `distanceOverride`.** A key-only rename — the value is still stored as
+    nautical miles and converted only for entry and display.
+14. **Data version stamped `3.0`.** Aligned with the app version; files from 2.5–2.7 still load through the
+    migrations.
+15. **Friendlier JSON load errors (#62).** A malformed or non-Voyage-Atlas file now shows a branded message
+    in both tools instead of a raw parse error, and the viewer's auto-load distinguishes a missing file
+    (the landing screen) from a present-but-broken one (an error).
+
+### Migration
+16. On load, a pre-v3.0 `settings.voyageTitle` is promoted to the single title — it wins if non-blank,
+    otherwise `meta.title` is used unless it is the bare "Voyage Atlas" constant the old editor wrote — and
+    a legacy `nmOverride` is read as `distanceOverride`. Files saved by 2.5–2.7 continue to load.
 
 ## [v2.9] - 2026-05-31
 
