@@ -537,7 +537,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v3.1</span>
+  <span>Voyage Atlas Editor v3.1.1</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -2592,8 +2592,8 @@ function exportKML() {
       if (!w.name || !w.name.trim() || !w.lat || !w.lon) return;
       let styleId = 'waypoint';
       if (w.major) styleId = 'major';
-      if (w.decision) styleId = 'decision';
       if (w.gateway) styleId = 'gateway';
+      if (w.decision) styleId = 'decision';
       kml += `<Placemark><name>${escXml(w.name)}</name><styleUrl>#${styleId}</styleUrl>
 <Point><coordinates>${w.lon},${w.lat},0</coordinates></Point></Placemark>\n`;
     });

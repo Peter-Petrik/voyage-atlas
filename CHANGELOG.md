@@ -9,8 +9,14 @@ framework document (`global-voyage-framework.md`) carries its own separate versi
 ## [Unreleased]
 
 Queued improvements tracked in `voyage-atlas-enhancements.md`:
+
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
+
+## [v3.1.1] - 2026-06-05
+
+### Fixed
+1. **KML export icon priority now matches the map.** A waypoint carrying more than one of Major/Decision/Gateway now exports with a single icon chosen by the priority Decision > Gateway > Major; previously the `exportKML` style assignment let Gateway override Decision, disagreeing with the map (which already drew Decision over Gateway). The reorder applies the `decision` style last; the map shape logic and the additive tooltip glyphs are unchanged. A KML placemark carries only one icon, so a Major-only waypoint exports as the major icon while the map shows it as a sized plain marker — the winning icon is aligned across map and export, but the map's combined shape-and-size styling cannot be reproduced in KML.
 
 ## [v3.1] - 2026-06-05
 

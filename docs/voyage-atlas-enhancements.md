@@ -5,7 +5,7 @@ The forward-looking backlog for the **editor** (`voyage-atlas-editor.html`) and 
 version. (The ~21 previously-"queued" items that had already shipped were pruned from this doc; all
 were confirmed present in the CHANGELOG first. The v3.0 release then pruned #53, #56, and #62 — shipped, and
 confirmed in the CHANGELOG — and dropped #52 as moot, since the CSV carries no distance figures to
-label.) Build decisions live in `voyage-atlas-runbook.md`.
+label. The v3.1.1 patch then pruned #66 — shipped, and confirmed in the CHANGELOG.) Build decisions live in `voyage-atlas-runbook.md`.
 
 Items keep their **original numbers** — cross-references and the runbook depend on them, so the numbers
 are stable IDs, not sequence. They're grouped into **phases** meant to be worked roughly in order, each
@@ -53,14 +53,6 @@ In the bulk-paste textarea, bind CMD/CTRL+Enter to "Add Rows" (Enter still inser
 ### 57. Second Escape clears the search box
 `Effort S · Impact Low · editor place search · —`
 First Escape dismisses the results; a second Escape clears the typed query.
-
-### 66. Align Decision/Gateway marker priority across map and KML
-`Effort S · Impact Low · editor marker render + KML export · open: which flag wins`
-A waypoint flagged both Decision and Gateway renders inconsistently: the editor map draws the Decision
-diamond (Decision wins), while the KML export emits the Gateway icon (its styleId is assigned
-major→decision→gateway, last write wins). Pick one precedence and apply it to both paths so a
-Decision+Gateway point looks the same in the editor and in Google Earth. **Open question:** which flag
-wins when both are set.
 
 ### 67. Adopt American spelling across all docs and HTML
 `Effort M · Impact Low · all docs + both HTML files · supersedes the earlier British-spelling docs convention`
