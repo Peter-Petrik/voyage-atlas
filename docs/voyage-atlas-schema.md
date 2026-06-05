@@ -212,7 +212,7 @@ The editor exports KML (`voyage-route.kml`, date-prefixed) for Google Earth and 
   <!-- Four icon styles: #waypoint #major #decision #gateway -->
   <Folder>
     <name>Ch N — Chapter Name</name>
-    <Placemark>                              <!-- Route line, coloured per chapter -->
+    <Placemark>                              <!-- Route line, colored per chapter -->
       <LineString><coordinates>lon,lat,0 ...</coordinates></LineString>
     </Placemark>
     <Placemark>                              <!-- One per named waypoint -->
@@ -226,7 +226,7 @@ The editor exports KML (`voyage-route.kml`, date-prefixed) for Google Earth and 
 
 1. **Styles.** `#waypoint` (white circle), `#major` (yellow stars), `#decision` (red diamond), `#gateway` (green stars), using Google's hosted paddle icons.
 2. **Folders.** One per chapter, named `Ch N — Chapter Name`.
-3. **Route.** One `LineString` Placemark per chapter through all coordinate-bearing waypoints; its colour is the chapter's palette colour (written in KML `aabbggrr` order).
+3. **Route.** One `LineString` Placemark per chapter through all coordinate-bearing waypoints; its color is the chapter's palette color (written in KML `aabbggrr` order).
 4. **Waypoints.** A `Point` Placemark per **named** waypoint (shaping vertices are skipped).
 5. **Icon priority.** The `styleUrl` is assigned in the order major → decision → gateway, so the **last applicable flag wins: gateway, then decision, then major**. This is the reverse of the on-map shape priority (where Decision wins), and is the one place the two presentations disagree.
 
@@ -245,5 +245,5 @@ Planned for permanent avoidance zones, restricted areas, or user-defined regions
 | `north` | float | Northern boundary latitude. |
 | `east` | float | Eastern boundary longitude. |
 | `type` | string | Zone type (e.g. `avoidance`, `restricted`, `custom`). |
-| `color` | string | Hex colour for rendering. |
+| `color` | string | Hex color for rendering. |
 | `opacity` | float | Fill opacity (0–1). |

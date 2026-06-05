@@ -13,6 +13,11 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.1.2] - 2026-06-05
+
+### Changed
+1. **Spelling standardized to American English across both tools and the docs (#67).** Prose, code comments, and user-visible strings were swept for British forms (color, center, behavior, favor, -ize/-ization, gray, and similar) and converted; code identifiers and CSS/JS keywords were left untouched. No functional change — the only editor-file edits are two code comments, and the viewer footer bumps for version parity. Reverses the earlier British-spelling docs convention.
+
 ## [v3.1.1] - 2026-06-05
 
 ### Fixed
@@ -38,17 +43,17 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. **Country look-up "nothing to do" reported a spurious "1/1" (testing 8/19).** The status numerator counted every geocode attempt, so a point Nominatim cannot resolve — for example an open-ocean shaping vertex — still incremented it, showing "1/1" when nothing was actually resolved. The status now counts only the waypoints actually resolved: it reads, for example, "Geocoded 4/5" and names how many could not be resolved. Because the count lives in the shared status line, the forward (name → coordinates) look-up reports honestly too. The "all waypoints with coordinates already have countries" message (nothing eligible) is unchanged.
 2. **Named-waypoint map clicks were hit-or-miss.** A click on a marker could fall through to the map's "add waypoint" handler or be swallowed by an overlapping route line. Marker clicks now route through the selection model and the route lines are non-interactive, so a click reliably reaches the marker beneath.
 3. **Two chapters could stay highlighted at once.** Activating a chapter now redraws every chapter, so only the active chapter's route is drawn in the highlighted style.
-4. **Sequence-number zoom fit the whole chapter (useless on long legs).** Clicking a waypoint's sequence number now zooms to a fixed level centred on that waypoint and activates its chapter, rather than fitting the chapter's full extent.
+4. **Sequence-number zoom fit the whole chapter (useless on long legs).** Clicking a waypoint's sequence number now zooms to a fixed level centered on that waypoint and activates its chapter, rather than fitting the chapter's full extent.
 5. **A stored `meta.title` no longer fails to import.** Folded into the single-title change below — the loader now reads the stored title into the editable title field.
 
 ### Added
-6. **Waypoint selection model (#56).** Clicking a marker on the map, or a waypoint's sequence number in the list, now selects that waypoint: the marker grows and turns the accent colour, and its row is tinted, scrolled into view, and briefly flashed. One waypoint is selected at a time, replaced by the next and cleared when the active chapter changes. Adding a waypoint selects the new row.
+6. **Waypoint selection model (#56).** Clicking a marker on the map, or a waypoint's sequence number in the list, now selects that waypoint: the marker grows and turns the accent color, and its row is tinted, scrolled into view, and briefly flashed. One waypoint is selected at a time, replaced by the next and cleared when the active chapter changes. Adding a waypoint selects the new row.
 7. **Country look-up pre-flight estimate.** Before a long reverse-geocode run, a confirmation modal shows how many waypoints will be looked up and a rough time estimate (the queue runs at one per second). The all-chapters look-up always confirms; a per-chapter look-up confirms only when 30 or more waypoints are eligible. The running status shows progress with a live "minutes remaining".
 8. **Filled-country cells are flagged (#53).** A country cell that already holds a value carries a small marker, so it is visible at a glance which cells the look-up will skip.
 
 ### Changed
 9. **The unsaved-changes marker moved onto the Save button.** The separate header "● Unsaved" indicator is gone; the Save button itself reads `Save *` (tooltip "Unsaved changes") whenever there are unsaved edits.
-10. **Country look-up buttons show disabled styling.** While a geocode run is queued or in flight, the look-up buttons are visibly greyed with a not-allowed cursor, on top of the existing re-click guard.
+10. **Country look-up buttons show disabled styling.** While a geocode run is queued or in flight, the look-up buttons are visibly grayed with a not-allowed cursor, on top of the existing re-click guard.
 11. **Expand-all / collapse-all is now an icon pair.** Each control is a compact `⊞` (expand all) / `⊟` (collapse all) pair behind its glyph — `📋 ⊞ ⊟` for metadata panels, `📍 ⊞ ⊟` for waypoint tables — replacing the single state-aware toggle.
 12. **Single voyage title at `meta.title`.** The user's voyage title now lives only at `meta.title`; the older `settings.voyageTitle` is dropped, and a blank title is no longer written.
 13. **`nmOverride` renamed to `distanceOverride`.** A key-only rename — the value is still stored as nautical miles and converted only for entry and display.
@@ -74,8 +79,8 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 7. **Expand-all / collapse-all is a single state-aware toggle.** The control now expands if any panel is closed and collapses otherwise, so one click does the right thing from a mixed state instead of requiring expand-then-collapse.
 8. **Viewer label "Waters" → "Countries / Territories,"** matching the editor field and keeping the tool sailing-agnostic.
 9. **Exported JSON omits unset overrides.** The settings overrides (`nmOverride`, `nationsOverride`, `territoriesOverride`) are written only when set, rather than as `null` placeholders — matching how `countriesOverride` already behaves. Data version is unchanged (2.7); the loader treats missing as unset, so older files still load.
-10. **Meta-form layout and tooltip polish.** Blog URL now shares a row with Pad Multiplier to use the vertical space better, and the marker tooltip's "right-click to delete" hint is italicised.
-11. **Button labels standardised to sentence case** ("Add chapter", "Add row", "Add N rows", "Add rows"), matching the rest of the UI.
+10. **Meta-form layout and tooltip polish.** Blog URL now shares a row with Pad Multiplier to use the vertical space better, and the marker tooltip's "right-click to delete" hint is italicized.
+11. **Button labels standardized to sentence case** ("Add chapter", "Add row", "Add N rows", "Add rows"), matching the rest of the UI.
 
 ## [v2.8.1] - 2026-05-31
 
@@ -84,14 +89,14 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 2. **Editor route lines stay continuous across the dateline at any map pan.** Dateline-crossing chapters are now drawn across world copies (matching the viewer) rather than in a single world, so a crossing route no longer breaks at the antimeridian depending on how the map is panned.
 
 ### Changed
-3. **Consistent "AUTO:" labelling.** The auto-derived hints on Distance, Nations, Territories, and the chapter Countries / Territories field now share an `AUTO:` prefix followed by the computed value (e.g. `AUTO: 7`, `AUTO: Greece, Italy`). The Distance hint now also shows the computed total.
-4. **Chapter field relabelled "Countries / Territories"** (was "Countries"), matching the hero's nations/territories split.
+3. **Consistent "AUTO:" labeling.** The auto-derived hints on Distance, Nations, Territories, and the chapter Countries / Territories field now share an `AUTO:` prefix followed by the computed value (e.g. `AUTO: 7`, `AUTO: Greece, Italy`). The Distance hint now also shows the computed total.
+4. **Chapter field relabeled "Countries / Territories"** (was "Countries"), matching the hero's nations/territories split.
 
 ## [v2.8] - 2026-05-30
 
 ### Changed
 1. **Calculated data is no longer stored in the file (completes #44).** Building on v2.7's recompute-on-load, the editor now stops *writing* derived figures entirely: `meta.hero` (the totals) and every per-chapter `nm`/`nmBase`/`nmApproach` are gone from the JSON. Both tools compute them on load. Files saved before v2.8 keep working — the old fields are ignored.
-2. **Chapter countries auto-derive, with a per-chapter override.** A chapter's country list is now derived on load from its waypoints' `country` fields. The chapter's Countries field is an override: blank means automatic (shown as a greyed placeholder), and typing a list stores a `countriesOverride` that replaces the derived list for that chapter. The voyage total is the classified union of every chapter's effective list, and the editor and viewer derive identically.
+2. **Chapter countries auto-derive, with a per-chapter override.** A chapter's country list is now derived on load from its waypoints' `country` fields. The chapter's Countries field is an override: blank means automatic (shown as a grayed placeholder), and typing a list stores a `countriesOverride` that replaces the derived list for that chapter. The voyage total is the classified union of every chapter's effective list, and the editor and viewer derive identically.
 3. **Data version 2.6 → 2.7.** The JSON shape changed (calculated fields removed, `countries` replaced by an optional `countriesOverride`), so the stamped data version moves to 2.7.
 
 ### Migration
@@ -112,7 +117,7 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. **Derived stats are recomputed on load, never trusted from the file (#44).** The viewer now recomputes the hero totals (distance, chapters, waypoints, nations, territories) and every per-chapter distance directly from the chapters and waypoints when a file loads, applying any explicit overrides (`nmOverride` / `nationsOverride` / `territoriesOverride`) on top — matching the editor, which already recomputed on load. The stored `meta.hero` and per-chapter `nm` / `nmBase` / `nmApproach` are now write-on-save snapshots only and are never read for display, so a hand-edited JSON (added waypoint, changed country, removed chapter) can no longer show stale figures. The JSON format is unchanged (data version stays 2.6).
 2. **"Load" vs "Import" verb unified (#45).** Opening a JSON file is now consistently called **Load** in both tools — the editor's data-input menu offers "Load JSON…" (was "Import JSON…"), matching the viewer's "Load JSON…". **Import** is reserved for merging tabular CSV data, so the editor's "Import CSVs (chapters + waypoints)…" is unchanged.
 3. **Waypoint / shaping-vertex nomenclature clarified (#46).** "Waypoint" stays the generic term for any point on the map. Where a count or an unnamed point is shown, the editor now names the subtype: the status line reads "N named waypoints · M shaping vertices" (was "N waypoints · M vertices"), and an unnamed point's marker tooltip and name-field placeholder read "shaping vertex" (was "routing vertex"), matching the Name column's help text. Generic labels (Paste Waypoints, the waypoint-table toggle, the CSV columns) are unchanged. The viewer hero stat still reads "Waypoints" (the viewer renders no shaping vertices, so the count is unambiguous there).
-4. **Brand colour adopted (#47).** The accent is now the sailingamazinggrace.com brand crimson: `#a32e38` in the light theme (replacing the brass `#8e622b`) and a lightened `#d4626c` in the dark theme (replacing the gold `#d8b15a` — the raw brand crimson is too dark on the deep-sea background). Accent-derived tints (soft hover fills, and the dark theme's borders and row shading) follow the new hue; the light theme's ink-based borders are unchanged. Contrast is AA-compliant in both themes: accent text and links run 6.1–6.6:1 (light) and 5.0:1 (dark); accent-filled buttons 6.3:1 (light) and 4.7:1 (dark).
+4. **Brand color adopted (#47).** The accent is now the sailingamazinggrace.com brand crimson: `#a32e38` in the light theme (replacing the brass `#8e622b`) and a lightened `#d4626c` in the dark theme (replacing the gold `#d8b15a` — the raw brand crimson is too dark on the deep-sea background). Accent-derived tints (soft hover fills, and the dark theme's borders and row shading) follow the new hue; the light theme's ink-based borders are unchanged. Contrast is AA-compliant in both themes: accent text and links run 6.1–6.6:1 (light) and 5.0:1 (dark); accent-filled buttons 6.3:1 (light) and 4.7:1 (dark).
 
 ## [v2.6.1] - 2026-05-30
 
@@ -143,7 +148,7 @@ are fixed.
 6. **Viewer loading simplified.** The redundant toolbar "Load JSON…" button was removed; loading a file lives only on the no-data landing screen.
 
 ### Fixed
-1. **Right-click delete no longer corrupts the next waypoint.** Deleting via right-click previously left a drag armed, so the next (shifted) waypoint would begin dragging on the following interaction. Marker mousedown now ignores non-primary buttons, and any pending drag is cancelled on delete.
+1. **Right-click delete no longer corrupts the next waypoint.** Deleting via right-click previously left a drag armed, so the next (shifted) waypoint would begin dragging on the following interaction. Marker mousedown now ignores non-primary buttons, and any pending drag is canceled on delete.
 2. **Voyage Title updates live and round-trips cleanly.** Editing the title now updates the page header and browser tab immediately. Separately, the computed display title no longer copies itself back into the editable field on export→import, which had made the auto-title "sticky".
 3. **Ghost (midpoint) drag cleanup.** A dragged midpoint handle is now explicitly removed when the drag ends, eliminating stray off-route segments when the layer list was briefly out of sync.
 4. **⇄ pull keeps panels open.** Pulling a chapter's start from the previous chapter's endpoint no longer collapses any open chapter panels.
@@ -371,7 +376,7 @@ are fixed.
 ## [v2.0.2] - 2026-05-28
 
 ### Changed
-1. Chapter metadata consolidation — `routing`, `bailout`, and `prose` fields replaced by a single `notes` textarea. Import from v1 JSON and older CSVs auto-merges the three fields into `notes` with labelled sections (e.g., "Routing: …", "Bail-out: …"). Schema doc updated.
+1. Chapter metadata consolidation — `routing`, `bailout`, and `prose` fields replaced by a single `notes` textarea. Import from v1 JSON and older CSVs auto-merges the three fields into `notes` with labeled sections (e.g., "Routing: …", "Bail-out: …"). Schema doc updated.
 
 ## [v2.0.1] - 2026-05-28
 
@@ -392,7 +397,7 @@ are fixed.
 8. Chapter reordering via drag handles, auto-renumbering.
 9. Import: v1 JSON (separate routes[] + waypoints[], auto-merged into unified model) and v2 JSON (unified waypoints). CSV import (chapters.csv + waypoints.csv, two-step file picker).
 10. Export: JSON (v2 schema with unified waypoints), chapters.csv, waypoints.csv, KML (folders per chapter, LineStrings + Placemarks with style-mapped icons).
-11. Paul Tol "muted" palette carried forward from viewer, chapter colour assignment preserved.
+11. Paul Tol "muted" palette carried forward from viewer, chapter color assignment preserved.
 12. Light/dark theme toggle matching the viewer's admiralty-chart aesthetic (Fraunces + Spline Sans Mono typography, CartoDB Positron/Dark Matter tiles).
 
 ### Changed — Data model

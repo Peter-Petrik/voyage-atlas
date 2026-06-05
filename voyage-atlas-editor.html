@@ -537,7 +537,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v3.1.1</span>
+  <span>Voyage Atlas Editor v3.1.2</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -781,7 +781,7 @@ function updateMapChapter(chNum) {
 
   const isActive = chNum === activeChapterNum;
   const color = chapterColor(chNum);
-  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#a32e38'; // #56 selected-marker colour
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#a32e38'; // #56 selected-marker color
   const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, normLon(w.lon)]);
   const markers = [];
 
@@ -1097,7 +1097,7 @@ function selectWaypoint(chNum, idx, opts = {}) {
   updateMapChapter(chNum); // redraw this chapter so the selected marker grows + turns crimson
   const w = ch.waypoints[idx];
   if (opts.zoom && w.lat && w.lon) {
-    const lon = ((w.lon + 180) % 360 + 360) % 360 - 180; // normalise so a dateline-side waypoint centres correctly
+    const lon = ((w.lon + 180) % 360 + 360) % 360 - 180; // normalize so a dateline-side waypoint centers correctly
     map.setView([w.lat, lon], 9); // B4: fixed zoom level 9
   }
   revealWaypointRow(chNum, idx);

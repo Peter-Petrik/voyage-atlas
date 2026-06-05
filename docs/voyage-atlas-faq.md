@@ -186,7 +186,7 @@ gradually rather than all at once. This is deliberate — firing requests in par
 service to rate-limit or block you.
 
 While any look-up is in flight, both the per-chapter **Look up countries** and the global
-**🌍 Look up all countries** buttons are visibly greyed and disabled, re-enabling only once the queue
+**🌍 Look up all countries** buttons are visibly grayed and disabled, re-enabling only once the queue
 has drained. That stops a second click from stacking a duplicate sweep onto a queue already running.
 
 ## Adjusting waypoint positions

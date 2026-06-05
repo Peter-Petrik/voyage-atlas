@@ -5,7 +5,7 @@ The forward-looking backlog for the **editor** (`voyage-atlas-editor.html`) and 
 version. (The ~21 previously-"queued" items that had already shipped were pruned from this doc; all
 were confirmed present in the CHANGELOG first. The v3.0 release then pruned #53, #56, and #62 — shipped, and
 confirmed in the CHANGELOG — and dropped #52 as moot, since the CSV carries no distance figures to
-label. The v3.1.1 patch then pruned #66 — shipped, and confirmed in the CHANGELOG.) Build decisions live in `voyage-atlas-runbook.md`.
+label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG.) Build decisions live in `voyage-atlas-runbook.md`.
 
 Items keep their **original numbers** — cross-references and the runbook depend on them, so the numbers
 are stable IDs, not sequence. They're grouped into **phases** meant to be worked roughly in order, each
@@ -54,21 +54,11 @@ In the bulk-paste textarea, bind CMD/CTRL+Enter to "Add Rows" (Enter still inser
 `Effort S · Impact Low · editor place search · —`
 First Escape dismisses the results; a second Escape clears the typed query.
 
-### 67. Adopt American spelling across all docs and HTML
-`Effort M · Impact Low · all docs + both HTML files · supersedes the earlier British-spelling docs convention`
-Convert spelling to American English across every reference doc and both tool files — reversing the
-earlier British-spelling docs convention. Sweep prose, comments, and user-visible strings for British
-forms (colour→color, centre→center, behaviour→behavior, favour→favor, -ise/-isation→-ize/-ization,
-greyed→grayed, and similar) and change them; leave code identifiers and CSS/JS keywords untouched (the
-CSS `color` property and the like are already American). Touches `voyage-atlas-editor.html`,
-`voyage-atlas.html`, the `docs/` set, and the project-knowledge docs; the project's standing
-British-spelling note should be updated to match.
-
 ---
 
 ## Phase 2 — Editor interaction & state
 
-Cohesive editor work centred on selection/feedback and editing robustness. The shared selection
+Cohesive editor work centered on selection/feedback and editing robustness. The shared selection
 state shipped in v3.0 (#56); #35 reuses it, and #19 remains the meatier item.
 
 ### 35. Bulk waypoint select + delete
@@ -196,11 +186,11 @@ Resolving #63 (stable chapter identity) is the natural prerequisite.
 A toggleable viewer layer visualizing prevailing wind along route legs, selectable by month, drawing
 from the structured wind-data files (SeaWinds/QuikSCAT 10-year averages — five ocean-basin files plus a
 methodology guide). **Not** departure-decision weather routing (that's LuckGrib's job) — this is
-strategic validation that a chapter's seasonal window aligns with favourable prevailing winds.
-Presentation ranges from simple (colour-coded leg segments: green = favourable, yellow = marginal,
+strategic validation that a chapter's seasonal window aligns with favorable prevailing winds.
+Presentation ranges from simple (color-coded leg segments: green = favorable, yellow = marginal,
 red = headwind) to rich (wind-rose icons at waypoints showing the month's direction/speed
 distribution). Inspired by Horizory.com. **Open question:** viewer-only visualization, or does it feed
-back into the editor (flagging legs with unfavourable wind angles for the specified travel month)?
+back into the editor (flagging legs with unfavorable wind angles for the specified travel month)?
 
 ---
 
@@ -239,7 +229,7 @@ NZ→Japan repositioning) shows as two disconnected segments. Draw a faint/dashe
 chapter's last waypoint to its successor's first. **Fork-aware from the start:** keyed off the same
 `getPredecessorChapter()` seam, a fork (one endpoint feeding multiple successors) produces *branching*
 connectors — the visual signature of a fork on the map. Variant connectors get distinct styling (dash
-pattern or colour) from normal handoffs, and reconvergence (two branches rejoining one chapter) needs a
+pattern or color) from normal handoffs, and reconvergence (two branches rejoining one chapter) needs a
 rule.
 
 ---
