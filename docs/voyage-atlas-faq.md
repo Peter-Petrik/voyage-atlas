@@ -52,11 +52,8 @@ colors each chapter distinctly so the arc of the voyage reads at a glance.
 
 Every chapter is a single ordered list of waypoints. Each waypoint is one of two kinds:
 
-1. **A named waypoint** — it has a name. It renders as a marker on the map and counts in the
-   named-waypoint total.
-2. **A shaping vertex** — it has coordinates but *no name* (the row shows "(shaping vertex)" in
-   the editor). It draws no marker; it only shapes the route line so the path bends correctly
-   (around a cape, along a coast, through a strait).
+1. **A named waypoint** — it has a name. It renders as a marker on the map and counts in the named-waypoint total.
+2. **A shaping vertex** — it has coordinates but *no name* (the row shows "(shaping vertex)" in the editor). It draws no marker; it only shapes the route line so the path bends correctly (around a cape, along a coast, through a strait).
 
 The route line connects every point in order, named or not. Shaping vertices let you draw a
 realistic track without cluttering the map with markers for every turn. To convert a marker into a
@@ -68,10 +65,8 @@ Each waypoint has three independent checkboxes — **M**, **D**, **G** — that 
 meaning:
 
 1. **M — Major.** A strategic hub (a major port or landfall). Renders as a larger circle.
-2. **D — Decision.** A point where the route forks or a go/no-go choice is made. Renders as a
-   diamond.
-3. **G — Gateway.** A threshold into a new region (a cape, canal, strait, or chokepoint). Renders
-   as a star.
+2. **D — Decision.** A point where the route forks or a go/no-go choice is made. Renders as a diamond.
+3. **G — Gateway.** A threshold into a new region (a cape, canal, strait, or chokepoint). Renders as a star.
 
 They are independent and combinable — a port can be Major *and* Gateway. When more than one is
 set, the visual priority is **Decision > Gateway > Major** for the marker shape, and Major adds
@@ -81,14 +76,8 @@ size. The flags are optional; a plain named waypoint with no flags is a normal c
 
 Each chapter's distance has two components:
 
-1. **Within-chapter distance** — the sum of great-circle (haversine) legs between the chapter's
-   points, in order, multiplied by the chapter's **Pad Multiplier**. The pad accounts for the real
-   sailing a straight-line track undercounts: tacking, exploration within a cruising ground,
-   detours, and gunkholing. A delivery passage might use 1.05; a season of loch-hopping in Scotland
-   might use 3.00.
-2. **Approach leg** — the "getting to the start point" distance: the raw, *unpadded* great-circle
-   distance from the previous chapter's last waypoint to this chapter's first waypoint. It is raw
-   (no pad) because it's a delivery passage between regions, not exploration.
+1. **Within-chapter distance** — the sum of great-circle (haversine) legs between the chapter's points, in order, multiplied by the chapter's **Pad Multiplier**. The pad accounts for the real sailing a straight-line track undercounts: tacking, exploration within a cruising ground, detours, and gunkholing. A delivery passage might use 1.05; a season of loch-hopping in Scotland might use 3.00.
+2. **Approach leg** — the "getting to the start point" distance: the raw, *unpadded* great-circle distance from the previous chapter's last waypoint to this chapter's first waypoint. It is raw (no pad) because it's a delivery passage between regions, not exploration.
 
 So: **chapter nm = (within-chapter base × pad) + approach leg.** The voyage total is the sum of all
 chapters.
@@ -144,14 +133,8 @@ in Voyage Settings.
 
 ## What's the difference between the JSON and the CSV exports?
 
-1. **JSON** is the complete, authoritative file. It carries the source data — chapters, waypoints,
-   flags, settings, and notes — in one structure. It does **not** store the computed figures (totals,
-   per-chapter distances, derived country lists); both tools recompute those on load, so a hand-edited
-   file never carries a stale number. This is what the viewer loads and what you keep as your master
-   file (`voyage-data.json`).
-2. **CSV** is a convenience for spreadsheet editing. There are two CSVs — one for chapters, one for
-   waypoints — and the editor exports both together in one action. Round-trip through a spreadsheet
-   when you want to bulk-edit, then re-import.
+1. **JSON** is the complete, authoritative file. It carries the source data — chapters, waypoints, flags, settings, and notes — in one structure. It does **not** store the computed figures (totals, per-chapter distances, derived country lists); both tools recompute those on load, so a hand-edited file never carries a stale number. This is what the viewer loads and what you keep as your master file (`voyage-data.json`).
+2. **CSV** is a convenience for spreadsheet editing. There are two CSVs — one for chapters, one for waypoints — and the editor exports both together in one action. Round-trip through a spreadsheet when you want to bulk-edit, then re-import.
 
 The data schema (field names, types, structure) is documented separately in
 `voyage-atlas-schema.md` if you ever hand-edit the JSON.
@@ -166,15 +149,10 @@ The data schema (field names, types, structure) is documented separately in
 
 There are several ways to populate the atlas:
 
-1. **Auto-load.** If a file named `voyage-data.json` sits in the same directory as the editor, it
-   loads automatically on open — the normal way to resume work on a hosted or local copy. A file that
-   is present but unreadable now shows a clear error rather than silently opening empty.
-2. **Load JSON.** Open any atlas JSON (v2 or v3; a v2 file is migrated to the v3.0 model on load). The
-   legacy v1 baked-map format is no longer supported — the editor rejects a v1 file with a clear
-   message rather than risk mangling its geometry. A malformed file is reported, not silently swallowed.
+1. **Auto-load.** If a file named `voyage-data.json` sits in the same directory as the editor, it loads automatically on open — the normal way to resume work on a hosted or local copy. A file that is present but unreadable now shows a clear error rather than silently opening empty.
+2. **Load JSON.** Open a v3.0 atlas JSON. Earlier formats are no longer supported. A malformed or non-Voyage-Atlas file is reported with a clear message, not silently swallowed.
 3. **Import CSV.** Load the chapters and waypoints CSVs.
-4. **Start fresh.** With no `voyage-data.json` present, the editor opens empty; add a chapter and
-   begin.
+4. **Start fresh.** With no `voyage-data.json` present, the editor opens empty; add a chapter and begin.
 
 ## Adding waypoints
 
@@ -182,29 +160,16 @@ Within a chapter, there are five ways to add points:
 
 1. **+ Add row** — appends one blank row to type into directly.
 2. **+ Add N rows** — appends several blank rows at once (useful before a paste or bulk entry).
-3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line
-   becomes a row.
-4. **Click on the map** — with **Rapid click** mode ON (toggle above the map), each click on the
-   map drops a new waypoint at that location. Turn it OFF to return to normal map interaction.
-5. **Search (Nominatim)** — type a place name in the search box and press **Enter** to search; use
-   the **arrow keys** to move through results, **Enter** to add the highlighted one, **Escape** to
-   dismiss. Adding a result drops a waypoint with coordinates (and country, when empty) filled.
+3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line becomes a row.
+4. **Click on the map** — with **Rapid click** mode ON (toggle above the map), each click on the map drops a new waypoint at that location. Turn it OFF to return to normal map interaction.
+5. **Search (Nominatim)** — type a place name in the search box and press **Enter** to search; use the **arrow keys** to move through results, **Enter** to add the highlighted one, **Escape** to dismiss. Adding a result drops a waypoint with coordinates (and country, when empty) filled.
 
 ## Geocoding (name ↔ coordinates)
 
 The editor uses the free Nominatim (OpenStreetMap) service two ways:
 
-1. **Forward** — type a name into a waypoint's Name field (or pick a search result, or paste a
-   name-only row) and the editor looks up the coordinates. Because the country rides along free in
-   that same lookup, it fills the country too — but only when the country field is empty, so a value
-   you typed by hand is never overwritten.
-2. **Reverse — Look up countries** — for waypoints you placed by coordinates (a map click or typed
-   lat/lon), no country is known yet. The **Look up countries** button reverse-geocodes every such
-   waypoint that has coordinates but no country, filling it from the position. This runs at two
-   scopes — each chapter has its own **Look up countries** button, and a single
-   **🌍 Look up all countries** button above the chapter list does the same sweep across every
-   chapter at once, handy after importing a batch of coordinate-only waypoints. This is the one path
-   that costs a *dedicated* lookup, which is why it's a deliberate button press rather than automatic.
+1. **Forward** — type a name into a waypoint's Name field (or pick a search result, or paste a name-only row) and the editor looks up the coordinates. Because the country rides along free in that same lookup, it fills the country too — but only when the country field is empty, so a value you typed by hand is never overwritten.
+2. **Reverse — Look up countries** — for waypoints you placed by coordinates (a map click or typed lat/lon), no country is known yet. The **Look up countries** button reverse-geocodes every such waypoint that has coordinates but no country, filling it from the position. This runs at two scopes — each chapter has its own **Look up countries** button, and a single **🌍 Look up all countries** button above the chapter list does the same sweep across every chapter at once, handy after importing a batch of coordinate-only waypoints. This is the one path that costs a *dedicated* lookup, which is why it's a deliberate button press rather than automatic.
 
 Before a long sweep runs, the editor shows a quick confirmation — how many waypoints it will look up
 and a rough time estimate at one per second — so a long run is never a surprise. The
@@ -228,9 +193,7 @@ has drained. That stops a second click from stacking a duplicate sweep onto a qu
 
 1. **Drag the marker** on the map to reposition it; lat/lon update live.
 2. **Edit lat/lon** directly in the table fields, or use the small steppers for fine nudges.
-3. **Drag a ghost midpoint** — each leg shows a faint "ghost" marker at its midpoint; drag it to
-   insert a new shaping vertex on that leg, bending the route. (Ghost midpoints sit *on* the
-   rendered line, even on long ocean legs.)
+3. **Drag a ghost midpoint** — each leg shows a faint "ghost" marker at its midpoint; drag it to insert a new shaping vertex on that leg, bending the route. (Ghost midpoints sit *on* the rendered line, even on long ocean legs.)
 
 ## Selecting a waypoint (map ↔ list)
 
@@ -253,8 +216,7 @@ the sync indicators (below).
 Because chapters share handoff points (Part 1), the editor shows the connection state in each
 chapter header:
 
-1. **🔗 (linked)** — this chapter's first waypoint is within 1 nm of the previous chapter's last
-   waypoint. They already connect; nothing to do.
+1. **🔗 (linked)** — this chapter's first waypoint is within 1 nm of the previous chapter's last waypoint. They already connect; nothing to do.
 2. **⇄ (pull)** — there's a gap (more than 1 nm). The tooltip shows the gap distance.
 
 Clicking ⇄ **inserts a copy** of the previous chapter's last waypoint as a new first row in this
@@ -279,15 +241,10 @@ delete it. Pulling when already synced does nothing.
 Open a chapter's metadata panel (the 📋 toggle, or double-click the chapter header) to edit:
 
 1. **Name** — the chapter's display name.
-2. **When** — the season window. Enter it as a range; the editor normalizes separators to an
-   en-dash (e.g., "May – Sep 2028"). Month/year dropdowns assist entry.
+2. **When** — the season window. Enter it as a range; the editor normalizes separators to an en-dash (e.g., "May – Sep 2028"). Month/year dropdowns assist entry.
 3. **Era** — past, current, or future (controls styling and timeline placement).
 4. **Pad Multiplier** — the distance multiplier for this chapter (see distance calculation, Part 1).
-5. **Countries / Territories** — auto-derived from the chapter's waypoint countries, in
-   first-appearance order. Leave it blank to keep that automatic; type a comma-separated list to
-   override it with a curated set (the override *replaces* the derived list, it does not add to it).
-   Each entry is then classified as a nation or a territory against the built-in reference list,
-   exactly as the voyage totals are.
+5. **Countries / Territories** — auto-derived from the chapter's waypoint countries, in first-appearance order. Leave it blank to keep that automatic; type a comma-separated list to override it with a curated set (the override *replaces* the derived list, it does not add to it). Each entry is then classified as a nation or a territory against the built-in reference list, exactly as the voyage totals are.
 6. **Key Destinations** — highlights for the viewer's chapter summary.
 7. **Blog URL** — an optional link to a post about this chapter, surfaced in the viewer.
 8. **Notes** — free-form narrative (routing thoughts, bail-out options, anything).
@@ -301,26 +258,16 @@ every panel of that kind and the **⊟** closes them all.
 The ⚙ panel above the chapter list holds voyage-level settings, saved into the JSON and reloaded on
 import:
 
-1. **Voyage Title** — the title shown in the page titles, the viewer header, and exports. Free
-   text: include a vessel, a vehicle, or anything you like, or leave it blank to fall back to the
-   default "Voyage Atlas".
-2. **Distance Units** — the display unit for every on-screen distance: nautical miles (default),
-   kilometers, or miles. Display-only; the stored data and all exports stay in nautical miles.
-3. **Distance Override** — force the displayed total to a specific number, overriding the computed
-   sum. Entered and shown in the selected display unit, stored as nautical miles. The footer marks
-   an active override.
-4. **Nations / Territories overrides** — force these counts, overriding the automatic
-   classification.
+1. **Voyage Title** — the title shown in the page titles, the viewer header, and exports. Free text: include a vessel, a vehicle, or anything you like, or leave it blank to fall back to the default "Voyage Atlas".
+2. **Distance Units** — the display unit for every on-screen distance: nautical miles (default), kilometers, or miles. Display-only; the stored data and all exports stay in nautical miles.
+3. **Distance Override** — force the displayed total to a specific number, overriding the computed sum. Entered and shown in the selected display unit, stored as nautical miles. The footer marks an active override.
+4. **Nations / Territories overrides** — force these counts, overriding the automatic classification.
 
 ## Saving and exporting
 
-1. **Save** — downloads the master file as `voyage-data.json` (a fixed filename; your browser
-   replaces the prior download). This is the file the viewer auto-loads.
-2. **Save As ▾** — a dropdown for everything else: a timestamped JSON (a dated snapshot), the two
-   CSVs together, and a KML.
-3. **KML** export produces a Google Earth–compatible file (waypoints + route lines per chapter,
-   with styled markers for Major/Decision/Gateway). Useful for viewing the voyage in Google Earth
-   Pro.
+1. **Save** — downloads the master file as `voyage-data.json` (a fixed filename; your browser replaces the prior download). This is the file the viewer auto-loads.
+2. **Save As ▾** — a dropdown for everything else: a timestamped JSON (a dated snapshot), the two CSVs together, and a KML.
+3. **KML** export produces a Google Earth–compatible file (waypoints + route lines per chapter, with styled markers for Major/Decision/Gateway). Useful for viewing the voyage in Google Earth Pro.
 
 The **Save** button reads `Save *` (with an "Unsaved changes" tooltip) whenever the document holds
 edits you haven't written out yet — adding, moving, reordering or deleting a waypoint, or changing any
@@ -334,10 +281,8 @@ reload the tab while there are unsaved changes, so an accidental close won't qui
 
 ## Keyboard shortcuts
 
-1. In any dialog (bulk add, paste, CSV import, delete confirmation): **Enter** confirms, **Escape**
-   cancels.
-2. In the Nominatim search box: **Enter** searches; once results show, **↑/↓** move through them,
-   **Enter** adds the highlighted result, **Escape** dismisses.
+1. In any dialog (bulk add, paste, CSV import, delete confirmation): **Enter** confirms, **Escape** cancels.
+2. In the Nominatim search box: **Enter** searches; once results show, **↑/↓** move through them, **Enter** adds the highlighted result, **Escape** dismisses.
 
 ## Footer stats
 
@@ -352,13 +297,8 @@ count, and shaping-vertex count. These recompute as you edit. An override from V
 
 ## Loading data
 
-1. **Auto-load.** If `voyage-data.json` is in the same directory as the viewer, it loads
-   automatically on open — the basis of the self-hosting model (below). A file that is present but
-   unreadable shows an error rather than the empty landing screen.
-2. **File picker.** With no data present, the viewer shows a landing screen; pick a voyage JSON
-   (v2 or v3) to load it. Loading lives only on this landing screen — once an atlas is shown the viewer
-   is read-only. The legacy v1 format is no longer supported, and a malformed file is reported rather
-   than silently swallowed.
+1. **Auto-load.** If `voyage-data.json` is in the same directory as the viewer, it loads automatically on open — the basis of the self-hosting model (below). A file that is present but unreadable shows an error rather than the empty landing screen.
+2. **File picker.** With no data present, the viewer shows a landing screen; pick a v3.0 voyage JSON to load it. Loading lives only on this landing screen — once an atlas is shown the viewer is read-only. Earlier formats are no longer supported, and a malformed file is reported rather than silently swallowed.
 
 ## Reading the map
 
@@ -389,10 +329,9 @@ route and marker colors are tuned to read on both.
 
 The header shows total distance, the nations and territories touched, the chapter count, and the
 named-waypoint count. **Both tools compute these from the chapters and waypoints every time a file
-loads** — they are not stored in the file at all (as of v2.7), so the headline numbers always match
+loads** — they are not stored in the file at all, so the headline numbers always match
 the drawn routes, even if you hand-edit the JSON (add a waypoint, change a country, remove a chapter).
-Any explicit override set in Voyage Settings is applied on top. (Files saved before v2.7 may still
-contain a `meta.hero` block; it is ignored on load.)
+Any explicit override set in Voyage Settings is applied on top.
 
 ## Self-hosting
 
@@ -440,8 +379,7 @@ Voyage Atlas manages *strategic* chapter-and-waypoint data — the shape and seq
 is **not**:
 
 1. A **live tracker** — it doesn't show where the boat is now.
-2. A **tactical passage planner** — weather windows, tidal gates, and anchorage selection live in
-   dedicated tools (LuckGrib, Navily, NoForeignLand).
+2. A **tactical passage planner** — weather windows, tidal gates, and anchorage selection live in dedicated tools (LuckGrib, Navily, NoForeignLand).
 
 It's the framework atlas: the charted intentions you navigate by, kept deliberately separate from
 the day-to-day tactics of actually sailing them.

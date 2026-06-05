@@ -80,7 +80,7 @@ The editor writes this on **Save**; the viewer loads it. This is the canonical i
 | Field | Type | Written | Description |
 |-------|------|---------|-------------|
 | `distanceUnit` | enum | always | Display unit for on-screen distances: `"nm"` (default), `"km"`, or `"mi"`. **Display-only** — every stored value and every export stays in nautical miles. |
-| `distanceOverride` | number | only when set | Replaces the recomputed total distance. Entered and shown in the selected unit, **stored in nautical miles**. Renamed from `nmOverride` in v3.0; the stored semantics are unchanged. |
+| `distanceOverride` | number | only when set | Replaces the recomputed total distance. Entered and shown in the selected unit, **stored in nautical miles**. |
 | `nationsOverride` | integer | only when set | Replaces the recomputed nations count. |
 | `territoriesOverride` | integer | only when set | Replaces the recomputed territories count. |
 
@@ -121,15 +121,12 @@ unset.
 These are **recomputed on load** by both tools from the chapters and waypoints, with overrides applied on
 top, and are **never written to the file**:
 
-1. The hero totals — total distance, chapter count, named-waypoint count (shaping vertices excluded),
-   nations, and territories.
-2. Each chapter's distance — base (haversine sum of its waypoints in order), padded (`base × padMultiplier`),
-   and the approach leg (raw, no pad) from the predecessor chapter's last waypoint to this chapter's first.
+1. The hero totals — total distance, chapter count, named-waypoint count (shaping vertices excluded), nations, and territories.
+2. Each chapter's distance — base (haversine sum of its waypoints in order), padded (`base × padMultiplier`), and the approach leg (raw, no pad) from the predecessor chapter's last waypoint to this chapter's first.
 3. Each chapter's effective country list and the voyage-wide nations/territories split.
 
 Because none of these is stored, a hand-edited file — an added waypoint, a changed country, a removed
-chapter — can never display a stale figure. (Files through v2.6 may still carry a `meta.hero` block and
-per-chapter `nm`/`nmBase`/`nmApproach`; these are ignored on load.)
+chapter — can never display a stale figure.
 
 ### Country handling
 
@@ -142,20 +139,6 @@ the final totals.
 **Nation vs territory classification:** the editor and viewer share a built-in reference list of overseas
 territories (the FAQ has the full list). Each distinct country name is checked against it — a match counts
 as a territory, no match as a nation. Overrides take precedence over the auto-count.
-
-### Migration from older files
-
-The loader reads files back to v2.5 and migrates them onto the v3.0 model:
-
-1. **Title.** A pre-v3.0 `settings.voyageTitle` is promoted to `meta.title` if non-blank; otherwise
-   `meta.title` is used, unless it is the bare `"Voyage Atlas"` constant the old editor wrote (treated as no
-   title). `settings.voyageTitle` is then dropped.
-2. **Distance override.** A legacy `settings.nmOverride` is read as `distanceOverride`.
-3. **Calculated fields.** A stored `meta.hero` and any per-chapter `nm`/`nmBase`/`nmApproach` are ignored.
-4. **Countries.** A pre-v2.8 per-chapter `countries` list is **not** promoted to an override — chapters
-   start clean and derive from their waypoints.
-
-The bundled `voyage-data.json` is a v2.7 file and loads through this path.
 
 ---
 
@@ -196,15 +179,12 @@ included (they are recomputed on load). Import is two-step: `chapters.csv` then 
 
 ### Waypoint rendering rules
 
-1. Empty `name` → shaping vertex: contributes to the route line, renders no marker, and its flags are
-   ignored.
+1. Empty `name` → shaping vertex: contributes to the route line, renders no marker, and its flags are ignored.
 2. Non-empty `name` → a marker is rendered on the map.
 3. `major` → a circle, slightly larger and with a heavier stroke.
 4. `decision` → a diamond marker.
 5. `gateway` → a star marker.
-6. The flags are independent and combinable. **On the map, a Decision diamond takes priority over a Gateway
-   star when both are set**, and `major` affects size rather than shape. (KML uses the opposite icon
-   priority — see the KML section.)
+6. The flags are independent and combinable. **On the map, a Decision diamond takes priority over a Gateway star when both are set**, and `major` affects size rather than shape. (KML uses the opposite icon priority — see the KML section.)
 
 ### Route line construction
 
@@ -244,15 +224,11 @@ The editor exports KML (`voyage-route.kml`, date-prefixed) for Google Earth and 
 </Document>
 ```
 
-1. **Styles.** `#waypoint` (white circle), `#major` (yellow stars), `#decision` (red diamond), `#gateway`
-   (green stars), using Google's hosted paddle icons.
+1. **Styles.** `#waypoint` (white circle), `#major` (yellow stars), `#decision` (red diamond), `#gateway` (green stars), using Google's hosted paddle icons.
 2. **Folders.** One per chapter, named `Ch N — Chapter Name`.
-3. **Route.** One `LineString` Placemark per chapter through all coordinate-bearing waypoints; its colour is
-   the chapter's palette colour (written in KML `aabbggrr` order).
+3. **Route.** One `LineString` Placemark per chapter through all coordinate-bearing waypoints; its colour is the chapter's palette colour (written in KML `aabbggrr` order).
 4. **Waypoints.** A `Point` Placemark per **named** waypoint (shaping vertices are skipped).
-5. **Icon priority.** The `styleUrl` is assigned in the order major → decision → gateway, so the **last
-   applicable flag wins: gateway, then decision, then major**. This is the reverse of the on-map shape
-   priority (where Decision wins), and is the one place the two presentations disagree.
+5. **Icon priority.** The `styleUrl` is assigned in the order major → decision → gateway, so the **last applicable flag wins: gateway, then decision, then major**. This is the reverse of the on-map shape priority (where Decision wins), and is the one place the two presentations disagree.
 
 ---
 

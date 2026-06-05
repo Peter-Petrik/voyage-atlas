@@ -314,7 +314,7 @@
 
 <div id="footer">
   <span id="footer-data"></span>
-  <span id="footer-ver">Voyage Atlas v3.0</span>
+  <span id="footer-ver">Voyage Atlas v3.1</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -552,12 +552,6 @@ function normalizeData(data) {
 
 /* ====================== Load + render ======================== */
 function loadVoyageData(raw) {
-  // Legacy v1 files (separate routes[] per chapter) are no longer supported. Reject before
-  // clearing the current view so a bad file doesn't blank the map.
-  if (raw && raw.chapters && raw.chapters.length > 0 && raw.chapters[0].routes !== undefined) {
-    alert('This file uses the legacy v1 format, which is no longer supported.');
-    return;
-  }
   // Clear previous
   routesLayer.clearLayers();
   wptsLayer.clearLayers();
@@ -572,13 +566,9 @@ function loadVoyageData(raw) {
 
   DATA = normalizeData(raw);
 
-  // Title — v3.0: the user title lives at meta.title. Older files put it in settings.voyageTitle
-  // (which wins), or in meta.title — unless that is the bare "Voyage Atlas" constant the old editor wrote.
+  // Title — v3.0: the user title lives at meta.title; fall back to the app name when absent.
   const settings = (DATA.meta && DATA.meta.settings) || {};
-  const importedMeta = (DATA.meta && DATA.meta.title) || '';
-  const title = (settings.voyageTitle && settings.voyageTitle.trim())
-    || (importedMeta && importedMeta !== 'Voyage Atlas' ? importedMeta : '')
-    || 'Voyage Atlas';
+  const title = (DATA.meta && DATA.meta.title && DATA.meta.title.trim()) || 'Voyage Atlas';
   document.getElementById('page-title').textContent = title;
   document.title = title;
   document.querySelector('.head-sub').textContent = 'Click any route, waypoint, or chapter to explore';
@@ -592,7 +582,7 @@ function loadVoyageData(raw) {
     chapterCountries(ch).forEach(c => { if (c) heroCountries.add(c); });
   });
   const heroClass = classifyCountries(heroCountries);
-  const heroDisplayNm = (settings.distanceOverride != null ? settings.distanceOverride : settings.nmOverride) || heroNm;
+  const heroDisplayNm = settings.distanceOverride || heroNm;
   const heroNations = settings.nationsOverride || heroClass.nations.length;
   const heroTerritories = settings.territoriesOverride || heroClass.territories.length;
   const heroItems = [];

@@ -1,21 +1,10 @@
 {
   "meta": {
     "title": "Example Voyage Atlas",
-    "version": "2.6",
-    "generatedAt": "2026-05-29",
-    "hero": {
-      "nm": 137,
-      "chapters": 3,
-      "waypoints": 10,
-      "nations": 1,
-      "territories": 0
-    },
+    "version": "3.0",
+    "generatedAt": "2026-06-05",
     "settings": {
-      "voyageTitle": "Example Voyage Atlas",
-      "distanceUnit": "nm",
-      "nmOverride": null,
-      "nationsOverride": null,
-      "territoriesOverride": null
+      "distanceUnit": "nm"
     }
   },
   "chapters": [
@@ -65,12 +54,6 @@
           "country": "Greece",
           "notes": ""
         }
-      ],
-      "nmBase": 28,
-      "nmApproach": 0,
-      "nm": 34,
-      "countries": [
-        "Greece"
       ]
     },
     {
@@ -141,12 +124,6 @@
           "country": "Greece",
           "notes": ""
         }
-      ],
-      "nmBase": 49,
-      "nmApproach": 0,
-      "nm": 66,
-      "countries": [
-        "Greece"
       ]
     },
     {
@@ -195,12 +172,6 @@
           "country": "Greece",
           "notes": "Major port — island capital."
         }
-      ],
-      "nmBase": 18,
-      "nmApproach": 16,
-      "nm": 37,
-      "countries": [
-        "Greece"
       ]
     }
   ]

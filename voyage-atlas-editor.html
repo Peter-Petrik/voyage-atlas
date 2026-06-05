@@ -537,7 +537,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v3.0</span>
+  <span>Voyage Atlas Editor v3.1</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -671,6 +671,10 @@ function unwrap(coords) {
 // wrapping on pan.
 const WORLD_COPIES = [-360, 0, 360];
 const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlngs;
+// Canonicalize a longitude to [-180,180). Map clicks/drags near the dateline can return values
+// outside that range (e.g. +200 instead of -160); splitAtDateline needs canonical input to detect
+// a crossing, so an out-of-range longitude would leave a crossing leg unsplit and render-fragile.
+const normLon = lon => ((lon + 180) % 360 + 360) % 360 - 180;
 
 /* ═══════════════════════════════════════════════════════════════
    STATE
@@ -739,7 +743,7 @@ function onMapClick(e) {
   if (!ch) return;
   const wpt = makeWaypoint();
   wpt.lat = Math.round(e.latlng.lat * 100000) / 100000;
-  wpt.lon = Math.round(e.latlng.lng * 100000) / 100000;
+  wpt.lon = normLon(Math.round(e.latlng.lng * 100000) / 100000);
   ch.waypoints.push(wpt);
   renderChapterWaypoints(activeChapterNum);
   updateMapChapter(activeChapterNum);
@@ -755,8 +759,11 @@ function updateMapAll() {
     if (ml.ghosts) ml.ghosts.forEach(m => map.removeLayer(m));
   });
   mapLayers = {};
-  // Draw all chapters
-  STATE.chapters.forEach(ch => updateMapChapter(ch.num));
+  // Draw inactive chapters first, then the active chapter last so its route and markers
+  // sit on top — keeps the active chapter's waypoints clickable where they coincide with a
+  // neighbour's endpoint, and makes "active wins" at a shared point (defect 2).
+  STATE.chapters.forEach(ch => { if (ch.num !== activeChapterNum) updateMapChapter(ch.num); });
+  if (activeChapterNum !== null) updateMapChapter(activeChapterNum);
 }
 
 function updateMapChapter(chNum) {
@@ -775,7 +782,7 @@ function updateMapChapter(chNum) {
   const isActive = chNum === activeChapterNum;
   const color = chapterColor(chNum);
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#a32e38'; // #56 selected-marker colour
-  const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
+  const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, normLon(w.lon)]);
   const markers = [];
 
   // Route line — split at the dateline and repeated across world copies so a crossing chapter stays
@@ -787,16 +794,26 @@ function updateMapChapter(chNum) {
       weight: isActive ? 3 : 1.5,
       opacity: isActive ? 0.9 : 0.35,
       dashArray: isActive ? null : '4 4',
-      interactive: false // B2: don't let route lines intercept marker clicks
+      // Active route stays non-interactive so it never intercepts the active chapter's marker
+      // clicks (B2). Inactive routes are clickable to activate the chapter (item 5); the
+      // active-last draw order keeps every chapter's markers above any route line.
+      interactive: !isActive
     };
     const parts = [];
     splitAtDateline(coords).forEach(seg => {
-      WORLD_COPIES.forEach(off => { parts.push(L.polyline(shiftLon(seg, off), lineOpts)); });
+      WORLD_COPIES.forEach(off => {
+        const pl = L.polyline(shiftLon(seg, off), lineOpts);
+        if (!isActive) pl.on('click', function(e) { L.DomEvent.stopPropagation(e); selectChapter(chNum, true); });
+        parts.push(pl);
+      });
     });
     line = L.layerGroup(parts).addTo(map);
   }
 
-  // Waypoint markers (only named ones, or all for active chapter)
+  // Waypoint markers (only named ones, or all for active chapter). Drawn in all three world copies
+  // (parity with the viewer) so a dateline-crossing chapter's markers stay visible from either side
+  // of the antimeridian. Every copy carries the same handlers and commits through normLon, so
+  // clicking, dragging, or deleting any copy edits the one underlying waypoint.
   ch.waypoints.forEach((w, idx) => {
     if (!w.lat || !w.lon) return;
     const hasName = w.name && w.name.trim() !== '';
@@ -804,43 +821,37 @@ function updateMapChapter(chNum) {
     // Inactive chapters: only show named waypoints as tiny dots
     if (!isActive && !hasName) return;
 
-    let marker;
+    const lon0 = normLon(w.lon);
     const opacity = isActive ? 0.9 : 0.3;
+    const shaped = isActive && (w.decision || w.gateway);
 
-    if (!isActive || (!w.decision && !w.gateway)) {
+    // Shared appearance — computed once per waypoint, reused across the world copies.
+    let circleOpts = null, shapeSvg = null, shapeSize = 0, shapeHalf = 0;
+    if (!shaped) {
       // Circle marker (regular, major, shaping, or inactive)
       let radius = hasName ? (w.major ? 7 : 4) : 2;
       let fillColor = hasName ? color : '#888';
       let strokeColor = isActive ? '#fff' : color;
       let cOpacity = opacity, cFillOpacity = isActive ? 0.85 : 0.3;
       if (isSelected) { radius += 3; fillColor = accent; strokeColor = accent; cOpacity = 1; cFillOpacity = 0.9; } // #56 selected
-      marker = L.circleMarker([w.lat, w.lon], {
-        radius: radius,
-        fillColor: fillColor,
-        color: strokeColor,
-        weight: w.major ? 2 : 1,
-        opacity: cOpacity,
-        fillOpacity: cFillOpacity
-      }).addTo(map);
+      circleOpts = { radius: radius, fillColor: fillColor, color: strokeColor, weight: w.major ? 2 : 1, opacity: cOpacity, fillOpacity: cFillOpacity };
     } else {
       // Shaped marker for Decision and/or Gateway (active chapter only)
-      const size = (w.major ? 20 : 16) + (isSelected ? 4 : 0); // #56 selected shape grows
-      const half = size / 2;
+      shapeSize = (w.major ? 20 : 16) + (isSelected ? 4 : 0); // #56 selected shape grows
+      shapeHalf = shapeSize / 2;
+      const size = shapeSize, half = shapeHalf;
       const stroke = isSelected ? accent : (isActive ? '#fff' : color);
       const strokeW = w.major ? 2 : 1.5;
-      let svg;
-
+      const fill = isSelected ? accent : color;
       if (w.decision) {
         // Diamond shape
-        const fill = isSelected ? accent : color;
-        svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+        shapeSvg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
           <rect x="${half*0.35}" y="${half*0.35}" width="${size*0.65}" height="${size*0.65}"
             transform="rotate(45 ${half} ${half})"
             fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${opacity}"/>
         </svg>`;
       } else {
         // Star shape (Gateway)
-        const fill = isSelected ? accent : color;
         const r = half * 0.9;
         const ri = r * 0.4;
         let points = '';
@@ -850,117 +861,127 @@ function updateMapChapter(chNum) {
           points += `${half + r * Math.cos(aOuter)},${half + r * Math.sin(aOuter)} `;
           points += `${half + ri * Math.cos(aInner)},${half + ri * Math.sin(aInner)} `;
         }
-        svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+        shapeSvg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
           <polygon points="${points.trim()}"
             fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${opacity}"/>
         </svg>`;
       }
-
-      const icon = L.divIcon({
-        html: svg,
-        className: '',
-        iconSize: [size, size],
-        iconAnchor: [half, half]
-      });
-      marker = L.marker([w.lat, w.lon], { icon: icon }).addTo(map);
     }
 
-    // Tooltip
     const tip = hasName ? `${w.name}${w.major ? ' ●' : ''}${w.decision ? ' ◆' : ''}${w.gateway ? ' ★' : ''}${isActive ? '<br><em>right-click to delete</em>' : ''}`
       : `shaping vertex #${idx + 1}${isActive ? '<br><em>right-click to delete</em>' : ''}`;
-    marker.bindTooltip(tip, { permanent: false, direction: 'top', offset: [0, -6] });
 
-    // Draggable behavior for active chapter
-    if (isActive) {
-      marker.on('mousedown', function(e) {
-        if (e.originalEvent && e.originalEvent.button > 0) return; // ignore right/middle buttons; right-click is delete (touch reports button 0/undefined and still drags)
-        dragMarkerLink = { chNum: chNum, wptIdx: idx };
-        markerDidMove = false;
-        map.dragging.disable();
-        map.on('mousemove', onMarkerDrag);
-        map.on('mouseup', onMarkerDragEnd);
-        L.DomEvent.stopPropagation(e);
-      });
-      // Right-click delete
-      marker.on('contextmenu', function(e) {
-        L.DomEvent.stopPropagation(e);
-        L.DomEvent.preventDefault(e);
-        confirmDeleteWaypoint(chNum, idx);
-      });
-      // Click selects this waypoint (highlights it, reveals + flashes the row)
+    WORLD_COPIES.forEach(off => {
+      let marker;
+      if (!shaped) {
+        marker = L.circleMarker([w.lat, lon0 + off], circleOpts).addTo(map);
+      } else {
+        const icon = L.divIcon({ html: shapeSvg, className: '', iconSize: [shapeSize, shapeSize], iconAnchor: [shapeHalf, shapeHalf] });
+        marker = L.marker([w.lat, lon0 + off], { icon: icon }).addTo(map);
+      }
+
+      marker.bindTooltip(tip, { permanent: false, direction: 'top', offset: [0, -6] });
+
+      // Click selects this waypoint — on any chapter. selectWaypoint activates the
+      // waypoint's chapter first (item 5), so clicking an inactive chapter both activates
+      // it and selects the point.
       marker.on('click', function(e) {
         L.DomEvent.stopPropagation(e);
         selectWaypoint(chNum, idx);
       });
-    }
+      // Drag and right-click delete stay active-chapter-only operations.
+      if (isActive) {
+        marker.on('mousedown', function(e) {
+          if (e.originalEvent && e.originalEvent.button > 0) return; // ignore right/middle buttons; right-click is delete (touch reports button 0/undefined and still drags)
+          dragMarkerLink = { chNum: chNum, wptIdx: idx };
+          markerDidMove = false;
+          map.dragging.disable();
+          map.on('mousemove', onMarkerDrag);
+          map.on('mouseup', onMarkerDragEnd);
+          L.DomEvent.stopPropagation(e);
+        });
+        // Right-click delete
+        marker.on('contextmenu', function(e) {
+          L.DomEvent.stopPropagation(e);
+          L.DomEvent.preventDefault(e);
+          confirmDeleteWaypoint(chNum, idx);
+        });
+      }
 
-    markers.push(marker);
+      markers.push(marker);
+    });
   });
 
-  // Ghost midpoint markers (active chapter only)
+  // Ghost midpoint markers (active chapter only). Like the waypoint markers, drawn in all three
+  // world copies so a dateline-crossing leg's insert handle stays visible from either side.
   const ghosts = [];
   if (isActive) {
     const validPts = [];
     ch.waypoints.forEach((w, idx) => {
-      if (w.lat && w.lon) validPts.push({ lat: w.lat, lon: w.lon, idx });
+      if (w.lat && w.lon) validPts.push({ lat: w.lat, lon: normLon(w.lon), idx });
     });
     for (let i = 0; i < validPts.length - 1; i++) {
       const a = validPts[i], b = validPts[i + 1];
-      // Pixel-space midpoint lands on the rendered straight line (Mercator-correct),
-      // unlike an arithmetic lat/lon mean which drifts off the line on long legs.
-      // Dateline-aware: if the leg crosses the antimeridian, shift the western endpoint east so the
-      // pixel midpoint lands on the rendered (short-way) leg rather than mid-map.
+      // Pixel-space midpoint lands on the rendered straight line (Mercator-correct), unlike an
+      // arithmetic lat/lon mean which drifts off the line on long legs. The layer-point round-trip
+      // is independent of zoom/center/size, so the midpoint is stable. Dateline-aware: shift the
+      // western endpoint east so the midpoint lands on the rendered (short-way) leg, not mid-map.
       let aLon = a.lon, bLon = b.lon;
       if (Math.abs(aLon - bLon) > 180) { if (aLon < bLon) aLon += 360; else bLon += 360; }
       const pA = map.latLngToLayerPoint([a.lat, aLon]);
       const pB = map.latLngToLayerPoint([b.lat, bLon]);
       const midLL = map.layerPointToLatLng(L.point((pA.x + pB.x) / 2, (pA.y + pB.y) / 2));
       const midLat = midLL.lat;
+      // Keep the midpoint within 180° of the (unwrapped) leg start so it shares the leg's frame.
       let midLon = midLL.lng;
-      if (midLon > 180) midLon -= 360; else if (midLon < -180) midLon += 360;
+      while (midLon - aLon > 180) midLon -= 360;
+      while (midLon - aLon < -180) midLon += 360;
       const insertAfterIdx = a.idx; // insert after this waypoint index
 
-      const ghost = L.circleMarker([midLat, midLon], {
-        radius: 5,
-        fillColor: color,
-        color: color,
-        weight: 1,
-        opacity: 0.3,
-        fillOpacity: 0.15,
-        className: 'ghost-midpoint'
-      }).addTo(map);
+      WORLD_COPIES.forEach(off => {
+        const ghost = L.circleMarker([midLat, midLon + off], {
+          radius: 5,
+          fillColor: color,
+          color: color,
+          weight: 1,
+          opacity: 0.3,
+          fillOpacity: 0.15,
+          className: 'ghost-midpoint'
+        }).addTo(map);
 
-      ghost.bindTooltip('Click to add waypoint', { permanent: false, direction: 'top', offset: [0, -6] });
+        ghost.bindTooltip('Click to add waypoint', { permanent: false, direction: 'top', offset: [0, -6] });
 
-      // Hover effect
-      ghost.on('mouseover', function() {
-        this.setStyle({ opacity: 0.8, fillOpacity: 0.5, radius: 7 });
+        // Hover effect
+        ghost.on('mouseover', function() {
+          this.setStyle({ opacity: 0.8, fillOpacity: 0.5, radius: 7 });
+        });
+        ghost.on('mouseout', function() {
+          if (!this._dragging) this.setStyle({ opacity: 0.3, fillOpacity: 0.15, radius: 5 });
+        });
+
+        // Click or drag to insert. Drag anchors are shifted into this copy's frame so the dashed
+        // preview lines stay aligned with the grabbed handle across the dateline.
+        ghost.on('mousedown', function(e) {
+          L.DomEvent.stopPropagation(e);
+          // Defensive: clear any leftover drag lines from a prior interrupted drag
+          ghostDragLines.forEach(l => map.removeLayer(l));
+          ghostDragLines = [];
+          this.closeTooltip();
+          this._dragging = true;
+          this._insertAfter = insertAfterIdx;
+          this._chNum = chNum;
+          this._prevLatLng = [a.lat, aLon + off];
+          this._nextLatLng = [b.lat, bLon + off];
+          this._color = color;
+          this.setStyle({ opacity: 0.9, fillOpacity: 0.7, radius: 7 });
+          map.dragging.disable();
+          map.on('mousemove', onGhostDrag);
+          map.on('mouseup', onGhostDragEnd);
+          ghostDragTarget = this;
+        });
+
+        ghosts.push(ghost);
       });
-      ghost.on('mouseout', function() {
-        if (!this._dragging) this.setStyle({ opacity: 0.3, fillOpacity: 0.15, radius: 5 });
-      });
-
-      // Click or drag to insert
-      ghost.on('mousedown', function(e) {
-        L.DomEvent.stopPropagation(e);
-        // Defensive: clear any leftover drag lines from a prior interrupted drag
-        ghostDragLines.forEach(l => map.removeLayer(l));
-        ghostDragLines = [];
-        this.closeTooltip();
-        this._dragging = true;
-        this._insertAfter = insertAfterIdx;
-        this._chNum = chNum;
-        this._prevLatLng = [a.lat, a.lon];
-        this._nextLatLng = [b.lat, b.lon];
-        this._color = color;
-        this.setStyle({ opacity: 0.9, fillOpacity: 0.7, radius: 7 });
-        map.dragging.disable();
-        map.on('mousemove', onGhostDrag);
-        map.on('mouseup', onGhostDragEnd);
-        ghostDragTarget = this;
-      });
-
-      ghosts.push(ghost);
     }
   }
 
@@ -978,7 +999,7 @@ function onMarkerDrag(e) {
   if (!ch) return;
   const w = ch.waypoints[wptIdx];
   w.lat = Math.round(e.latlng.lat * 100000) / 100000;
-  w.lon = Math.round(e.latlng.lng * 100000) / 100000;
+  w.lon = normLon(Math.round(e.latlng.lng * 100000) / 100000);
   updateMapChapter(chNum);
   // Update table inputs if visible
   const latInput = document.querySelector(`#wpt-lat-${chNum}-${wptIdx}`);
@@ -1035,7 +1056,7 @@ function onGhostDragEnd(e) {
 
   const wpt = makeWaypoint();
   wpt.lat = Math.round(pos.lat * 100000) / 100000;
-  wpt.lon = Math.round(pos.lng * 100000) / 100000;
+  wpt.lon = normLon(Math.round(pos.lng * 100000) / 100000);
   ch.waypoints.splice(insertAfter + 1, 0, wpt);
 
   renderChapterWaypoints(chNum);
@@ -2001,12 +2022,16 @@ function updateWpt(chNum, idx, field, value) {
 function addWaypoint(chNum) {
   const ch = getChapter(chNum);
   if (!ch) return;
-  ch.waypoints.push(makeWaypoint());
+  // Item 6: insert the new row after the selected row when one is selected in this chapter;
+  // otherwise append at the end. (Map-click and geocode adds still append.)
+  let insertIdx = ch.waypoints.length;
+  if (selectedChapterNum === chNum && selectedWptIdx != null) insertIdx = selectedWptIdx + 1;
+  ch.waypoints.splice(insertIdx, 0, makeWaypoint());
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
   updateHeroStats();
-  // #56: select the new row so it is highlighted and scrolled into view (universal reveal, no threshold).
-  selectWaypoint(chNum, ch.waypoints.length - 1);
+  // #56: select the newly inserted row so it is highlighted and scrolled into view.
+  selectWaypoint(chNum, insertIdx);
 }
 
 function deleteWpt(chNum, idx) {
@@ -2283,21 +2308,14 @@ function handleJSONFile(e) {
 }
 
 function loadFromJSON(data) {
-  // The legacy v1 format stored separate routes[] and waypoints[] per chapter. It is no longer
-  // supported — the editor uses the unified waypoint model. Reject it clearly rather than letting
-  // the v2 loader silently drop its route geometry.
-  if (data.chapters && data.chapters.length > 0 && data.chapters[0].routes !== undefined) {
-    alert('This file uses the legacy v1 format, which is no longer supported. Please rebuild it in the current editor.');
-    return;
-  }
   if (data.chapters) {
-    loadFromV2JSON(data);
+    loadVoyage(data);
   } else {
     alert('Unrecognized JSON format. Expected a "chapters" array.');
   }
 }
 
-function loadFromV2JSON(data) {
+function loadVoyage(data) {
   STATE.chapters = data.chapters.map(ch => ({
     num: ch.num,
     name: ch.name || '',
@@ -2332,21 +2350,9 @@ function loadFromV2JSON(data) {
   if (data.meta && data.meta.settings) {
     STATE.settings = { ...STATE.settings, ...data.meta.settings };
   }
-  // v3.0 model: a single user voyage title lives at meta.title (STATE.metaTitle), edited in the
-  // settings field and written back verbatim. Migrate older files — a pre-v3.0 settings.voyageTitle
-  // holds the user's title and wins; otherwise fall back to meta.title, unless it is the bare
-  // "Voyage Atlas" constant the old serialiser always wrote (not a real user title).
-  const legacyTitle = data.meta && data.meta.settings && data.meta.settings.voyageTitle;
-  const importedMeta = (data.meta && data.meta.title) || '';
-  STATE.metaTitle = (legacyTitle && legacyTitle.trim())
-    ? legacyTitle.trim()
-    : (importedMeta && importedMeta !== 'Voyage Atlas' ? importedMeta : '');
-  // Migrate legacy keys onto the v3.0 model, then drop them so they are not re-serialised.
-  if (STATE.settings.nmOverride != null && STATE.settings.distanceOverride == null) {
-    STATE.settings.distanceOverride = STATE.settings.nmOverride;
-  }
-  delete STATE.settings.nmOverride;
-  delete STATE.settings.voyageTitle;
+  // v3.0 model: the user voyage title lives at meta.title (STATE.metaTitle), edited in the
+  // settings field and written back verbatim. distanceOverride loads via the settings spread above.
+  STATE.metaTitle = (data.meta && data.meta.title) || '';
   loadSettings();
   updateHeroStats();
   setDirty(false);
