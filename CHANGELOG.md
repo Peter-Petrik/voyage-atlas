@@ -13,6 +13,11 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.4.6] - 2026-06-06
+
+### Fixed
+1. **The viewer's zoom buttons are no longer hidden behind the Map & Layers panel, and the on-map panels are now grouped by purpose.** The zoom control and the Map & Layers panel both sat in the top-left corner, so the panel covered the + / − buttons. The panels were rearranged into four corners: map controls along the top (zoom top-left, Map & Layers top-right) and voyage content along the bottom (the chapter list bottom-left, the selected-chapter detail bottom-right, moved from the top-right). The detail panel gained a height cap with scrolling so a long entry can't run off the top of the map. Mobile keeps its stacked layout (full-width Map & Layers below the zoom control, detail as a bottom sheet).
+
 ## [v3.4.5] - 2026-06-06
 
 ### Fixed
