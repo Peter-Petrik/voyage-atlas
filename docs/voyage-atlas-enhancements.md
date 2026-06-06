@@ -69,6 +69,10 @@ covers "split" without a dedicated split tool. Duplicate alone is likely suffici
 chapter created with a fresh identity (see #63) and an insert-after-current placement; on a positional
 numbering scheme the trailing chapters renumber.
 
+### 68. Editor structural draw / z-order — adopt the viewer's named-layer-group model
+`Effort M · Impact Med · editor map rendering (layer architecture) · —`
+The editor draws routes, waypoint markers, and ghost midpoints **directly onto the map** (`.addTo(map)`) and then corrects stacking after the fact — each chapter re-runs a `markers.forEach(m => m.bringToFront())` pass so the markers sit above their ghosts. The viewer, by contrast, owns a small set of **named layer groups** (`routesLayer`, `wptsLayer`, `pazLayer`, `decisionLayer`, `gatewayLayer`) added to the map in a deliberate order, so z-order is correct *by construction* and a layer toggle is just add/remove of one group. The two tools reach correct layering by different mechanisms; the editor's is order-of-insertion plus post-hoc fix-ups, which is fragile — any new element type, or any code path that adds after the `bringToFront` pass, can land in the wrong stratum. Adopt the viewer's model in the editor: create explicit layer groups (routes below markers below ghosts/overlays, in a fixed declared order), draw each element into its group instead of onto the map, and retire the `bringToFront` correction pass. Net effect: layering becomes deterministic regardless of draw order, the two tools converge on one rendering architecture (audit discipline), and future overlays (PAZ authoring #43, connection rendering #37) have a clean home. Watch-outs: ghost-midpoint drag lines and the rapid-click interaction still need their current event wiring; the dark/light tile swap and `worldCopyJump` three-copy rendering must be preserved; verify marker interactivity (drag, click-to-select) is unchanged after the move into groups.
+
 ---
 
 ## Phase 3 — Save / load / interchange
