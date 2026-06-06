@@ -13,6 +13,12 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.4.9] - 2026-06-06
+
+### Changed
+1. **The viewer opens one zoom step wider on load.** Globe-spanning voyages were framed at the tightest no-tile zoom, which felt cramped; the on-load view now eases out one step for more breathing room around the route.
+2. **Selecting a chapter no longer frames it edge-to-edge.** The chapter-zoom now eases out one step so the selected chapter isn't pinned to the viewport edges and clears the corner panels, while still never zooming out far enough to tile the map.
+
 ## [v3.4.8] - 2026-06-06
 
 ### Fixed
