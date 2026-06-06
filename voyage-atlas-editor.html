@@ -548,7 +548,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed">Voyage Atlas Editor v3.4.5</span>
+  <span class="footer-ver-ed">Voyage Atlas Editor v3.5</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1127,7 +1127,7 @@ function noRepeatMinZoom() {
   while (z < 18 && 256 * Math.pow(2, z) < w) z++;
   return z;
 }
-function fitToCoords(coords) {
+function fitToCoords(coords, easeOut) {
   if (!coords || coords.length === 0) return;
   if (coords.length === 1) { map.setView([coords[0][0], normLon(coords[0][1])], FIT_POINT_ZOOM); return; }
   const pts = unwrap(coords); // one continuous frame; dateline-safe
@@ -1135,7 +1135,10 @@ function fitToCoords(coords) {
   // getBoundsZoom frames the points (with padding for breathing room); clamp UP to the no-repeat
   // minimum so a globe-spanning voyage never tiles. When the clamp engages (a span too wide for one
   // world), the ends clip — but symmetrically, because the view is centered on the unwrapped midpoint.
-  const z = Math.max(map.getBoundsZoom(b, false, [80, 80]), noRepeatMinZoom());
+  // easeOut backs off one zoom step (used by chapter selection) so the chapter isn't framed edge-to-edge
+  // and clears the corner panels; still floored at the no-repeat minimum so it never tiles.
+  const fit = map.getBoundsZoom(b, false, [80, 80]);
+  const z = Math.max(easeOut ? fit - 1 : fit, noRepeatMinZoom());
   const c = b.getCenter();
   map.setView([c.lat, normLon(c.lng)], z);
 }

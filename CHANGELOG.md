@@ -13,6 +13,15 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.5] - 2026-06-06
+
+### Changed
+1. **The two tools share one identical map-fit function again.** The viewer's `fitToCoords` had gained a one-step zoom-ease option (used when selecting a chapter) that the editor's copy didn't have, so the shared function had drifted apart. The editor now carries the identical function. Its behavior is unchanged — it doesn't use the ease, because the editor's map has no floating corner panels for a selected chapter to clear, unlike the viewer.
+
+### Documentation
+1. Updated the FAQ to describe the viewer's current behavior: how it frames the map on load (the whole voyage when it fits, otherwise anchored on the current chapter and opening toward the route ahead), the four-corner panel layout, and how selecting a chapter focuses it while the others dim.
+2. Brought the runbook up to date through v3.5 (the viewer framing, layout, and selection work, and the fit-function re-sync, with rationale).
+
 ## [v3.4.9] - 2026-06-06
 
 ### Changed

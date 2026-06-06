@@ -307,7 +307,7 @@ footer carries the version and a link back to the project site, not the stats.
 2. **File picker.** With no data present, the viewer shows a landing screen; pick a v3.0 voyage JSON to load it. Loading lives only on this landing screen — once an atlas is shown the viewer is read-only. Earlier formats are no longer supported, and a malformed file is reported rather than silently swallowed.
 3. **Force the picker.** Adding `?import=yes` to the viewer's URL shows the landing screen even when a co-located `voyage-data.json` would otherwise auto-load — handy for opening a different file without removing the default. The match is case-insensitive (`yes`/`YES`/`Yes`).
 
-On load the map frames the whole voyage (it fits to the combined extent of every chapter's waypoints) rather than opening on the whole world.
+On load, how the viewer frames the map depends on the voyage's span. A voyage that fits within a single (non-repeating) view of the world — a coastal cruise, one ocean, a season — is framed whole, so it opens on its own region. A voyage that wraps most or all of the way around the globe can't be shown complete in one view without the world repeating, so instead the viewer anchors on the **current chapter** (taken from each chapter's era, falling back to the first upcoming chapter, then the last) and shifts the frame so the route opens toward where the voyage is heading — the point it departs from sits near the trailing edge, with the rest of the width given to the passages ahead. Either way no chapter is selected to start.
 
 ## Reading the map
 
@@ -315,6 +315,10 @@ Each chapter is drawn in its own color, with named waypoints as markers and the 
 all points in order. Click a waypoint for its name and the chapter's season; major ports are
 marked. The hero stats at the top summarize the whole voyage. When a chapter has a blog URL set, its
 info panel shows a "Read the posts →" link.
+
+**Selecting a chapter** — click a chapter in the list (or its route on the map) to focus it. The selected chapter's route and waypoints stay at full strength while every other chapter dims, so the active one stands out; the map eases to that chapter's extent (one step wider than a tight fit, so it isn't pinned to the edges or hidden under the corner panels), and the detail panel opens. Clearing the selection restores all chapters to full strength.
+
+The on-map panels sit in the four corners: zoom controls top-left, **Map & Layers** top-right, the **chapter list** bottom-left, and the **selected-chapter detail** bottom-right. (On a narrow/mobile screen they stack instead: Map & Layers below the zoom control, the detail panel as a bottom sheet.)
 
 ## Layer toggles
 
