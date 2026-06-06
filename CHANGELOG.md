@@ -13,6 +13,11 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.4.7] - 2026-06-06
+
+### Changed
+1. **The viewer's on-load framing now suits globe-spanning voyages.** A circumnavigation's route wraps the whole planet, so it cannot be shown complete in a single non-tiling world — the previous fit-the-whole-voyage approach left such a voyage either tiled or floating tiny. The viewer now frames on load in one of two ways. If the whole voyage fits one non-tiling world (a regional or single-ocean voyage), it is framed whole as before. If it does not (a circumnavigation or other near-global span), the view anchors on the current chapter — taken from the chapter era flags, falling back to the first upcoming chapter, then the final chapter — and shifts so the route opens toward where the voyage is heading: the point the voyage departs from (e.g. the easternmost point of a westabout voyage) sits about 12% in from the usable edge, clear of the on-map panels, leaving the rest of the width for the route ahead. The zoom is the no-repeat minimum, so the map never tiles. This is a viewer-only change; the editor's on-load behavior is unchanged.
+
 ## [v3.4.6] - 2026-06-06
 
 ### Fixed

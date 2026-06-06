@@ -317,7 +317,7 @@
 <div id="footer">
   <span id="footer-data"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span id="footer-ver">Voyage Atlas v3.4.6</span>
+  <span id="footer-ver">Voyage Atlas v3.4.7</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -772,7 +772,7 @@ function loadVoyageData(raw) {
 
   // P1: size the map to its final layout BEFORE fitting (getBoundsZoom measures against current
   // pixel size). invalidateSize first, then fit, in the same tick.
-  setTimeout(() => { map.invalidateSize(); fitAllChapters(DATA.chapters); }, 100); // #58: frame the whole voyage on load
+  setTimeout(() => { map.invalidateSize(); fitVoyageOnLoad(DATA.chapters); }, 100); // #58: frame the voyage on load (fit-whole or focus-current-and-shift)
 }
 
 // Shared fit routine — the single place every "frame these points" operation goes through, so the
@@ -822,6 +822,85 @@ function fitAllChapters(chapters) {
     (ch.waypoints || []).forEach(w => { if (w.lat && w.lon) coords.push([w.lat, w.lon]); });
   });
   fitToCoords(coords); // no-op when empty — leaves the default world view
+}
+
+// On-load framing for the VIEWER (the published, family-facing surface). Most users of this tool are
+// circumnavigators, so the dominant case is a voyage whose unwrapped longitude span approaches or
+// exceeds one full turn of the globe — which cannot be shown whole in a single non-tiling world. So:
+//   • If the whole voyage DOES fit one non-tiling world, fit it all (a regional or single-ocean voyage).
+//   • Otherwise, anchor the view on the current chapter and shift so the route opens toward where the
+//     voyage is going: the trailing-extreme waypoint (the point the voyage departs FROM — e.g. the
+//     easternmost point of a westabout voyage) is placed ~12% in from the usable edge, leaving the rest
+//     of the width for the route ahead. "Current" comes from the chapter era flags, with a fallback
+//     chain. This frames a globe-spanning voyage meaningfully instead of trying (and failing) to show
+//     the impossible whole loop. Zoom is the no-repeat minimum, so it never tiles.
+const LOAD_ANCHOR_INSET = 0.12; // place the trailing-extreme waypoint this fraction in from the usable edge
+function fitVoyageOnLoad(chapters) {
+  const list = (chapters || []).filter(ch => (ch.waypoints || []).some(w => w.lat && w.lon));
+  if (!list.length) return;
+  const allCoords = [];
+  list.forEach(ch => (ch.waypoints || []).forEach(w => { if (w.lat && w.lon) allCoords.push([w.lat, w.lon]); }));
+  if (allCoords.length < 2) { fitToCoords(allCoords); return; }
+
+  // Does the whole voyage fit one non-tiling world? If the framing zoom isn't forced up by the
+  // no-repeat clamp, the bounds fit on their own — fit them all (the regional / non-circumnav case).
+  const uAll = unwrap(allCoords);
+  const bAll = L.latLngBounds(uAll);
+  const natural = map.getBoundsZoom(bAll, false, [80, 80]);
+  const nrMin = noRepeatMinZoom();
+  if (natural >= nrMin) { fitToCoords(allCoords); return; }
+
+  // --- Circumnav / globe-spanning case: focus the current chapter, shift toward the route ahead. ---
+  // Focus chapter: current → first future → last (past) → first.
+  const focus = list.find(ch => ch.era === 'current')
+             || list.find(ch => ch.era === 'future')
+             || list[list.length - 1];
+  const focusIdx = list.indexOf(focus);
+
+  // Travel direction in unwrapped longitude: where the bulk of the remaining route lies relative to
+  // focus. Compare the focus's mean unwrapped lon to the voyage's last point's unwrapped lon.
+  // Build a per-waypoint unwrapped index so focus and tail share one continuous frame.
+  const flat = [];
+  list.forEach((ch, ci) => (ch.waypoints || []).forEach(w => { if (w.lat && w.lon) flat.push({ ci, lat: w.lat, lon: w.lon }); }));
+  const uFlat = unwrap(flat.map(p => [p.lat, p.lon]));
+  uFlat.forEach((p, k) => { flat[k].ulon = p[1]; });
+  const focusPts = flat.filter(p => p.ci === focusIdx);
+  const focusMeanU = focusPts.reduce((s, p) => s + p.ulon, 0) / focusPts.length;
+  const tailU = uFlat[uFlat.length - 1][1];
+  const headingWest = tailU < focusMeanU; // route ahead is at lower (westward) unwrapped lon
+
+  // Trailing-extreme waypoint = the point the voyage departs FROM, in unwrapped terms:
+  //   heading west  → the EASTMOST (max ulon) point sits at the right edge
+  //   heading east  → the WESTMOST (min ulon) point sits at the left edge
+  const trailing = headingWest
+    ? flat.reduce((a, p) => p.ulon > a.ulon ? p : a)
+    : flat.reduce((a, p) => p.ulon < a.ulon ? p : a);
+
+  const z = nrMin;
+  // Vertical center: keep the focus chapter's latitude band in view.
+  const focusLatMean = focusPts.reduce((s, p) => s + p.lat, 0) / focusPts.length;
+
+  // Place the trailing waypoint at LOAD_ANCHOR_INSET in from the usable edge. The Map & Layers panel
+  // occupies the top-right (~208px); when anchoring to the right edge, inset from inside that panel so
+  // the waypoint isn't tucked under it. Work in pixels via Leaflet's projection at zoom z.
+  const size = map.getSize();
+  const RIGHT_PANEL = 208, EDGE_PAD = 12;
+  let targetX;
+  if (headingWest) {
+    const usableRight = size.x - RIGHT_PANEL;            // right limit clear of the panel
+    targetX = usableRight - LOAD_ANCHOR_INSET * usableRight; // 12% in from the usable right edge
+  } else {
+    const usableLeft = EDGE_PAD;
+    targetX = usableLeft + LOAD_ANCHOR_INSET * size.x;       // 12% in from the left edge
+  }
+  // Center longitude such that the trailing waypoint projects to targetX at zoom z.
+  // worldPx = pixels per 360°. dLon for (targetX - centerX_screen) determines centerLon.
+  const worldPx = 256 * Math.pow(2, z);
+  const degPerPx = 360 / worldPx;
+  const screenCenterX = size.x / 2;
+  // trailing should be at targetX; trailing.ulon = centerLon + (targetX - screenCenterX) * degPerPx
+  const centerLon = normLon(trailing.ulon - (targetX - screenCenterX) * degPerPx);
+  map.setView([focusLatMean, centerLon], z);
 }
 
 /* ======================== Interaction ======================== */
