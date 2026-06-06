@@ -548,7 +548,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed">Voyage Atlas Editor v3.4.4</span>
+  <span class="footer-ver-ed">Voyage Atlas Editor v3.4.5</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1115,14 +1115,27 @@ function onGhostDragEnd(e) {
 // (50 nm or 5,000 nm) and a fixed cap is wrong for some size — framing-then-easing adapts to any. A
 // floor keeps a globe-spanning set from easing below the sensible world view. A lone point can't be
 // framed by bounds, so it uses a fixed close zoom.
-const FIT_FLOOR_ZOOM = 1;      // lowest zoom the ease may reach; low enough not to clamp a wide voyage tighter than it fits in a narrow pane
 const FIT_POINT_ZOOM = 9;      // a single isolated point
+// The lowest zoom at which ONE world copy is at least as wide as the map pane. Below this, Leaflet's
+// worldCopyJump tiles the world and a voyage appears repeated (two or three of each continent) — far
+// more confusing than some clipping. Computed from the pane's actual pixel width, so the editor's
+// narrow split-pane and the viewer's full-width pane each get the correct minimum automatically (a
+// fixed constant can't, since the threshold depends on width). 256 px = world width at zoom 0.
+function noRepeatMinZoom() {
+  const w = map.getSize().x || 256;
+  let z = 0;
+  while (z < 18 && 256 * Math.pow(2, z) < w) z++;
+  return z;
+}
 function fitToCoords(coords) {
   if (!coords || coords.length === 0) return;
   if (coords.length === 1) { map.setView([coords[0][0], normLon(coords[0][1])], FIT_POINT_ZOOM); return; }
   const pts = unwrap(coords); // one continuous frame; dateline-safe
   const b = L.latLngBounds(pts);
-  const z = Math.max(map.getBoundsZoom(b, false, [60, 60]) - 1, FIT_FLOOR_ZOOM); // fill, then ease one out
+  // getBoundsZoom frames the points (with padding for breathing room); clamp UP to the no-repeat
+  // minimum so a globe-spanning voyage never tiles. When the clamp engages (a span too wide for one
+  // world), the ends clip — but symmetrically, because the view is centered on the unwrapped midpoint.
+  const z = Math.max(map.getBoundsZoom(b, false, [80, 80]), noRepeatMinZoom());
   const c = b.getCenter();
   map.setView([c.lat, normLon(c.lng)], z);
 }

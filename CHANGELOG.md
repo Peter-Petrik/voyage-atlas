@@ -13,6 +13,12 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.4.5] - 2026-06-06
+
+### Fixed
+1. **The on-load fit no longer tiles the world (showing a voyage two or three times) and no longer floats a voyage tiny in an empty map.** v3.4.4 lowered the zoom floor far enough that a globe-spanning voyage could zoom out past the point where one world copy fills the map, so Leaflet's world-wrap drew the continents — and the route — repeated across the map. The fixed floor is replaced by a minimum zoom **computed from the map pane's actual width**: the fit never zooms out past the point where a single world fills the pane, so the map never tiles, in either tool's differently-sized map. The redundant extra zoom-out step (a full level beyond the framing zoom) was removed; framing margin now comes from the fit padding alone.
+2. **A voyage too wide to fit one world clips symmetrically.** When a near-global span can't fit without tiling, the view sits at the no-tile zoom centered on the route's midpoint, so the eastern and western ends fall off by roughly equal amounts rather than the whole voyage shifting to one side. Regional and single-ocean voyages are unaffected — they fit fully as before. Dateline handling is unchanged.
+
 ## [v3.4.4] - 2026-06-06
 
 ### Fixed
