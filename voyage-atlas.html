@@ -317,7 +317,7 @@
 <div id="footer">
   <span id="footer-data"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span id="footer-ver">Voyage Atlas v3.4.7</span>
+  <span id="footer-ver">Voyage Atlas v3.4.8</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -588,6 +588,7 @@ function chapterCountries(ch) {
   return (ch.countriesOverride && ch.countriesOverride.length) ? ch.countriesOverride : deriveCountriesFromWaypoints(ch);
 }
 let polylines = {};
+let wptMarkers = {}; // per-chapter waypoint circle markers, so selection can dim non-selected dots
 let activeNum = null;
 
 /* ======================== File loader ======================== */
@@ -633,6 +634,7 @@ function loadVoyageData(raw) {
   document.getElementById('legend-body').innerHTML = '';
   document.getElementById('drawer-body').innerHTML = '';
   polylines = {};
+  wptMarkers = {};
   activeNum = null;
   closeInfo();
 
@@ -671,8 +673,8 @@ function loadVoyageData(raw) {
         WORLD_COPIES.forEach(off => {
           const poly = L.polyline(shiftLon(seg, off), { color, weight: 3, opacity: 0.85, smoothFactor: 1 }).addTo(routesLayer);
           poly.on('click', () => selectChapter(ch.num));
-          poly.on('mouseover', () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: 5, opacity: 1 }); });
-          poly.on('mouseout',  () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: 3, opacity: 0.85 }); });
+          poly.on('mouseover', () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: activeNum ? 2 : 5, opacity: activeNum ? 0.25 : 1 }); });
+          poly.on('mouseout',  () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: activeNum ? 2 : 3, opacity: activeNum ? 0.25 : 0.85 }); });
           polylines[ch.num].push(poly);
         });
       });
@@ -698,6 +700,8 @@ function loadVoyageData(raw) {
           fillOpacity: major ? 1 : 0.8,
         });
         m.addTo(wptsLayer);
+        m._baseFill = major ? 1 : 0.8; // remember base so selection can dim then restore exactly
+        (wptMarkers[ch.num] || (wptMarkers[ch.num] = [])).push(m);
         m.bindPopup(popup, { maxWidth: 230 });
 
         // Decision markers
@@ -905,6 +909,10 @@ function fitVoyageOnLoad(chapters) {
 
 /* ======================== Interaction ======================== */
 function setChapterStyle(num, style) { (polylines[num]||[]).forEach(p => p.setStyle(style)); }
+// Dim or restore a chapter's waypoint dots. dim=true fades them; dim=false restores base fillOpacity.
+function setChapterWptDim(num, dim) {
+  (wptMarkers[num]||[]).forEach(m => m.setStyle({ opacity: dim ? 0.25 : 1, fillOpacity: dim ? 0.18 : m._baseFill }));
+}
 
 function selectChapter(num) {
   if (!DATA) return;
@@ -915,6 +923,7 @@ function selectChapter(num) {
   Object.keys(polylines).forEach(k => {
     setChapterStyle(+k, { weight: (+k === num) ? 5 : 2, opacity: (+k === num) ? 1 : 0.25 });
   });
+  Object.keys(wptMarkers).forEach(k => setChapterWptDim(+k, +k !== num));
   (polylines[num]||[]).forEach(p => p.bringToFront());
 
   document.querySelectorAll('.dr-row').forEach(el => el.classList.toggle('active', el.id === `dr-${num}`));
@@ -959,6 +968,7 @@ function closeInfo() {
   activeNum = null;
   document.getElementById('info').classList.remove('show');
   Object.keys(polylines).forEach(k => setChapterStyle(+k, { weight: 3, opacity: 0.85 }));
+  Object.keys(wptMarkers).forEach(k => setChapterWptDim(+k, false));
   document.querySelectorAll('.dr-row, .leg-row').forEach(el => el.classList.remove('active'));
 }
 

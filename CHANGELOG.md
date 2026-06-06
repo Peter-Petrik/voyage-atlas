@@ -13,6 +13,12 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.4.8] - 2026-06-06
+
+### Fixed
+1. **Selecting a chapter now dims the other chapters' waypoints, not just their route lines.** When a chapter was selected, the unselected chapters' route lines faded correctly but their waypoint dots stayed at full color, so several chapters still looked active at once. The viewer now tracks each chapter's waypoint markers and fades the unselected ones alongside their routes, then restores them when the selection is cleared.
+2. **Hovering an unselected chapter's route no longer leaves it looking active.** While a chapter was selected, moving the cursor across another chapter's route brightened it and then, on leaving, restored it to the normal (undimmed) appearance instead of the dimmed one — so any route the cursor brushed stayed looking active, and which chapters appeared active changed with each pass of the mouse. Hover now keeps unselected chapters dimmed while a selection is active, and only brightens routes on hover when nothing is selected.
+
 ## [v3.4.7] - 2026-06-06
 
 ### Changed
