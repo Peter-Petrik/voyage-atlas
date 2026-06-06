@@ -537,7 +537,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v3.1.2</span>
+  <span>Voyage Atlas Editor v3.2</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -604,6 +604,18 @@ th .hi { margin-left: 2px; }
   </div>
 </div>
 
+<!-- Generic confirmation modal (styled replacement for native confirm()) -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <h2 id="confirm-modal-title">Confirm</h2>
+    <p id="confirm-modal-msg"></p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-modal-ok" onclick="proceedConfirmModal()">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <!-- Country look-up pre-flight confirmation modal (D2) -->
 <div class="modal-overlay" id="lookup-confirm-modal">
   <div class="modal">
@@ -624,11 +636,10 @@ const TOL_PALETTE = [
   '#332288','#88CCEE','#44AA99','#117733','#999933',
   '#DDCC77','#CC6677','#882255','#AA4499'
 ];
+const COLOR_ASSIGN = [0,0,1,2,3,4,5,6,7,8,1,5,3,6,0,4,7,2,8,5];
 
 function chapterColor(num) {
-  // Assignment matching the viewer (1-indexed, wrapping)
-  const assign = [0,0,1,2,3,4,5,6,7,8,1,5,3,6,0,4,7,2,8,5];
-  const idx = (num >= 0 && num < assign.length) ? assign[num] : ((num - 1) % TOL_PALETTE.length);
+  const idx = (num >= 0 && num < COLOR_ASSIGN.length) ? COLOR_ASSIGN[num] : ((num - 1) % TOL_PALETTE.length);
   return TOL_PALETTE[idx] || TOL_PALETTE[0];
 }
 
@@ -665,16 +676,52 @@ function unwrap(coords) {
   return out;
 }
 
-// World copies so dateline-crossing routes stay continuous regardless of how the map is panned
-// (parity with the viewer). Markers are drawn in a single world only — they're interactive here, so
-// triplicating them would create duplicate draggable/clickable points; worldCopyJump handles their
-// wrapping on pan.
+// World copies so dateline-crossing routes, markers, and ghost midpoints stay continuous and visible
+// regardless of how the map is panned (parity with the viewer; as of v3.1). Markers are interactive,
+// so every copy carries the same handlers and commits through normLon — clicking, dragging, or deleting
+// any copy edits the one underlying waypoint.
 const WORLD_COPIES = [-360, 0, 360];
 const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlngs;
 // Canonicalize a longitude to [-180,180). Map clicks/drags near the dateline can return values
 // outside that range (e.g. +200 instead of -160); splitAtDateline needs canonical input to detect
 // a crossing, so an out-of-range longitude would leave a crossing leg unsplit and render-fragile.
 const normLon = lon => ((lon + 180) % 360 + 360) % 360 - 180;
+// Parse a flag value from imported text (paste/CSV) consistently: true for 'true'/'1'/'yes',
+// case-insensitive. A single source so paste and CSV imports can't disagree on casing.
+function parseBool(v) {
+  if (v === true) return true;
+  const s = String(v == null ? '' : v).trim().toLowerCase();
+  return s === 'true' || s === '1' || s === 'yes';
+}
+// Round a coordinate to 5 decimal places (~1.1 m). Single source for the precision policy used by
+// every map-derived coordinate (click, drag, ghost insert, search pick, geocode).
+const round5 = n => Math.round(n * 100000) / 100000;
+
+/* Marker shape SVG builders — shared between editor and viewer (identical definitions in both).
+   Geometry is fixed; appearance (fill/stroke/strokeW/opacity) is passed by the caller so each tool's
+   active/selected/static styling layers on top. A diamond marks a Decision point, a star a Gateway. */
+function decisionMarkerSVG(size, fill, stroke, strokeW, opacity) {
+  const half = size / 2;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+            <rect x="${half*0.35}" y="${half*0.35}" width="${size*0.65}" height="${size*0.65}"
+              transform="rotate(45 ${half} ${half})"
+              fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${opacity}"/>
+          </svg>`;
+}
+function gatewayMarkerSVG(size, fill, stroke, strokeW, opacity) {
+  const half = size / 2;
+  const r = half * 0.9, ri = r * 0.4;
+  let points = '';
+  for (let i = 0; i < 5; i++) {
+    const aOuter = (i * 72 - 90) * Math.PI / 180;
+    const aInner = ((i * 72) + 36 - 90) * Math.PI / 180;
+    points += `${half + r * Math.cos(aOuter)},${half + r * Math.sin(aOuter)} `;
+    points += `${half + ri * Math.cos(aInner)},${half + ri * Math.sin(aInner)} `;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="${points.trim()}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${opacity}"/>
+          </svg>`;
+}
 
 /* ═══════════════════════════════════════════════════════════════
    STATE
@@ -742,8 +789,8 @@ function onMapClick(e) {
   const ch = getChapter(activeChapterNum);
   if (!ch) return;
   const wpt = makeWaypoint();
-  wpt.lat = Math.round(e.latlng.lat * 100000) / 100000;
-  wpt.lon = normLon(Math.round(e.latlng.lng * 100000) / 100000);
+  wpt.lat = round5(e.latlng.lat);
+  wpt.lon = normLon(round5(e.latlng.lng));
   ch.waypoints.push(wpt);
   renderChapterWaypoints(activeChapterNum);
   updateMapChapter(activeChapterNum);
@@ -839,32 +886,14 @@ function updateMapChapter(chNum) {
       // Shaped marker for Decision and/or Gateway (active chapter only)
       shapeSize = (w.major ? 20 : 16) + (isSelected ? 4 : 0); // #56 selected shape grows
       shapeHalf = shapeSize / 2;
-      const size = shapeSize, half = shapeHalf;
+      const size = shapeSize;
       const stroke = isSelected ? accent : (isActive ? '#fff' : color);
       const strokeW = w.major ? 2 : 1.5;
       const fill = isSelected ? accent : color;
       if (w.decision) {
-        // Diamond shape
-        shapeSvg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-          <rect x="${half*0.35}" y="${half*0.35}" width="${size*0.65}" height="${size*0.65}"
-            transform="rotate(45 ${half} ${half})"
-            fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${opacity}"/>
-        </svg>`;
+        shapeSvg = decisionMarkerSVG(size, fill, stroke, strokeW, opacity);
       } else {
-        // Star shape (Gateway)
-        const r = half * 0.9;
-        const ri = r * 0.4;
-        let points = '';
-        for (let i = 0; i < 5; i++) {
-          const aOuter = (i * 72 - 90) * Math.PI / 180;
-          const aInner = ((i * 72) + 36 - 90) * Math.PI / 180;
-          points += `${half + r * Math.cos(aOuter)},${half + r * Math.sin(aOuter)} `;
-          points += `${half + ri * Math.cos(aInner)},${half + ri * Math.sin(aInner)} `;
-        }
-        shapeSvg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="${points.trim()}"
-            fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${opacity}"/>
-        </svg>`;
+        shapeSvg = gatewayMarkerSVG(size, fill, stroke, strokeW, opacity);
       }
     }
 
@@ -998,8 +1027,8 @@ function onMarkerDrag(e) {
   const ch = getChapter(chNum);
   if (!ch) return;
   const w = ch.waypoints[wptIdx];
-  w.lat = Math.round(e.latlng.lat * 100000) / 100000;
-  w.lon = normLon(Math.round(e.latlng.lng * 100000) / 100000);
+  w.lat = round5(e.latlng.lat);
+  w.lon = normLon(round5(e.latlng.lng));
   updateMapChapter(chNum);
   // Update table inputs if visible
   const latInput = document.querySelector(`#wpt-lat-${chNum}-${wptIdx}`);
@@ -1055,8 +1084,8 @@ function onGhostDragEnd(e) {
   if (!ch) return;
 
   const wpt = makeWaypoint();
-  wpt.lat = Math.round(pos.lat * 100000) / 100000;
-  wpt.lon = normLon(Math.round(pos.lng * 100000) / 100000);
+  wpt.lat = round5(pos.lat);
+  wpt.lon = normLon(round5(pos.lng));
   ch.waypoints.splice(insertAfter + 1, 0, wpt);
 
   renderChapterWaypoints(chNum);
@@ -1079,7 +1108,7 @@ function focusMapOnChapter(chNum) {
   const b = L.latLngBounds(pts);
   const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), 8);
   const c = b.getCenter();
-  const lon = ((c.lng + 180) % 360 + 360) % 360 - 180;
+  const lon = normLon(c.lng);
   map.setView([c.lat, lon], z);
 }
 
@@ -1097,7 +1126,7 @@ function selectWaypoint(chNum, idx, opts = {}) {
   updateMapChapter(chNum); // redraw this chapter so the selected marker grows + turns crimson
   const w = ch.waypoints[idx];
   if (opts.zoom && w.lat && w.lon) {
-    const lon = ((w.lon + 180) % 360 + 360) % 360 - 180; // normalize so a dateline-side waypoint centers correctly
+    const lon = normLon(w.lon); // normalize so a dateline-side waypoint centers correctly
     map.setView([w.lat, lon], 9); // B4: fixed zoom level 9
   }
   revealWaypointRow(chNum, idx);
@@ -1194,8 +1223,8 @@ function pickSearchResult(i) {
   const r = el._results[i];
   if (!r) return;
   hideSearchResults();
-  const lat = Math.round(parseFloat(r.lat) * 100000) / 100000;
-  const lon = Math.round(parseFloat(r.lon) * 100000) / 100000;
+  const lat = round5(parseFloat(r.lat));
+  const lon = round5(parseFloat(r.lon));
   const name = r.display_name.split(',')[0].trim();
   document.getElementById('nom-input').value = '';
 
@@ -1436,8 +1465,8 @@ function processFwdGeoQueue() {
       if (curIdx === -1) return; // deleted during fetch
       const w = wptRef;
       if (w.lat || w.lon) return; // coords set meanwhile
-      w.lat = Math.round(parseFloat(r.lat) * 100000) / 100000;
-      w.lon = Math.round(parseFloat(r.lon) * 100000) / 100000;
+      w.lat = round5(parseFloat(r.lat));
+      w.lon = round5(parseFloat(r.lon));
       geoResolved++; // coordinates successfully resolved
       // Country rides along free in this forward response — fill only if empty
       // (never clobber a value typed or pasted by hand).
@@ -1548,7 +1577,7 @@ function haversineNm(lat1, lon1, lat2, lon2) {
    `follows` field here and all distance/sync logic adapts without further edits. */
 function getPredecessorChapter(ch) {
   if (!ch) return null;
-  const sorted = [...STATE.chapters].sort((a, b) => a.num - b.num);
+  const sorted = [...(STATE.chapters || [])].sort((a, b) => a.num - b.num);
   const i = sorted.findIndex(c => c.num === ch.num);
   return i > 0 ? sorted[i - 1] : null;
 }
@@ -1560,8 +1589,8 @@ function getPredecessorChapter(ch) {
 function chapterApproachNm(ch) {
   const prev = getPredecessorChapter(ch);
   if (!prev) return 0;
-  const prevPts = prev.waypoints.filter(w => w.lat && w.lon);
-  const thisPts = ch.waypoints.filter(w => w.lat && w.lon);
+  const prevPts = (prev.waypoints || []).filter(w => w.lat && w.lon);
+  const thisPts = (ch.waypoints || []).filter(w => w.lat && w.lon);
   if (prevPts.length === 0 || thisPts.length === 0) return 0;
   const last = prevPts[prevPts.length - 1];
   const first = thisPts[0];
@@ -1570,7 +1599,7 @@ function chapterApproachNm(ch) {
 
 function chapterNmBase(ch) {
   let total = 0;
-  const pts = ch.waypoints.filter(w => w.lat && w.lon);
+  const pts = (ch.waypoints || []).filter(w => w.lat && w.lon);
   for (let i = 1; i < pts.length; i++) {
     total += haversineNm(pts[i-1].lat, pts[i-1].lon, pts[i].lat, pts[i].lon);
   }
@@ -2066,6 +2095,26 @@ function doDeleteWpt() {
   closeDeleteWptModal();
 }
 
+// Generic styled confirmation (replaces native confirm()). Stores the pending callback and runs it on
+// Proceed. Used for chapter delete; available for any future destructive action.
+let pendingConfirmAction = null;
+function confirmModal(title, message, onConfirm) {
+  pendingConfirmAction = onConfirm;
+  document.getElementById('confirm-modal-title').textContent = title;
+  document.getElementById('confirm-modal-msg').textContent = message;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.remove('open');
+  pendingConfirmAction = null;
+}
+function proceedConfirmModal() {
+  const action = pendingConfirmAction;
+  document.getElementById('confirm-modal').classList.remove('open');
+  pendingConfirmAction = null;
+  if (action) action();
+}
+
 /* ═══════════════════════════════════════════════════════════════
    CHAPTER ACTIONS
    ═══════════════════════════════════════════════════════════════ */
@@ -2090,15 +2139,14 @@ function selectChapter(chNum, skipFit) {
 
 function toggleMeta(chNum, btn) {
   const panel = document.getElementById(`ch-meta-${chNum}`);
+  if (!panel) return;
   const isOpen = panel.classList.toggle('open');
-  btn.classList.toggle('open', isOpen);
+  if (btn) btn.classList.toggle('open', isOpen);
 }
 
 function dblClickChapter(chNum) {
-  const panel = document.getElementById(`ch-meta-${chNum}`);
   const btn = document.querySelector(`#ch-${chNum} .ch-toggle[title="Chapter metadata"]`);
-  const isOpen = panel.classList.toggle('open');
-  if (btn) btn.classList.toggle('open', isOpen);
+  toggleMeta(chNum, btn);
 }
 
 function toggleWpts(chNum, btn) {
@@ -2147,11 +2195,12 @@ function pullFromPrevious(chNum) {
 }
 
 function deleteChapter(chNum) {
-  if (!confirm(`Delete chapter ${chNum}? This cannot be undone.`)) return;
-  STATE.chapters = STATE.chapters.filter(c => c.num !== chNum);
-  renumberChapters();
-  if (activeChapterNum === chNum) activeChapterNum = null;
-  renderAllChapters();
+  confirmModal('Delete Chapter', `Delete chapter ${chNum}? This cannot be undone.`, () => {
+    STATE.chapters = STATE.chapters.filter(c => c.num !== chNum);
+    renumberChapters();
+    if (activeChapterNum === chNum) activeChapterNum = null;
+    renderAllChapters();
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2260,9 +2309,9 @@ function doPaste() {
     if (row.length >= 1) wpt.name = (row[0] || '').trim();
     if (row.length >= 2) wpt.lat = parseFloat(row[1]) || null;
     if (row.length >= 3) wpt.lon = parseFloat(row[2]) || null;
-    if (row.length >= 4) wpt.major = row[3] === 'true' || row[3] === '1' || row[3] === 'TRUE';
-    if (row.length >= 5) wpt.decision = row[4] === 'true' || row[4] === '1' || row[4] === 'TRUE';
-    if (row.length >= 6) wpt.gateway = row[5] === 'true' || row[5] === '1' || row[5] === 'TRUE';
+    if (row.length >= 4) wpt.major = parseBool(row[3]);
+    if (row.length >= 5) wpt.decision = parseBool(row[4]);
+    if (row.length >= 6) wpt.gateway = parseBool(row[5]);
     if (row.length >= 7) wpt.country = (row[6] || '').trim();
     if (row.length >= 8) wpt.notes = (row[7] || '').trim();
     ch.waypoints.push(wpt);
@@ -2315,32 +2364,52 @@ function loadFromJSON(data) {
   }
 }
 
-function loadVoyage(data) {
-  STATE.chapters = data.chapters.map(ch => ({
+/* Shared importer normalization (#T2-2). Both the JSON loader and the CSV merge build the same chapter
+   and waypoint shape; these are the single source for that shape. The `csv` option controls the two
+   genuine format differences: CSV delivers countries/keyDestinations as comma strings (split here) and
+   coordinates as strings (parsed here), whereas JSON delivers arrays and native numbers. The legacy
+   routing/bailout/prose -> notes fallback is applied identically for both. */
+function csvList(v) {
+  return v ? String(v).split(',').map(s => s.trim()).filter(Boolean) : null;
+}
+function composeNotesFallback(raw) {
+  return raw.notes || [
+    raw.routing ? `Routing: ${raw.routing}` : '',
+    raw.bailout ? `Bail-out: ${raw.bailout}` : '',
+    raw.prose || ''
+  ].filter(Boolean).join('\n\n') || '';
+}
+function normalizeWaypoint(w, opts = {}) {
+  const csv = !!opts.csv;
+  return {
+    name: w.name || '',
+    lat: csv ? (parseFloat(w.lat) || null) : (w.lat ?? null),
+    lon: csv ? (parseFloat(w.lon) || null) : (w.lon ?? null),
+    major: parseBool(w.major),
+    decision: parseBool(w.decision),
+    gateway: parseBool(w.gateway),
+    country: w.country || '',
+    notes: w.notes || ''
+  };
+}
+function normalizeChapter(ch, opts = {}) {
+  const csv = !!opts.csv;
+  return {
     num: ch.num,
     name: ch.name || '',
     when: ch.when || '',
     era: ch.era || 'future',
-    notes: ch.notes || [
-      ch.routing ? `Routing: ${ch.routing}` : '',
-      ch.bailout ? `Bail-out: ${ch.bailout}` : '',
-      ch.prose || ''
-    ].filter(Boolean).join('\n\n') || '',
-    countriesOverride: ch.countriesOverride || null,
-    keyDestinations: ch.keyDestinations || [],
+    notes: composeNotesFallback(ch),
+    countriesOverride: csv ? csvList(ch.countries) : (ch.countriesOverride || null),
+    keyDestinations: csv ? (csvList(ch.keyDestinations) || []) : (ch.keyDestinations || []),
     blogUrl: ch.blogUrl || null,
-    padMultiplier: ch.padMultiplier || 1.2,
-    waypoints: (ch.waypoints || []).map(w => ({
-      name: w.name || '',
-      lat: w.lat ?? null,
-      lon: w.lon ?? null,
-      major: w.major || false,
-      decision: w.decision || false,
-      gateway: w.gateway || false,
-      country: w.country || '',
-      notes: w.notes || ''
-    }))
-  }));
+    padMultiplier: parseFloat(ch.padMultiplier) || 1.2,
+    waypoints: (ch.waypoints || []).map(w => normalizeWaypoint(w, opts))
+  };
+}
+
+function loadVoyage(data) {
+  STATE.chapters = data.chapters.map(ch => normalizeChapter(ch));
   renderAllChapters();
   if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
   setTimeout(() => map.invalidateSize(), 100);
@@ -2404,22 +2473,7 @@ function mergeCSVImport(chapRows, wptRows) {
   (chapRows || []).forEach(r => {
     const num = parseInt(r.num);
     if (isNaN(num)) return;
-    const ch = {
-      num,
-      name: r.name || '',
-      when: r.when || '',
-      era: r.era || 'future',
-      notes: r.notes || [
-        r.routing ? `Routing: ${r.routing}` : '',
-        r.bailout ? `Bail-out: ${r.bailout}` : '',
-        r.prose || ''
-      ].filter(Boolean).join('\n\n') || '',
-      countriesOverride: r.countries ? r.countries.split(',').map(s => s.trim()).filter(Boolean) : null,
-      keyDestinations: r.keyDestinations ? r.keyDestinations.split(',').map(s => s.trim()).filter(Boolean) : [],
-      blogUrl: r.blogUrl || null,
-      padMultiplier: parseFloat(r.padMultiplier) || 1.2,
-      waypoints: []
-    };
+    const ch = normalizeChapter({ ...r, num }, { csv: true });
     STATE.chapters.push(ch);
     chMap[num] = ch;
   });
@@ -2427,16 +2481,10 @@ function mergeCSVImport(chapRows, wptRows) {
   (wptRows || []).forEach(r => {
     const chNum = parseInt(r.chapter);
     if (!chMap[chNum]) return;
-    chMap[chNum].waypoints.push({
-      name: r.name || '',
-      lat: parseFloat(r.lat) || null,
-      lon: parseFloat(r.lon) || null,
-      major: r.major === 'true' || r.major === '1',
-      decision: r.decision === 'true' || r.decision === '1',
-      gateway: r.gateway === 'true' || r.gateway === '1',
-      country: r.country || '',
-      notes: r.notes || ''
-    });
+    // Note: the original never stored `order` on the waypoint, so the "sort by order" below has always
+    // been a no-op (waypoints keep CSV file order). Preserved as-is to keep this a behavior-neutral
+    // refactor; activating that sort is logged separately as a candidate fix, not done here.
+    chMap[chNum].waypoints.push(normalizeWaypoint(r, { csv: true }));
   });
 
   // Sort waypoints by order if present
@@ -2455,14 +2503,8 @@ function mergeCSVImport(chapRows, wptRows) {
    ═══════════════════════════════════════════════════════════════ */
 function saveDefault() {
   closeDropdowns();
-  const jsonStr = buildExportJSON();
-  // Save as voyage-data.json (no timestamp — overwrite pattern)
-  const blob = new Blob([jsonStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'voyage-data.json';
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
+  // Save as voyage-data.json with no timestamp (the overwrite pattern), via the shared downloadFile.
+  downloadFile('voyage-data.json', buildExportJSON(), 'application/json', false);
   setDirty(false);
 }
 
@@ -2618,13 +2660,17 @@ function escXml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
 }
 
-function downloadFile(filename, content, mimeType) {
-  const d = new Date();
-  const prefix = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-${String(d.getHours()).padStart(2,'0')}-${String(d.getMinutes()).padStart(2,'0')}-`;
+function downloadFile(filename, content, mimeType, timestamp = true) {
+  let name = filename;
+  if (timestamp) {
+    const d = new Date();
+    const prefix = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-${String(d.getHours()).padStart(2,'0')}-${String(d.getMinutes()).padStart(2,'0')}-`;
+    name = prefix + filename;
+  }
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = prefix + filename;
+  a.href = url; a.download = name;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -2724,12 +2770,14 @@ document.addEventListener('keydown', function(e) {
     if (document.getElementById('paste-modal').classList.contains('open')) closePasteModal();
     if (document.getElementById('csv-step2-modal').classList.contains('open')) closeCSVStep2();
     if (document.getElementById('delete-wpt-modal').classList.contains('open')) closeDeleteWptModal();
+    if (document.getElementById('confirm-modal').classList.contains('open')) closeConfirmModal();
     closeDropdowns();
   }
   if (e.key === 'Enter' && !e.shiftKey) {
     if (document.getElementById('bulk-modal').classList.contains('open')) { e.preventDefault(); doBulkAdd(); }
     if (document.getElementById('csv-step2-modal').classList.contains('open')) { e.preventDefault(); document.getElementById('file-csv-waypoints').click(); }
     if (document.getElementById('delete-wpt-modal').classList.contains('open')) { e.preventDefault(); doDeleteWpt(); }
+    if (document.getElementById('confirm-modal').classList.contains('open')) { e.preventDefault(); proceedConfirmModal(); }
   }
 });
 

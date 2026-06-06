@@ -271,10 +271,6 @@
     <span>Map &amp; Layers</span><span class="caret">▾</span>
   </div>
   <div class="panel-body">
-    <div class="seg" id="base-seg">
-      <button data-base="light" class="on">Light</button>
-      <button data-base="dark">Dark</button>
-    </div>
     <label class="toggle"><input type="checkbox" id="t-routes" checked> Routes</label>
     <label class="toggle"><input type="checkbox" id="t-wpts" checked> Waypoints</label>
     <label class="toggle"><input type="checkbox" id="t-paz"> Avoidance zones</label>
@@ -314,7 +310,7 @@
 
 <div id="footer">
   <span id="footer-data"></span>
-  <span id="footer-ver">Voyage Atlas v3.1.2</span>
+  <span id="footer-ver">Voyage Atlas v3.2</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -377,10 +373,8 @@ function setBase(mode) {
   if (dark) { map.removeLayer(baseLight); baseDark.addTo(map); }
   else      { map.removeLayer(baseDark); baseLight.addTo(map); }
   document.querySelector('meta[name=theme-color]').setAttribute('content', dark ? '#0b1622' : '#f4efe4');
-  document.querySelectorAll('#base-seg button').forEach(b => b.classList.toggle('on', b.dataset.base === mode));
   refreshMarkerStrokes();
 }
-document.querySelectorAll('#base-seg button').forEach(b => b.addEventListener('click', () => setBase(b.dataset.base)));
 
 /* ======================== Layer groups ======================== */
 const routesLayer = L.layerGroup().addTo(map);
@@ -407,6 +401,35 @@ function refreshMarkerStrokes() {
 
 const WORLD_COPIES = [-360, 0, 360];
 const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlngs;
+// Canonicalize a longitude to [-180,180). Shared with the editor; used so a dateline-side center
+// resolves correctly. Same definition in both tools.
+const normLon = lon => ((lon + 180) % 360 + 360) % 360 - 180;
+
+/* Marker shape SVG builders — shared between editor and viewer (identical definitions in both).
+   Geometry is fixed; appearance (fill/stroke/strokeW/opacity) is passed by the caller so each tool's
+   active/selected/static styling layers on top. A diamond marks a Decision point, a star a Gateway. */
+function decisionMarkerSVG(size, fill, stroke, strokeW, opacity) {
+  const half = size / 2;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+            <rect x="${half*0.35}" y="${half*0.35}" width="${size*0.65}" height="${size*0.65}"
+              transform="rotate(45 ${half} ${half})"
+              fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${opacity}"/>
+          </svg>`;
+}
+function gatewayMarkerSVG(size, fill, stroke, strokeW, opacity) {
+  const half = size / 2;
+  const r = half * 0.9, ri = r * 0.4;
+  let points = '';
+  for (let i = 0; i < 5; i++) {
+    const aOuter = (i * 72 - 90) * Math.PI / 180;
+    const aInner = ((i * 72) + 36 - 90) * Math.PI / 180;
+    points += `${half + r * Math.cos(aOuter)},${half + r * Math.sin(aOuter)} `;
+    points += `${half + ri * Math.cos(aInner)},${half + ri * Math.sin(aInner)} `;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="${points.trim()}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${opacity}"/>
+          </svg>`;
+}
 
 /* ========================= State ========================= */
 let DATA = null;
@@ -426,7 +449,9 @@ function fmtDist(nm) {
    waypoints on load, applying any overrides in meta.settings on top. The stored meta.hero and the
    per-chapter nm/nmBase/nmApproach are write-on-save snapshots only — never trusted for display —
    so a hand-edited JSON (added waypoint, changed country, removed chapter) can never drift from
-   what's drawn. The functions below are ported verbatim from the editor so the two tools agree. */
+   what's drawn. The functions below are part of the shared core kept byte-identical between the editor
+   and the viewer (mirror-maintained: a change to any must be applied to both); the only intended
+   per-tool difference is the state source — the editor reads STATE.chapters, the viewer DATA.chapters. */
 const TERRITORIES = new Set([
   // UK overseas territories
   'Anguilla','Bermuda','British Indian Ocean Territory','British Virgin Islands',
@@ -630,7 +655,7 @@ function loadVoyageData(raw) {
                     (major ? '<div class="pop-major">Major port</div>' : '');
       WORLD_COPIES.forEach(off => {
         const m = L.circleMarker([w.lat, w.lon + off], {
-          radius: major ? 6 : 3.6,
+          radius: major ? 7 : 4,
           weight: major ? 2 : 1.2,
           color: stroke,
           fillColor: color,
@@ -641,31 +666,18 @@ function loadVoyageData(raw) {
 
         // Decision markers
         if (w.decision) {
-          const size = major ? 18 : 14;
+          const size = major ? 20 : 16;
           const half = size / 2;
-          const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-            <rect x="${half*0.35}" y="${half*0.35}" width="${size*0.65}" height="${size*0.65}"
-              transform="rotate(45 ${half} ${half})"
-              fill="${color}" stroke="${stroke}" stroke-width="1.5" opacity="0.9"/>
-          </svg>`;
+          const svg = decisionMarkerSVG(size, color, stroke, 1.5, 0.9);
           const icon = L.divIcon({ html: svg, className: '', iconSize: [size, size], iconAnchor: [half, half] });
           const dm = L.marker([w.lat, w.lon + off], { icon }).bindPopup(popup, { maxWidth: 230 });
           dm.addTo(decisionLayer);
         }
         // Gateway markers
         if (w.gateway) {
-          const size = major ? 18 : 14;
+          const size = major ? 20 : 16;
           const half = size / 2;
-          const r = half * 0.9, ri = r * 0.4;
-          let points = '';
-          for (let i = 0; i < 5; i++) {
-            const aO = (i * 72 - 90) * Math.PI / 180;
-            const aI = ((i * 72) + 36 - 90) * Math.PI / 180;
-            points += `${half + r * Math.cos(aO)},${half + r * Math.sin(aO)} ${half + ri * Math.cos(aI)},${half + ri * Math.sin(aI)} `;
-          }
-          const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="${points.trim()}" fill="${color}" stroke="${stroke}" stroke-width="1.5" opacity="0.9"/>
-          </svg>`;
+          const svg = gatewayMarkerSVG(size, color, stroke, 1.5, 0.9);
           const icon = L.divIcon({ html: svg, className: '', iconSize: [size, size], iconAnchor: [half, half] });
           const gm = L.marker([w.lat, w.lon + off], { icon }).bindPopup(popup, { maxWidth: 230 });
           gm.addTo(gatewayLayer);
@@ -749,7 +761,7 @@ function selectChapter(num) {
     const b = L.latLngBounds(pts);
     const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), 6);
     const c = b.getCenter();
-    const lon = ((c.lng + 180) % 360 + 360) % 360 - 180;
+    const lon = normLon(c.lng);
     map.setView([c.lat, lon], z);
   }
 

@@ -13,7 +13,29 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
-## [v3.1.2] - 2026-06-05
+## [v3.2] - 2026-06-06
+
+A duplicate-functionality reconciliation pass across both tools, from a line-by-line / function-by-function audit. The shared core (the logic the editor and viewer must keep in step) is now extracted into single, byte-identical helpers rather than hand-copied, the marker rendering is unified so a waypoint looks the same in both tools, and one import bug is fixed. No data-schema change (still 3.0).
+
+### Fixed
+1. **CSV import silently dropped uppercase boolean flags.** A `major`/`decision`/`gateway` value of `TRUE` (uppercase) in a waypoints CSV imported as `false`, because the CSV path matched only `true`/`1` while the paste path also accepted `TRUE`. Both import paths now share one case-insensitive `parseBool` helper, so `true`/`TRUE`/`True`/`1`/`yes` all parse truthy regardless of import route.
+2. **Editor and viewer drew the same waypoint at different sizes.** Major waypoint circles, and Decision/Gateway shape markers, used different dimensions in the two tools (editor radius 7 / shapes 20·16; viewer radius 6 / shapes 18·14), so the editor preview and the published viewer disagreed. The viewer now adopts the editor's sizes, so a waypoint renders identically in both.
+
+### Changed
+3. **Marker shape SVG is now a shared pair of helpers.** The Decision-diamond and Gateway-star SVG builders, previously inlined four times (twice per tool), are now `decisionMarkerSVG` / `gatewayMarkerSVG` — byte-identical definitions in both files, taking the shape's appearance as parameters. Rendered output is unchanged from before (verified equivalent).
+4. **Longitude canonicalization is a shared `normLon` helper.** The `[-180,180)` wrap formula, previously inlined in three places (and a named helper only in the editor), is now `normLon` in both tools, called at every site.
+5. **`chapterColor` uses a hoisted `COLOR_ASSIGN` constant in both tools.** The editor previously rebuilt the color-assignment array on every call; it now reads the same module-level constant the viewer uses, making `chapterColor` byte-identical across the files.
+6. **Editor import normalization consolidated.** The JSON loader and the CSV merge previously each built the chapter/waypoint object shape (including the legacy routing/bail-out/prose → notes fallback); both now go through shared `normalizeChapter` / `normalizeWaypoint` helpers. Behavior is unchanged; the CSV-only differences (comma-split lists, string-to-number coordinates) are handled by an option.
+7. **Chapter delete uses the styled confirmation modal.** The native browser `confirm()` for deleting a chapter is replaced by the same in-app modal pattern used for waypoint delete, via a reusable `confirmModal(title, message, onConfirm)`. Wired into the existing Esc-cancel / Enter-confirm keyboard handling.
+8. **`saveDefault` reuses the shared `downloadFile` helper.** The inline blob-download in Save is gone; `downloadFile` gained an optional `timestamp` flag (default on), and Save calls it with the flag off to keep the no-timestamp `voyage-data.json` overwrite behavior.
+9. **Distance-coordinate rounding via a shared `round5` helper.** The repeated `Math.round(x * 100000) / 100000` idiom (map click, marker drag, ghost insert, search pick, geocode) is now one helper.
+10. **Defensive array guards unified across the shared distance functions.** `getPredecessorChapter`, `chapterApproachNm`, and `chapterNmBase` now carry the same `|| []` guards in both tools; the only intended per-tool difference left in the shared core is the state source (the editor reads `STATE.chapters`, the viewer `DATA.chapters`).
+11. **`dblClickChapter` delegates to `toggleMeta`.** The duplicated panel-toggle body is removed; `toggleMeta` gained a defensive button guard.
+
+### Removed
+12. **Redundant viewer theme control.** The `Light`/`Dark` segmented control in the viewer's Map & Layers panel is removed; it duplicated the header `◐` theme toggle (both drove the same light/dark tile swap). The header button is now the single theme control. The editor was already single-control and is unchanged here.
+
+
 
 ### Changed
 1. **Spelling standardized to American English across both tools and the docs (#67).** Prose, code comments, and user-visible strings were swept for British forms (color, center, behavior, favor, -ize/-ization, gray, and similar) and converted; code identifiers and CSS/JS keywords were left untouched. No functional change — the only editor-file edits are two code comments, and the viewer footer bumps for version parity. Reverses the earlier British-spelling docs convention.
