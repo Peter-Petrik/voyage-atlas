@@ -13,7 +13,14 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
-## [v3.2.1] - 2026-06-06
+## [v3.3] - 2026-06-06
+
+### Added
+1. **Blog-post link in the viewer info panel (#16).** When a chapter carries a `blogUrl`, the info panel now shows a "Read the posts →" link (opens in a new tab). The field has existed in the data since v1.1 but had no viewer surface; it is now displayed when present and hidden when absent. No data-model change.
+2. **`?import=yes` load-screen override in the viewer (#49).** Opening the viewer with `?import=yes` forces the landing screen even when a co-located `voyage-data.json` would otherwise auto-load, so a user can open a different file without removing the default. The match is the literal lowercase `yes`.
+3. **"A project of Sailing Grace" backlink in both footers (#51).** A restrained link to `https://sailingamazinggrace.com/plans`, centered in the footer of both the editor and the viewer (between the data/stats span on the left and the version on the right). Opens in a new tab.
+
+
 
 ### Fixed
 1. **Removed a dead waypoint sort in CSV import.** `mergeCSVImport` ran a "sort waypoints by order" step that had never functioned — the imported waypoint object never carried the `order` field, so the sort key was always undefined and the rows kept CSV file order regardless. The no-op sort is removed and the contract is now explicit: waypoints take CSV row order on import, and the exported `order` column is positional metadata that is not read back. No behavior change for any tool-produced CSV (where file order already matches the `order` column); the change removes misleading code that implied the column drove ordering. The viewer footer bumps for version parity.
