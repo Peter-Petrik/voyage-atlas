@@ -40,6 +40,7 @@ tools open to a working example. <!-- TODO: link to the full live example once p
 7. **Automatic nation / territory classification** against a built-in reference list, with manual overrides.
 8. **Exports** — JSON (the master file), CSV (chapters + waypoints, for spreadsheet editing), and KML (for Google Earth).
 9. **Self-hosting** — two files in a directory; the viewer auto-loads its data.
+10. **Viewer niceties** — the map frames the whole voyage on load, a chapter's info panel links out to its blog post when one is set, and `?import=yes` forces the file picker for opening a different atlas.
 
 ## Documentation
 

@@ -154,13 +154,15 @@ There are several ways to populate the atlas:
 3. **Import CSV.** Load the chapters and waypoints CSVs.
 4. **Start fresh.** With no `voyage-data.json` present, the editor opens empty; add a chapter and begin.
 
+**On load, the map frames the whole voyage** — it fits to the combined extent of every chapter's waypoints, so an all-Mediterranean voyage opens on the Mediterranean and a global one on the world. **No chapter is selected to start:** the status bar above the map reads "No chapter selected — click a chapter to begin." This matters because adding a waypoint — whether by clicking the map, searching, or pasting — adds it to the *active* chapter, so you select a chapter (click it in the list) before those actions do anything. A place search with no chapter active pans the map to the result and reminds you to pick a chapter rather than dropping the point.
+
 ## Adding waypoints
 
 Within a chapter, there are five ways to add points:
 
 1. **+ Add row** — appends one blank row to type into directly.
 2. **+ Add N rows** — appends several blank rows at once (useful before a paste or bulk entry).
-3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line becomes a row.
+3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line becomes a row. **Cmd/Ctrl+Enter** in the paste box adds the rows (plain Enter inserts a newline).
 4. **Click on the map** — with **Rapid click** mode ON (toggle above the map), each click on the map drops a new waypoint at that location. Turn it OFF to return to normal map interaction.
 5. **Search (Nominatim)** — type a place name in the search box and press **Enter** to search; use the **arrow keys** to move through results, **Enter** to add the highlighted one, **Escape** to dismiss. Adding a result drops a waypoint with coordinates (and country, when empty) filled.
 
@@ -260,7 +262,7 @@ import:
 
 1. **Voyage Title** — the title shown in the page titles, the viewer header, and exports. Free text: include a vessel, a vehicle, or anything you like, or leave it blank to fall back to the default "Voyage Atlas".
 2. **Distance Units** — the display unit for every on-screen distance: nautical miles (default), kilometers, or miles. Display-only; the stored data and all exports stay in nautical miles.
-3. **Distance Override** — force the displayed total to a specific number, overriding the computed sum. Entered and shown in the selected display unit, stored as nautical miles. The footer marks an active override.
+3. **Distance Override** — force the displayed total to a specific number, overriding the computed sum. Entered and shown in the selected display unit, stored as nautical miles. The header stat tile marks an active override with a ⚙.
 4. **Nations / Territories overrides** — force these counts, overriding the automatic classification.
 
 ## Saving and exporting
@@ -282,12 +284,16 @@ reload the tab while there are unsaved changes, so an accidental close won't qui
 ## Keyboard shortcuts
 
 1. In any dialog (bulk add, paste, CSV import, delete confirmation): **Enter** confirms, **Escape** cancels.
-2. In the Nominatim search box: **Enter** searches; once results show, **↑/↓** move through them, **Enter** adds the highlighted result, **Escape** dismisses.
+2. In the paste box specifically: **Cmd/Ctrl+Enter** adds the rows, while plain **Enter** inserts a newline (so you can paste or type multi-line content first).
+3. In the Nominatim search box: **Enter** searches; once results show, **↑/↓** move through them, **Enter** adds the highlighted result, **Escape** dismisses the results. A **second Escape** (once the results are already dismissed) clears the typed query.
 
-## Footer stats
+## Header stats
 
-The footer shows the live totals: distance, nations, territories, chapter count, named-waypoint
-count, and shaping-vertex count. These recompute as you edit. An override from Voyage Settings is marked.
+The editor header shows the live totals as tiles — distance, nations, territories, chapter count,
+named-waypoint count, and (when any exist) a shaping-vertex count. These recompute as you edit, using
+the same logic the viewer uses for its header, so the two tools always agree. A ⚙ marker on a tile
+means that figure is a manual override set in Voyage Settings rather than the computed value. The
+footer carries the version and a link back to the project site, not the stats.
 
 ---
 
@@ -299,12 +305,16 @@ count, and shaping-vertex count. These recompute as you edit. An override from V
 
 1. **Auto-load.** If `voyage-data.json` is in the same directory as the viewer, it loads automatically on open — the basis of the self-hosting model (below). A file that is present but unreadable shows an error rather than the empty landing screen.
 2. **File picker.** With no data present, the viewer shows a landing screen; pick a v3.0 voyage JSON to load it. Loading lives only on this landing screen — once an atlas is shown the viewer is read-only. Earlier formats are no longer supported, and a malformed file is reported rather than silently swallowed.
+3. **Force the picker.** Adding `?import=yes` to the viewer's URL shows the landing screen even when a co-located `voyage-data.json` would otherwise auto-load — handy for opening a different file without removing the default. The match is case-insensitive (`yes`/`YES`/`Yes`).
+
+On load the map frames the whole voyage (it fits to the combined extent of every chapter's waypoints) rather than opening on the whole world.
 
 ## Reading the map
 
 Each chapter is drawn in its own color, with named waypoints as markers and the route line tracing
 all points in order. Click a waypoint for its name and the chapter's season; major ports are
-marked. The hero stats at the top summarize the whole voyage.
+marked. The hero stats at the top summarize the whole voyage. When a chapter has a blog URL set, its
+info panel shows a "Read the posts →" link.
 
 ## Layer toggles
 
