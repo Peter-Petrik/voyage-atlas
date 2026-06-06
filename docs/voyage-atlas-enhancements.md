@@ -5,7 +5,7 @@ The forward-looking backlog for the **editor** (`voyage-atlas-editor.html`) and 
 version. (The ~21 previously-"queued" items that had already shipped were pruned from this doc; all
 were confirmed present in the CHANGELOG first. The v3.0 release then pruned #53, #56, and #62 — shipped, and
 confirmed in the CHANGELOG — and dropped #52 as moot, since the CSV carries no distance figures to
-label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG.) Build decisions live in `voyage-atlas-runbook.md`.
+label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG. The v3.2–v3.4 releases then pruned #16, #49, #51, #55, #57, #58, and #61 — all shipped, and confirmed in the CHANGELOG.) Build decisions live in `voyage-atlas-runbook.md`.
 
 Items keep their **original numbers** — cross-references and the runbook depend on them, so the numbers
 are stable IDs, not sequence. They're grouped into **phases** meant to be worked roughly in order, each
@@ -23,36 +23,14 @@ tracks sit off the main line.
 Small, mostly independent tweaks; largely the v2.7/v2.8 test-pass captures, so this clears that loop.
 One or two sessions.
 
-### 16. Blog-post links in the viewer
-`Effort S · Impact Low · viewer info-panel · —`
-The `blogUrl` field exists in the data (since v1.1) but has no viewer UI. Add a "Read the posts →" link
-in the info panel / drawer row, shown only when `blogUrl` is present.
-
 ### 48. Footer version → CHANGELOG link
 `Effort S · Impact Low · both footers · dep: approach from the Turkey Pump-Out project (to supply or rebuild)`
 Make the version footer in both tools link to the matching CHANGELOG entry.
-
-### 49. `?import=yes` power-user override
-`Effort S · Impact Low · viewer load · —`
-A query-param that forces the load UI even when `voyage-data.json` is auto-loaded, so a user can open a
-different file without removing the default. Uses the **Load** verb (now shipped).
 
 ### 50. Editor → Viewer preview link
 `Effort S · Impact Low · editor UI · —`
 A subtle link in the editor to `voyage-atlas.html` (same directory) so an editing user can preview the
 rendered result.
-
-### 51. "Project of S/Y GRACE" website backlink
-`Effort S · Impact Low · both UI · dep: project URL TBD`
-A restrained backlink in the viewer (and editor) to the project website — a "home" to learn more.
-
-### 55. CMD/CTRL+Enter = Add Rows in the paste box
-`Effort S · Impact Low · editor paste box · —`
-In the bulk-paste textarea, bind CMD/CTRL+Enter to "Add Rows" (Enter still inserts a newline).
-
-### 57. Second Escape clears the search box
-`Effort S · Impact Low · editor place search · —`
-First Escape dismisses the results; a second Escape clears the typed query.
 
 ---
 
@@ -66,17 +44,6 @@ state shipped in v3.0 (#56); #35 reuses it, and #19 remains the meatier item.
 Multi-select rows via CTRL/⌘-click (non-adjacent) and SHIFT-click (range), then delete the selection in
 one action. The single-selection state model shipped with #56 (v3.0); this extends it to multi-select
 plus a "Delete selected (N)" affordance.
-
-### 58. Rethink the default chapter selection
-`Effort S/M · Impact Med · editor selection · relates to the #56 selection model (shipped)`
-On load the first chapter is auto-selected, so map clicks / searches silently add to chapter 1. Find a
-more intuitive default (e.g. no selection until the user picks, with a clear prompt).
-
-### 61. Surface the hero stats in the editor header
-`Effort M · Impact Med · editor header + updateHeroStats · —`
-The viewer shows the totals (distance, nations, territories, chapters, waypoints) prominently in its
-header; the editor tucks the same figures into the bottom status bar. Mirror the viewer and present
-them in the editor header.
 
 ### 54. Re-geocode a named waypoint by name
 `Effort M · Impact Med · editor geocode + waypoint row · —`
