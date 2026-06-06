@@ -76,7 +76,11 @@ html, body {
   letter-spacing: 0.01em; white-space: nowrap;
 }
 .hdr-sub { font-size: 9.5px; color: var(--muted); letter-spacing: 0.04em; }
-.hdr-actions { display: flex; gap: 6px; margin-left: auto; align-items: center; }
+.hdr-stats { margin-left: auto; display: flex; gap: 16px; flex-shrink: 0; overflow: hidden; }
+.hdr-stats .stat { text-align: center; }
+.hdr-stats .stat-val { font-family: 'Fraunces', serif; font-size: 15px; color: var(--accent); display: block; line-height: 1.1; white-space: nowrap; }
+.hdr-stats .stat-lbl { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
+.hdr-actions { display: flex; gap: 6px; margin-left: 16px; align-items: center; flex-shrink: 0; }
 .btn {
   font-family: inherit; font-size: 11px;
   padding: 5px 10px; border-radius: 4px;
@@ -362,7 +366,7 @@ html, body {
 }
 #footer a { color: var(--accent); cursor: pointer; text-decoration: none; }
 #footer a:hover { text-decoration: underline; }
-#footer > #hero-stats, #footer > .footer-ver-ed { flex: 1 1 0; }
+#footer > .footer-left, #footer > .footer-ver-ed { flex: 1 1 0; }
 #footer > .footer-ver-ed { text-align: right; }
 #footer .footer-credit { flex: 0 1 auto; text-align: center; white-space: nowrap; padding: 0 10px; }
 
@@ -446,6 +450,7 @@ th .hi { margin-left: 2px; }
     <h1>Voyage Atlas — Editor</h1>
     <div class="hdr-sub">Chapter &amp; waypoint management</div>
   </div>
+  <span id="hero-stats" class="hdr-stats">0 chapters · 0 named waypoints · 0 nm</span>
   <div class="hdr-actions">
     <div class="dropdown">
       <button class="btn" onclick="toggleDropdown('import-menu')">Load ▾</button>
@@ -532,7 +537,7 @@ th .hi { margin-left: 2px; }
       <div id="map"></div>
     </div>
     <div id="map-status">
-      <span id="status-text">No chapter selected</span>
+      <span id="status-text">No chapter selected — click a chapter to begin</span>
       <span style="flex:1"></span>
       <button id="rapid-click-toggle" onclick="toggleRapidClick()">Rapid click: OFF</button>
     </div>
@@ -541,9 +546,9 @@ th .hi { margin-left: 2px; }
 
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
-  <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
+  <span class="footer-left"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed">Voyage Atlas Editor v3.3</span>
+  <span class="footer-ver-ed">Voyage Atlas Editor v3.4</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -557,7 +562,7 @@ th .hi { margin-left: 2px; }
     <h2>Paste Waypoints</h2>
     <p>Paste tab-separated or comma-separated rows. Columns: name, lat, lon (minimum).
        Optional extra columns: major, decision, gateway, country, notes.</p>
-    <textarea id="paste-area" style="width:100%;min-height:120px;font-family:inherit;font-size:11px;
+    <textarea id="paste-area" onkeydown="if((e=event).key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();doPaste();}" style="width:100%;min-height:120px;font-family:inherit;font-size:11px;
       padding:8px;border:1px solid var(--border-strong);border-radius:3px;
       background:var(--bg);color:var(--ink);resize:vertical;"></textarea>
     <div class="modal-actions">
@@ -740,6 +745,7 @@ let STATE = { chapters: [], settings: defaultSettings(), metaTitle: '' };
 // Distance display units. Data, CSV, and KML always store canonical nautical miles; the selected
 // unit only changes what's shown on screen (and the Distance Override field's value).
 const NM_TO = { nm: 1, km: 1.852, mi: 1.150779 }; // 1 nm = 1.852 km = 1.150779 mi
+const UNIT_LABEL = { nm: 'Nautical Miles', km: 'Kilometers', mi: 'Miles' };
 function distUnit() { return STATE.settings.distanceUnit || 'nm'; }
 function fmtDist(nm) {
   const u = distUnit();
@@ -1118,6 +1124,24 @@ function focusMapOnChapter(chNum) {
   map.setView([c.lat, lon], z);
 }
 
+// Fit the map to the combined extent of every chapter's waypoints (#58). Used on load instead of
+// auto-selecting a chapter, so the editor frames the whole voyage (an all-Med voyage shows the Med, a
+// global voyage shows the world) rather than jumping into chapter 1. Each chapter is unwrapped in its
+// own frame for dateline-awareness, then all points are collected for one bounds.
+function fitAllChapters() {
+  const pts = [];
+  STATE.chapters.forEach(ch => {
+    const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
+    if (coords.length === 1) pts.push(coords[0]);
+    else if (coords.length >= 2) unwrap(coords).forEach(p => pts.push(p));
+  });
+  if (pts.length === 0) return; // nothing to fit (empty voyage) — leave the default world view
+  const b = L.latLngBounds(pts);
+  const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), 8);
+  const c = b.getCenter();
+  map.setView([c.lat, normLon(c.lng)], z);
+}
+
 // Map ↔ list selection sync (#56). selectWaypoint is the single seam used by marker-click, the
 // sequence-number click, add-waypoint, and row focus. It activates the chapter if needed (clearing the
 // prior selection and redrawing all chapters so the route highlight stays exclusive — B3), records the
@@ -1133,7 +1157,7 @@ function selectWaypoint(chNum, idx, opts = {}) {
   const w = ch.waypoints[idx];
   if (opts.zoom && w.lat && w.lon) {
     const lon = normLon(w.lon); // normalize so a dateline-side waypoint centers correctly
-    map.setView([w.lat, lon], 9); // B4: fixed zoom level 9
+    map.setView([w.lat, lon], 7); // B4: fixed zoom level 7
   }
   revealWaypointRow(chNum, idx);
 }
@@ -1195,7 +1219,13 @@ function nomKeydown(e) {
     if (showing) pickSearchResult(el._selIdx >= 0 ? el._selIdx : 0); // highlighted, else the top result
     else nomSearch();
   } else if (e.key === 'Escape') {
-    hideSearchResults();
+    // First Escape dismisses the results dropdown; a second Escape (results already hidden) clears the
+    // typed query (#57).
+    if (showing) {
+      hideSearchResults();
+    } else if (document.getElementById('nom-input').value) {
+      document.getElementById('nom-input').value = '';
+    }
   }
 }
 
@@ -1249,6 +1279,10 @@ function pickSearchResult(i) {
       updateMapChapter(activeChapterNum);
       updateHeroStats();
     }
+  } else {
+    // No chapter active (#58): don't silently drop the pin — pan to it and hint where adds go.
+    const statusEl = document.getElementById('status-text');
+    if (statusEl) statusEl.innerHTML = '<span class="status-active">Select a chapter to add this waypoint</span>';
   }
   map.setView([lat, lon], 10);
 }
@@ -1617,6 +1651,46 @@ function chapterNm(ch) {
   return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1)) + chapterApproachNm(ch);
 }
 
+/* Shared hero-stat computation — identical in the editor and viewer (the state source is the only
+   difference, passed in as `chapters`). Returns the raw figures both tools display; each tool applies
+   its own presentation. `settings` supplies the manual overrides. */
+function computeHeroStats(chapters, settings) {
+  const s = settings || {};
+  let totalNm = 0, namedWaypoints = 0, shapingVertices = 0;
+  const countries = new Set();
+  (chapters || []).forEach(ch => {
+    totalNm += chapterNm(ch);
+    (ch.waypoints || []).forEach(w => {
+      if (w.name && w.name.trim()) namedWaypoints++;
+      else if (w.lat && w.lon) shapingVertices++;
+    });
+    chapterCountries(ch).forEach(c => { if (c) countries.add(c); });
+  });
+  const classified = classifyCountries(countries);
+  return {
+    totalNm,
+    displayNm: s.distanceOverride || totalNm,
+    nationsAuto: classified.nations.length,
+    territoriesAuto: classified.territories.length,
+    nations: s.nationsOverride || classified.nations.length,
+    territories: s.territoriesOverride || classified.territories.length,
+    chapters: (chapters || []).length,
+    namedWaypoints,
+    shapingVertices,
+    nmOverridden: !!s.distanceOverride,
+    nationsOverridden: !!s.nationsOverride,
+    territoriesOverridden: !!s.territoriesOverride
+  };
+}
+
+/* Shared hero-tile renderer — the viewer's tile markup, used by both tools. `items` is an array of
+   [value, label] (with an optional third element: true to append the ⚙ manual-override marker). */
+function heroTilesHTML(items) {
+  return items.map(([v, l, ov]) =>
+    `<div class="stat"><span class="stat-val">${v}${ov ? ' ⚙' : ''}</span><span class="stat-lbl">${l}</span></div>`
+  ).join('');
+}
+
 function computeEditorTitle() {
   // v3.0: the voyage title is the single user title at meta.title (STATE.metaTitle); the constant
   // app name is the implied fallback.
@@ -1663,35 +1737,25 @@ function loadSettings() {
 
 function updateHeroStats() {
   setDirty(true);
-  let totalNm = 0, totalWpts = 0, totalVertices = 0;
-  const allCountries = new Set();
-  STATE.chapters.forEach(ch => {
-    totalNm += chapterNm(ch);
-    ch.waypoints.forEach(w => {
-      if (w.name && w.name.trim()) totalWpts++;
-      else if (w.lat && w.lon) totalVertices++;
-    });
-    chapterCountries(ch).forEach(c => { if (c) allCountries.add(c); });
-  });
-  const s = STATE.settings || {};
-  const displayNm = s.distanceOverride || totalNm;
-  // Auto-classify nations vs territories
-  const classified = classifyCountries(allCountries);
-  const nations = s.nationsOverride || classified.nations.length;
-  const territories = s.territoriesOverride || classified.territories.length;
-  // Update settings placeholders (AUTO: prefix + the computed value, consistent across all three)
+  const h = computeHeroStats(STATE.chapters, STATE.settings);
+  // Editor-only side effect: drive the settings-panel AUTO: placeholders (pre-override values).
   const nmInput = document.getElementById('set-nm');
   const nInput = document.getElementById('set-nations');
   const tInput = document.getElementById('set-territories');
-  if (nmInput && !s.distanceOverride) nmInput.placeholder = `AUTO: ${fmtDist(totalNm)}`;
-  if (nInput && !s.nationsOverride) nInput.placeholder = `AUTO: ${classified.nations.length}`;
-  if (tInput && !s.territoriesOverride) tInput.placeholder = `AUTO: ${classified.territories.length}`;
-  let statsText = `${fmtDist(displayNm)}${s.distanceOverride ? ' ⚙' : ''}`;
-  if (nations) statsText += ` · ${nations} ${nations === 1 ? 'nation' : 'nations'}${s.nationsOverride ? ' ⚙' : ''}`;
-  if (territories) statsText += ` · ${territories} ${territories === 1 ? 'territory' : 'territories'}${s.territoriesOverride ? ' ⚙' : ''}`;
-  statsText += ` · ${STATE.chapters.length} ${STATE.chapters.length === 1 ? 'chapter' : 'chapters'} · ${totalWpts} ${totalWpts === 1 ? 'named waypoint' : 'named waypoints'}`;
-  if (totalVertices) statsText += ` · ${totalVertices} ${totalVertices === 1 ? 'shaping vertex' : 'shaping vertices'}`;
-  document.getElementById('hero-stats').textContent = statsText;
+  if (nmInput && !h.nmOverridden) nmInput.placeholder = `AUTO: ${fmtDist(h.totalNm)}`;
+  if (nInput && !h.nationsOverridden) nInput.placeholder = `AUTO: ${h.nationsAuto}`;
+  if (tInput && !h.territoriesOverridden) tInput.placeholder = `AUTO: ${h.territoriesAuto}`;
+  // Tiles — same renderer and styling as the viewer; the editor adds the ⚙ manual-override marker and a
+  // shaping-vertices tile (author-facing detail the viewer omits).
+  const u = distUnit();
+  const items = [];
+  if (h.displayNm) items.push([Math.round(h.displayNm * NM_TO[u]).toLocaleString(), UNIT_LABEL[u], h.nmOverridden]);
+  if (h.nations) items.push([h.nations, h.nations === 1 ? 'Nation' : 'Nations', h.nationsOverridden]);
+  if (h.territories) items.push([h.territories, h.territories === 1 ? 'Territory' : 'Territories', h.territoriesOverridden]);
+  items.push([h.chapters, h.chapters === 1 ? 'Chapter' : 'Chapters']);
+  if (h.namedWaypoints) items.push([h.namedWaypoints, h.namedWaypoints === 1 ? 'Waypoint' : 'Waypoints']);
+  if (h.shapingVertices) items.push([h.shapingVertices, h.shapingVertices === 1 ? 'Vertex' : 'Vertices']);
+  document.getElementById('hero-stats').innerHTML = heroTilesHTML(items);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2417,7 +2481,7 @@ function normalizeChapter(ch, opts = {}) {
 function loadVoyage(data) {
   STATE.chapters = data.chapters.map(ch => normalizeChapter(ch));
   renderAllChapters();
-  if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
+  fitAllChapters(); // #58: frame the whole voyage; no chapter auto-selected
   setTimeout(() => map.invalidateSize(), 100);
   // Reset to defaults first so a loaded voyage never inherits the previous session's settings
   // (e.g. a file that omits distanceUnit gets 'nm', not whatever was loaded before).
@@ -2495,7 +2559,7 @@ function mergeCSVImport(chapRows, wptRows) {
 
   STATE.chapters.sort((a, b) => a.num - b.num);
   renderAllChapters();
-  if (STATE.chapters.length > 0) selectChapter(STATE.chapters[0].num);
+  fitAllChapters(); // #58: frame the whole voyage; no chapter auto-selected
   setDirty(false);
 }
 

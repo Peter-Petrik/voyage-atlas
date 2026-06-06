@@ -13,17 +13,30 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.4] - 2026-06-06
+
+### Added
+1. **Voyage stats in the editor header (#61).** The totals (distance, nations, territories, chapters, named waypoints) now appear in the editor header, mirroring the viewer's prominent placement, instead of only in the footer status line. The footer no longer shows the stats. Editor and viewer compute the figures through one shared `computeHeroStats(chapters, settings)` helper (byte-identical in both files; the state source is the only difference) and render through one shared `heroTilesHTML` tile builder, so the two tools cannot drift. The editor's header tiles match the viewer's while retaining the author-facing extras the viewer omits: the ⚙ marker on manually-overridden figures and a shaping-vertices tile.
+2. **Fit-to-all-chapters on load, in both tools (#58).** When a voyage loads, the map now frames the combined extent of every chapter's waypoints — an all-Mediterranean voyage opens on the Mediterranean, a global voyage on the world — rather than the editor jumping into chapter 1 or the viewer always opening on the whole world. Dateline-aware (each chapter is unwrapped in its own frame). An empty voyage leaves the default world view.
+3. **Cmd/Ctrl+Enter adds rows in the paste box (#55).** In the bulk-paste textarea, Cmd/Ctrl+Enter triggers "Add rows"; plain Enter still inserts a newline.
+
+### Changed
+4. **The editor no longer auto-selects chapter 1 on load (#58).** Previously a chapter was always active on load, so map clicks and place searches silently added waypoints to chapter 1. Now no chapter is selected until the user picks one; the map-status line reads "No chapter selected — click a chapter to begin," and a place search with no chapter active pans to the result and hints "Select a chapter to add this waypoint" rather than silently dropping it.
+5. **Second Escape clears the place search box (#57).** The first Escape dismisses the results dropdown; a second Escape (results already hidden) clears the typed query.
+6. **Sequence-number zoom is less tight.** Clicking a waypoint's sequence number now zooms to level 7 instead of 9 — two steps further out — so more surrounding context is visible.
+7. **`?import` matching is case-insensitive.** The viewer load-override query param now accepts `yes`/`YES`/`Yes` (previously lowercase `yes` only).
+
 ## [v3.3] - 2026-06-06
 
 ### Added
 1. **Blog-post link in the viewer info panel (#16).** When a chapter carries a `blogUrl`, the info panel now shows a "Read the posts →" link (opens in a new tab). The field has existed in the data since v1.1 but had no viewer surface; it is now displayed when present and hidden when absent. No data-model change.
-2. **`?import=yes` load-screen override in the viewer (#49).** Opening the viewer with `?import=yes` forces the landing screen even when a co-located `voyage-data.json` would otherwise auto-load, so a user can open a different file without removing the default. The match is the literal lowercase `yes`.
+2. **`?import=yes` load-screen override in the viewer (#49).** Opening the viewer with `?import=yes` forces the landing screen even when a co-located `voyage-data.json` would otherwise auto-load, so a user can open a different file without removing the default.
 3. **"A project of Sailing Grace" backlink in both footers (#51).** A restrained link to `https://sailingamazinggrace.com/plans`, centered in the footer of both the editor and the viewer (between the data/stats span on the left and the version on the right). Opens in a new tab.
 
-
+## [v3.2.1] - 2026-06-06
 
 ### Fixed
-1. **Removed a dead waypoint sort in CSV import.** `mergeCSVImport` ran a "sort waypoints by order" step that had never functioned — the imported waypoint object never carried the `order` field, so the sort key was always undefined and the rows kept CSV file order regardless. The no-op sort is removed and the contract is now explicit: waypoints take CSV row order on import, and the exported `order` column is positional metadata that is not read back. No behavior change for any tool-produced CSV (where file order already matches the `order` column); the change removes misleading code that implied the column drove ordering. The viewer footer bumps for version parity.
+1. **Removed a dead waypoint sort in CSV import.** `mergeCSVImport` ran a "sort waypoints by order" step that had never functioned — the imported waypoint object never carried the `order` field, so the sort key was always undefined and the rows kept CSV file order regardless. The no-op sort is removed and the contract is now explicit: waypoints take CSV row order on import, and the exported `order` column is positional metadata that is not read back. No behavior change for any tool-produced CSV (where file order already matches the `order` column); the change removes misleading code that implied the column drove ordering.
 
 ## [v3.2] - 2026-06-06
 
@@ -47,7 +60,7 @@ A duplicate-functionality reconciliation pass across both tools, from a line-by-
 ### Removed
 12. **Redundant viewer theme control.** The `Light`/`Dark` segmented control in the viewer's Map & Layers panel is removed; it duplicated the header `◐` theme toggle (both drove the same light/dark tile swap). The header button is now the single theme control. The editor was already single-control and is unchanged here.
 
-
+## [v3.1.2] - 2026-06-05
 
 ### Changed
 1. **Spelling standardized to American English across both tools and the docs (#67).** Prose, code comments, and user-visible strings were swept for British forms (color, center, behavior, favor, -ize/-ization, gray, and similar) and converted; code identifiers and CSS/JS keywords were left untouched. No functional change — the only editor-file edits are two code comments, and the viewer footer bumps for version parity. Reverses the earlier British-spelling docs convention.

@@ -317,7 +317,7 @@
 <div id="footer">
   <span id="footer-data"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span id="footer-ver">Voyage Atlas v3.3</span>
+  <span id="footer-ver">Voyage Atlas v3.4</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -535,6 +535,46 @@ function chapterNm(ch) {
   return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1)) + chapterApproachNm(ch);
 }
 
+/* Shared hero-stat computation — identical in the editor and viewer (the state source is the only
+   difference, passed in as `chapters`). Returns the raw figures both tools display; each tool applies
+   its own presentation. `settings` supplies the manual overrides. */
+function computeHeroStats(chapters, settings) {
+  const s = settings || {};
+  let totalNm = 0, namedWaypoints = 0, shapingVertices = 0;
+  const countries = new Set();
+  (chapters || []).forEach(ch => {
+    totalNm += chapterNm(ch);
+    (ch.waypoints || []).forEach(w => {
+      if (w.name && w.name.trim()) namedWaypoints++;
+      else if (w.lat && w.lon) shapingVertices++;
+    });
+    chapterCountries(ch).forEach(c => { if (c) countries.add(c); });
+  });
+  const classified = classifyCountries(countries);
+  return {
+    totalNm,
+    displayNm: s.distanceOverride || totalNm,
+    nationsAuto: classified.nations.length,
+    territoriesAuto: classified.territories.length,
+    nations: s.nationsOverride || classified.nations.length,
+    territories: s.territoriesOverride || classified.territories.length,
+    chapters: (chapters || []).length,
+    namedWaypoints,
+    shapingVertices,
+    nmOverridden: !!s.distanceOverride,
+    nationsOverridden: !!s.nationsOverride,
+    territoriesOverridden: !!s.territoriesOverride
+  };
+}
+
+/* Shared hero-tile renderer — the viewer's tile markup, used by both tools. `items` is an array of
+   [value, label] (with an optional third element: true to append the ⚙ manual-override marker). */
+function heroTilesHTML(items) {
+  return items.map(([v, l, ov]) =>
+    `<div class="stat"><span class="stat-val">${v}${ov ? ' ⚙' : ''}</span><span class="stat-lbl">${l}</span></div>`
+  ).join('');
+}
+
 // Effective country list for a chapter: explicit per-chapter override if set, else derived on the
 // fly from the waypoints' country fields (first-appearance order). Matches the editor.
 function deriveCountriesFromWaypoints(ch) {
@@ -606,26 +646,15 @@ function loadVoyageData(raw) {
   document.querySelector('.head-sub').textContent = 'Click any route, waypoint, or chapter to explore';
 
   // Hero stats — recomputed live from chapters/waypoints; meta.hero is a snapshot, never trusted.
-  let heroNm = 0, heroWpts = 0;
-  const heroCountries = new Set();
-  (DATA.chapters || []).forEach(ch => {
-    heroNm += chapterNm(ch);
-    (ch.waypoints || []).forEach(w => { if (w.name && w.name.trim()) heroWpts++; });
-    chapterCountries(ch).forEach(c => { if (c) heroCountries.add(c); });
-  });
-  const heroClass = classifyCountries(heroCountries);
-  const heroDisplayNm = settings.distanceOverride || heroNm;
-  const heroNations = settings.nationsOverride || heroClass.nations.length;
-  const heroTerritories = settings.territoriesOverride || heroClass.territories.length;
+  const h = computeHeroStats(DATA.chapters, settings);
+  const u = viewerUnit();
   const heroItems = [];
-  if (heroDisplayNm) heroItems.push([Math.round(heroDisplayNm * NM_TO[viewerUnit()]).toLocaleString(), UNIT_LABEL[viewerUnit()]]);
-  if (heroNations) heroItems.push([heroNations, heroNations === 1 ? 'Nation' : 'Nations']);
-  if (heroTerritories) heroItems.push([heroTerritories, heroTerritories === 1 ? 'Territory' : 'Territories']);
-  if (DATA.chapters && DATA.chapters.length) heroItems.push([DATA.chapters.length, DATA.chapters.length === 1 ? 'Chapter' : 'Chapters']);
-  if (heroWpts) heroItems.push([heroWpts, heroWpts === 1 ? 'Waypoint' : 'Waypoints']);
-  document.getElementById('hero').innerHTML = heroItems.map(
-    ([v,l]) => `<div class="stat"><span class="stat-val">${v}</span><span class="stat-lbl">${l}</span></div>`
-  ).join('');
+  if (h.displayNm) heroItems.push([Math.round(h.displayNm * NM_TO[u]).toLocaleString(), UNIT_LABEL[u]]);
+  if (h.nations) heroItems.push([h.nations, h.nations === 1 ? 'Nation' : 'Nations']);
+  if (h.territories) heroItems.push([h.territories, h.territories === 1 ? 'Territory' : 'Territories']);
+  if (h.chapters) heroItems.push([h.chapters, h.chapters === 1 ? 'Chapter' : 'Chapters']);
+  if (h.namedWaypoints) heroItems.push([h.namedWaypoints, h.namedWaypoints === 1 ? 'Waypoint' : 'Waypoints']);
+  document.getElementById('hero').innerHTML = heroTilesHTML(heroItems);
 
   // Footer
   const ver = (DATA.meta && DATA.meta.version) || '';
@@ -741,7 +770,26 @@ function loadVoyageData(raw) {
   document.getElementById('legend').style.display = '';
   document.getElementById('landing').classList.add('hidden');
 
+  fitAllChapters(); // #58: frame the whole voyage on load (parity with the editor)
   setTimeout(() => map.invalidateSize(), 100);
+}
+
+// Fit the map to the combined extent of every chapter's waypoints (#58), so an all-Med voyage frames
+// the Med and a global voyage frames the world, rather than always opening on the whole world. Each
+// chapter is unwrapped in its own frame for dateline-awareness, then all points feed one bounds.
+function fitAllChapters() {
+  if (!DATA || !DATA.chapters) return;
+  const pts = [];
+  DATA.chapters.forEach(ch => {
+    const coords = (ch.waypoints || []).filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
+    if (coords.length === 1) pts.push(coords[0]);
+    else if (coords.length >= 2) unwrap(coords).forEach(p => pts.push(p));
+  });
+  if (pts.length === 0) return; // nothing to fit — leave the default world view
+  const b = L.latLngBounds(pts);
+  const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), 6);
+  const c = b.getCenter();
+  map.setView([c.lat, normLon(c.lng)], z);
 }
 
 /* ======================== Interaction ======================== */
@@ -835,7 +883,7 @@ document.addEventListener('keydown', e => {
 /* Auto-load voyage-data.json from same directory if present.
    #49: ?import=yes forces the load UI even when a co-located voyage-data.json exists, so a user can open
    a different file without removing the default. */
-if (new URLSearchParams(location.search).get('import') === 'yes') {
+if ((new URLSearchParams(location.search).get('import') || '').toLowerCase() === 'yes') {
   document.getElementById('landing').classList.remove('hidden');
 } else {
 fetch('./voyage-data.json').then(r => {
