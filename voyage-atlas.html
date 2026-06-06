@@ -317,7 +317,7 @@
 <div id="footer">
   <span id="footer-data"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span id="footer-ver">Voyage Atlas v3.4.3</span>
+  <span id="footer-ver">Voyage Atlas v3.4.4</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -785,7 +785,7 @@ function loadVoyageData(raw) {
 // (50 nm or 5,000 nm) and a fixed cap is wrong for some size — framing-then-easing adapts to any. A
 // floor keeps a globe-spanning set from easing below the sensible world view. A lone point can't be
 // framed by bounds, so it uses a fixed close zoom.
-const FIT_FLOOR_ZOOM = 2;      // never ease wider than this (keeps a global voyage from over-zooming out)
+const FIT_FLOOR_ZOOM = 1;      // lowest zoom the ease may reach; low enough not to clamp a wide voyage tighter than it fits in a narrow pane
 const FIT_POINT_ZOOM = 9;      // a single isolated point
 function fitToCoords(coords) {
   if (!coords || coords.length === 0) return;

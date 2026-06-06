@@ -13,6 +13,11 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.4.4] - 2026-06-06
+
+### Fixed
+1. **A wide voyage in the editor's narrower map pane is no longer cut off at the edges.** The shared fit eased the zoom out one level for breathing room but then floored it at a minimum that, for a globe-spanning voyage in the editor's half-width map pane, was one to two levels tighter than the zoom that actually fits the route — so the eastern and western ends (e.g. Europe on a Pacific-centered circumnavigation) fell off the edges. The floor was lowered so it never clamps a fit tighter than the zoom that frames the full extent; the viewer, with its full-width map, was already close and is unchanged in practice. Centering and dateline handling are unchanged.
+
 ## [v3.4.3] - 2026-06-06
 
 ### Fixed
