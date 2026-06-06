@@ -548,7 +548,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed">Voyage Atlas Editor v3.4</span>
+  <span class="footer-ver-ed">Voyage Atlas Editor v3.4.1</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -562,7 +562,7 @@ th .hi { margin-left: 2px; }
     <h2>Paste Waypoints</h2>
     <p>Paste tab-separated or comma-separated rows. Columns: name, lat, lon (minimum).
        Optional extra columns: major, decision, gateway, country, notes.</p>
-    <textarea id="paste-area" onkeydown="if((e=event).key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();doPaste();}" style="width:100%;min-height:120px;font-family:inherit;font-size:11px;
+    <textarea id="paste-area" onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();doPaste();}" style="width:100%;min-height:120px;font-family:inherit;font-size:11px;
       padding:8px;border:1px solid var(--border-strong);border-radius:3px;
       background:var(--bg);color:var(--ink);resize:vertical;"></textarea>
     <div class="modal-actions">
@@ -1125,19 +1125,21 @@ function focusMapOnChapter(chNum) {
 }
 
 // Fit the map to the combined extent of every chapter's waypoints (#58). Used on load instead of
-// auto-selecting a chapter, so the editor frames the whole voyage (an all-Med voyage shows the Med, a
+// auto-selecting a chapter, so the map frames the whole voyage (an all-Med voyage shows the Med, a
 // global voyage shows the world) rather than jumping into chapter 1. Each chapter is unwrapped in its
-// own frame for dateline-awareness, then all points are collected for one bounds.
-function fitAllChapters() {
+// own frame for dateline-awareness, then all points are collected for one bounds. Shared, identical
+// definition in the editor and viewer: the caller passes its state source and its own max-zoom cap
+// (the editor fits tighter than the viewer, matching each tool's single-chapter fit).
+function fitAllChapters(chapters, maxZoom) {
   const pts = [];
-  STATE.chapters.forEach(ch => {
-    const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
+  (chapters || []).forEach(ch => {
+    const coords = (ch.waypoints || []).filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
     if (coords.length === 1) pts.push(coords[0]);
     else if (coords.length >= 2) unwrap(coords).forEach(p => pts.push(p));
   });
   if (pts.length === 0) return; // nothing to fit (empty voyage) — leave the default world view
   const b = L.latLngBounds(pts);
-  const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), 8);
+  const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), maxZoom);
   const c = b.getCenter();
   map.setView([c.lat, normLon(c.lng)], z);
 }
@@ -1647,7 +1649,7 @@ function chapterNmBase(ch) {
 }
 
 function chapterNm(ch) {
-  // Padded within-chapter sailing distance + raw approach leg from predecessor
+  // Padded within-chapter sailing distance + raw approach leg from the predecessor chapter.
   return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1)) + chapterApproachNm(ch);
 }
 
@@ -2481,7 +2483,7 @@ function normalizeChapter(ch, opts = {}) {
 function loadVoyage(data) {
   STATE.chapters = data.chapters.map(ch => normalizeChapter(ch));
   renderAllChapters();
-  fitAllChapters(); // #58: frame the whole voyage; no chapter auto-selected
+  fitAllChapters(STATE.chapters, 8); // #58: frame the whole voyage; no chapter auto-selected
   setTimeout(() => map.invalidateSize(), 100);
   // Reset to defaults first so a loaded voyage never inherits the previous session's settings
   // (e.g. a file that omits distanceUnit gets 'nm', not whatever was loaded before).
@@ -2559,7 +2561,7 @@ function mergeCSVImport(chapRows, wptRows) {
 
   STATE.chapters.sort((a, b) => a.num - b.num);
   renderAllChapters();
-  fitAllChapters(); // #58: frame the whole voyage; no chapter auto-selected
+  fitAllChapters(STATE.chapters, 8); // #58: frame the whole voyage; no chapter auto-selected
   setDirty(false);
 }
 

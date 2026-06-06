@@ -317,7 +317,7 @@
 <div id="footer">
   <span id="footer-data"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span id="footer-ver">Voyage Atlas v3.4</span>
+  <span id="footer-ver">Voyage Atlas v3.4.1</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -770,24 +770,26 @@ function loadVoyageData(raw) {
   document.getElementById('legend').style.display = '';
   document.getElementById('landing').classList.add('hidden');
 
-  fitAllChapters(); // #58: frame the whole voyage on load (parity with the editor)
+  fitAllChapters(DATA.chapters, 6); // #58: frame the whole voyage on load (parity with the editor)
   setTimeout(() => map.invalidateSize(), 100);
 }
 
-// Fit the map to the combined extent of every chapter's waypoints (#58), so an all-Med voyage frames
-// the Med and a global voyage frames the world, rather than always opening on the whole world. Each
-// chapter is unwrapped in its own frame for dateline-awareness, then all points feed one bounds.
-function fitAllChapters() {
-  if (!DATA || !DATA.chapters) return;
+// Fit the map to the combined extent of every chapter's waypoints (#58). Used on load instead of
+// auto-selecting a chapter, so the map frames the whole voyage (an all-Med voyage shows the Med, a
+// global voyage shows the world) rather than jumping into chapter 1. Each chapter is unwrapped in its
+// own frame for dateline-awareness, then all points are collected for one bounds. Shared, identical
+// definition in the editor and viewer: the caller passes its state source and its own max-zoom cap
+// (the editor fits tighter than the viewer, matching each tool's single-chapter fit).
+function fitAllChapters(chapters, maxZoom) {
   const pts = [];
-  DATA.chapters.forEach(ch => {
+  (chapters || []).forEach(ch => {
     const coords = (ch.waypoints || []).filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
     if (coords.length === 1) pts.push(coords[0]);
     else if (coords.length >= 2) unwrap(coords).forEach(p => pts.push(p));
   });
-  if (pts.length === 0) return; // nothing to fit — leave the default world view
+  if (pts.length === 0) return; // nothing to fit (empty voyage) — leave the default world view
   const b = L.latLngBounds(pts);
-  const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), 6);
+  const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), maxZoom);
   const c = b.getCenter();
   map.setView([c.lat, normLon(c.lng)], z);
 }

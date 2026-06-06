@@ -13,6 +13,15 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.4.1] - 2026-06-06
+
+### Changed
+1. **Fit-to-all-chapters is now a single shared function across both tools.** v3.4 introduced the on-load fit as two separate definitions (one per tool) that had drifted: different zoom caps and a missing array guard in the editor copy. It is now one byte-identical `fitAllChapters(chapters, maxZoom)` in both files, with each tool passing its own state source and its own max-zoom cap at the call site (the editor fits tighter, matching its single-chapter fit). The editor's tighter framing and the viewer's wider framing are unchanged; only the duplicated logic is removed.
+
+### Fixed
+2. **Editor `fitAllChapters` no longer assumes every chapter has a waypoints array.** The shared version guards waypoint access, so a chapter without a waypoints list is skipped rather than throwing.
+3. **Paste box keyboard handler no longer leaks an implicit global.** The Cmd/Ctrl+Enter shortcut now references the event explicitly instead of assigning the global `event` to an undeclared variable. No behavior change.
+
 ## [v3.4] - 2026-06-06
 
 ### Added
