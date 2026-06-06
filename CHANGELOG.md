@@ -13,6 +13,11 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.2.1] - 2026-06-06
+
+### Fixed
+1. **Removed a dead waypoint sort in CSV import.** `mergeCSVImport` ran a "sort waypoints by order" step that had never functioned — the imported waypoint object never carried the `order` field, so the sort key was always undefined and the rows kept CSV file order regardless. The no-op sort is removed and the contract is now explicit: waypoints take CSV row order on import, and the exported `order` column is positional metadata that is not read back. No behavior change for any tool-produced CSV (where file order already matches the `order` column); the change removes misleading code that implied the column drove ordering. The viewer footer bumps for version parity.
+
 ## [v3.2] - 2026-06-06
 
 A duplicate-functionality reconciliation pass across both tools, from a line-by-line / function-by-function audit. The shared core (the logic the editor and viewer must keep in step) is now extracted into single, byte-identical helpers rather than hand-copied, the marker rendering is unified so a waypoint looks the same in both tools, and one import bug is fixed. No data-schema change (still 3.0).

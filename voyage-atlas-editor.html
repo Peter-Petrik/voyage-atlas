@@ -537,7 +537,7 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span id="hero-stats">0 chapters · 0 named waypoints · 0 nm</span>
-  <span>Voyage Atlas Editor v3.2</span>
+  <span>Voyage Atlas Editor v3.2.1</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -2481,16 +2481,11 @@ function mergeCSVImport(chapRows, wptRows) {
   (wptRows || []).forEach(r => {
     const chNum = parseInt(r.chapter);
     if (!chMap[chNum]) return;
-    // Note: the original never stored `order` on the waypoint, so the "sort by order" below has always
-    // been a no-op (waypoints keep CSV file order). Preserved as-is to keep this a behavior-neutral
-    // refactor; activating that sort is logged separately as a candidate fix, not done here.
     chMap[chNum].waypoints.push(normalizeWaypoint(r, { csv: true }));
   });
 
-  // Sort waypoints by order if present
-  STATE.chapters.forEach(ch => {
-    ch.waypoints.sort((a, b) => (parseInt(a.order) || 0) - (parseInt(b.order) || 0));
-  });
+  // Waypoints take CSV row order. (The exported `order` column is positional metadata only; it is not
+  // read back on import, so rows must be in the intended sequence in the file.)
 
   STATE.chapters.sort((a, b) => a.num - b.num);
   renderAllChapters();
