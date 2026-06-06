@@ -13,6 +13,14 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.4.2] - 2026-06-06
+
+### Fixed
+1. **Fit-to-all-chapters no longer zooms out across three world copies for a dateline-crossing voyage.** The on-load fit unwrapped each chapter's longitudes in its own frame and then pooled the points, so chapters on opposite sides of the antimeridian landed in mismatched frames and produced an artificial near-global span — the map zoomed fully out and showed three world copies. The fit now collects every waypoint in travel order (chapter order, then waypoint order) into one sequence and unwraps it once, the same way route lines are drawn, so the whole voyage lives in a single continuous longitude frame and frames on its populated arc. A genuine round-the-world voyage still frames wide (its route really does span more than half the globe); a regional or single-ocean voyage now frames tightly.
+
+### Changed
+2. **The viewer's on-load fit zooms in one step closer.** The viewer's fit-to-all max zoom was raised from 6 to 8 (matching the editor), so a compact voyage — e.g. a single cruising ground — fills more of the map instead of sitting small in a wide view.
+
 ## [v3.4.1] - 2026-06-06
 
 ### Changed
