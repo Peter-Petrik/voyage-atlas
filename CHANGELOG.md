@@ -13,6 +13,15 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.4.3] - 2026-06-06
+
+### Fixed
+1. **The editor's on-load map fit is no longer too zoomed out.** The fit ran before the map container had been sized to its final layout (the editor's map shares width with the chapter panel, which settles a moment after load), so it measured the wrong viewport and chose too low a zoom — the global voyage didn't fill the map vertically. The load now sizes the map (`invalidateSize`) and then fits, in that order, on all three load paths (open JSON, CSV import — which previously had no size step at all — and the viewer's load).
+2. **Selecting a chapter no longer zooms further out than the whole-voyage view.** The chapter-select fit was capped at a fixed zoom that could be wider than the all-voyage fit, so picking a single chapter — a smaller area — sometimes zoomed out. Fixed by the change below.
+
+### Changed
+3. **All map framing now uses one shared "fill, then ease out one level" routine.** The whole-voyage fit, the chapter-select fit, and the editor's chapter focus previously each had their own fixed maximum-zoom cap (and those caps had drifted between the tools). They now all route through one shared `fitToCoords` helper (byte-identical in both tools) that frames the points to fill the screen and then steps back one zoom level for breathing room, with a floor so a round-the-world voyage can't ease too far out. Because the real-world span of a chapter or voyage is unknown — it could be 50 nm or 5,000 nm — framing-then-easing adapts to any size, where a fixed cap was always wrong for some. Dateline handling is unchanged and still graceful: a crossing chapter or voyage frames tightly on its populated arc, never across three world copies.
+
 ## [v3.4.2] - 2026-06-06
 
 ### Fixed

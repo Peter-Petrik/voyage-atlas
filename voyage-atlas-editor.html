@@ -548,7 +548,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed">Voyage Atlas Editor v3.4.2</span>
+  <span class="footer-ver-ed">Voyage Atlas Editor v3.4.3</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1105,45 +1105,46 @@ function onGhostDragEnd(e) {
   updateHeroStats();
 }
 
+// Shared fit routine — the single place every "frame these points" operation goes through, so the
+// whole-voyage fit, the chapter-select fit, and any future fit all behave identically (audit
+// discipline; byte-identical in the editor and viewer). Dateline-safe: the coords are `unwrap`ped into
+// one continuous longitude frame (the same machinery the route lines use), so a set that straddles the
+// antimeridian frames on its populated arc and never zooms out across the three world copies. Sizing:
+// `getBoundsZoom` returns the tightest zoom at which the points fill the frame; we then back off one
+// level (`- 1`) for breathing room, because the real-world span of a chapter or voyage is unknown
+// (50 nm or 5,000 nm) and a fixed cap is wrong for some size — framing-then-easing adapts to any. A
+// floor keeps a globe-spanning set from easing below the sensible world view. A lone point can't be
+// framed by bounds, so it uses a fixed close zoom.
+const FIT_FLOOR_ZOOM = 2;      // never ease wider than this (keeps a global voyage from over-zooming out)
+const FIT_POINT_ZOOM = 9;      // a single isolated point
+function fitToCoords(coords) {
+  if (!coords || coords.length === 0) return;
+  if (coords.length === 1) { map.setView([coords[0][0], normLon(coords[0][1])], FIT_POINT_ZOOM); return; }
+  const pts = unwrap(coords); // one continuous frame; dateline-safe
+  const b = L.latLngBounds(pts);
+  const z = Math.max(map.getBoundsZoom(b, false, [60, 60]) - 1, FIT_FLOOR_ZOOM); // fill, then ease one out
+  const c = b.getCenter();
+  map.setView([c.lat, normLon(c.lng)], z);
+}
+
 function focusMapOnChapter(chNum) {
   const ch = getChapter(chNum);
   if (!ch || ch.waypoints.length === 0) return;
-  const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]);
-  if (coords.length === 0) return;
-  if (coords.length === 1) {
-    map.setView(coords[0], 8);
-    return;
-  }
-  // Dateline-aware fit (parity with the viewer): unwrap so a crossing chapter fits tightly across
-  // the antimeridian instead of spanning the globe the wrong way and zooming fully out.
-  const pts = unwrap(coords);
-  const b = L.latLngBounds(pts);
-  const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), 8);
-  const c = b.getCenter();
-  const lon = normLon(c.lng);
-  map.setView([c.lat, lon], z);
+  fitToCoords(ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]));
 }
 
 // Fit the map to the combined extent of every chapter's waypoints (#58). Used on load instead of
 // auto-selecting a chapter, so the map frames the whole voyage (an all-Med voyage shows the Med, a
-// global voyage shows the world) rather than jumping into chapter 1. Dateline handling reuses the same
-// `unwrap` the routes use: every waypoint is collected in travel order (chapter order, then waypoint
-// order) into ONE sequence and unwrapped once, so the whole voyage lives in a single continuous
-// longitude frame — a dateline-crossing voyage frames on its populated arc instead of spanning the
-// globe the wrong way (which previously zoomed fully out across three world copies). Shared, identical
-// definition in the editor and viewer: the caller passes its state source and its own max-zoom cap.
-function fitAllChapters(chapters, maxZoom) {
+// global voyage shows the world) rather than jumping into chapter 1. Every waypoint is collected in
+// travel order (chapter order, then waypoint order) into ONE sequence and handed to the shared
+// `fitToCoords`, which unwraps it into a single continuous longitude frame — so a dateline-crossing
+// voyage frames on its populated arc, never across three world copies.
+function fitAllChapters(chapters) {
   const coords = [];
   (chapters || []).forEach(ch => {
     (ch.waypoints || []).forEach(w => { if (w.lat && w.lon) coords.push([w.lat, w.lon]); });
   });
-  if (coords.length === 0) return; // nothing to fit (empty voyage) — leave the default world view
-  if (coords.length === 1) { map.setView(coords[0], maxZoom); return; }
-  const pts = unwrap(coords); // one continuous frame across the entire voyage
-  const b = L.latLngBounds(pts);
-  const z = Math.min(map.getBoundsZoom(b, false, [60, 60]), maxZoom);
-  const c = b.getCenter();
-  map.setView([c.lat, normLon(c.lng)], z);
+  fitToCoords(coords); // no-op when empty — leaves the default world view
 }
 
 // Map ↔ list selection sync (#56). selectWaypoint is the single seam used by marker-click, the
@@ -2485,8 +2486,10 @@ function normalizeChapter(ch, opts = {}) {
 function loadVoyage(data) {
   STATE.chapters = data.chapters.map(ch => normalizeChapter(ch));
   renderAllChapters();
-  fitAllChapters(STATE.chapters, 8); // #58: frame the whole voyage; no chapter auto-selected
-  setTimeout(() => map.invalidateSize(), 100);
+  // P1: size the map to its final layout BEFORE fitting. getBoundsZoom measures against the map's
+  // current pixel size, so fitting before the container has settled (the editor's map shares width
+  // with the chapter panel) picks too low a zoom. invalidateSize first, then fit, in the same tick.
+  setTimeout(() => { map.invalidateSize(); fitAllChapters(STATE.chapters); }, 100); // #58: frame the whole voyage; no chapter auto-selected
   // Reset to defaults first so a loaded voyage never inherits the previous session's settings
   // (e.g. a file that omits distanceUnit gets 'nm', not whatever was loaded before).
   STATE.settings = defaultSettings();
@@ -2563,7 +2566,8 @@ function mergeCSVImport(chapRows, wptRows) {
 
   STATE.chapters.sort((a, b) => a.num - b.num);
   renderAllChapters();
-  fitAllChapters(STATE.chapters, 8); // #58: frame the whole voyage; no chapter auto-selected
+  // P1: size the map before fitting (this path previously fit with no invalidateSize at all).
+  setTimeout(() => { map.invalidateSize(); fitAllChapters(STATE.chapters); }, 100); // #58: frame the whole voyage; no chapter auto-selected
   setDirty(false);
 }
 
