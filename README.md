@@ -6,14 +6,14 @@ ocean passages and multi-year voyages, but generic enough for any voyage.
 
 In the cruising community, *plan* is a dangerous four-letter word — *"sailors' plans are written
 in sand and at low tide."* This isn't a planner. An **atlas** is a collection of charts: routes
-you navigate *by*, not a schedule you're bound *to*.
+routes to navigate *by*, not a schedule to be bound *to*.
 
 <!-- TODO: add a screenshot of the viewer here, e.g. ![Voyage Atlas viewer](docs/screenshot.png) -->
 
 ## What's in the box
 
-1. **Editor** (`voyage-atlas-editor.html`) — build and maintain your atlas: chapters, waypoints, route geometry, and voyage metadata. Map-based and table-based editing, geocoding, drag-to-reorder, and JSON / CSV / KML export.
-2. **Viewer** (`voyage-atlas.html`) — a read-only interactive map of a finished atlas. This is what you publish or share.
+1. **Editor** (`voyage-atlas-editor.html`) — builds and maintains an atlas: chapters, waypoints, route geometry, and voyage metadata. Map-based and table-based editing, geocoding, drag-to-reorder, and JSON / CSV / KML export.
+2. **Viewer** (`voyage-atlas.html`) — a read-only interactive map of a finished atlas. This is what is published or shared.
 
 Both are single HTML files. No build step, no framework, no server — open them in any modern
 browser, host them on any static server, or hand them to someone else, and they behave identically.
@@ -21,9 +21,9 @@ browser, host them on any static server, or hand them to someone else, and they 
 ## Quick start
 
 1. Download `voyage-atlas-editor.html`, `voyage-atlas.html`, and (optionally) the sample `voyage-data.json` into the same folder.
-2. **To explore the sample:** open `voyage-atlas.html` in your browser. If `voyage-data.json` is alongside it, the map loads automatically.
-3. **To build your own:** open `voyage-atlas-editor.html`, add a chapter, and start placing waypoints (click the map, search by name, or type coordinates). When you're done, click **Save** to download `voyage-data.json`.
-4. **To view what you built:** put your `voyage-data.json` next to `voyage-atlas.html` and open the viewer — or load the file from the viewer's landing screen.
+2. **To explore the sample:** open `voyage-atlas.html` in a browser. If `voyage-data.json` is alongside it, the map loads automatically.
+3. **To build a new atlas:** open `voyage-atlas-editor.html`, add a chapter, and start placing waypoints (click the map, search by name, or type coordinates). Click **Save** to download `voyage-data.json`.
+4. **To view a finished atlas:** put the `voyage-data.json` next to `voyage-atlas.html` and open the viewer — or load the file from the viewer's landing screen.
 
 The repository ships with a small sample `voyage-data.json` (a short Greek Ionian cruise) so the
 tools open to a working example. <!-- TODO: link to the full live example once published, e.g.
@@ -50,16 +50,16 @@ tools open to a working example. <!-- TODO: link to the full live example once p
 
 ## A note on data correctness
 
-The atlas shows you what you enter. If you chart a backtrack, a waypoint on land, or a leg that
-overshoots a harbor, the tools render it faithfully and count it honestly — no second-guessing, no
+The atlas shows exactly what is entered. A charted backtrack, a waypoint on land, or a leg that
+overshoots a harbor is rendered faithfully and counted honestly — no second-guessing, no
 silent "corrections." Accuracy of the data is the navigator's responsibility, by design.
 
 ## Contributing
 
-Issues and feature suggestions are welcome via the issue tracker. If you'd like to contribute code,
-open an issue first to discuss the change. The design rationale behind the architecture (why
-chapters, the predecessor seam, the distance model) is documented for maintainers; ask in an issue
-if you're picking up something non-trivial.
+Issues and feature suggestions are welcome via the issue tracker. Contributions to the code are
+best raised in an issue first to discuss the change. The design rationale behind the architecture (why
+chapters, the predecessor seam, the distance model) is documented for maintainers; non-trivial work
+is worth a question in an issue before starting.
 
 ## License
 

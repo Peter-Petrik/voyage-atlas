@@ -235,7 +235,7 @@ The editor exports KML (`voyage-route.kml`, date-prefixed) for Google Earth and 
 ## Future: `zones.csv` (not yet implemented)
 
 Planned for permanent avoidance zones, restricted areas, or user-defined regions. Current PAZ data
-(rectangles from the framework appendix) lives in the viewer code; `zones.csv` would externalise it.
+(rectangles from the framework appendix) lives in the viewer code; `zones.csv` would externalize it.
 
 | Column | Type | Description |
 |--------|------|-------------|
