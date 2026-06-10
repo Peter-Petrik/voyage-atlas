@@ -1,0 +1,66 @@
+# Automated GitHub Release creation triggered by version tags.
+#
+# When a tag matching v* (e.g. v3.5.1) is pushed, this workflow extracts the
+# matching version's section from CHANGELOG.md and creates a GitHub Release
+# populated with those notes. There is no build, test, or publish step: the
+# project is two self-contained HTML files with no package and no dependencies,
+# so the only automated artifact is the Release entry itself.
+#
+# Authentication uses the default GITHUB_TOKEN that Actions provides. No stored
+# secrets or tokens are required, and the workflow contains nothing
+# installation-specific, so a self-hosting fork runs it unchanged.
+
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    # contents: write is required to create a GitHub Release. No other
+    # permission is needed; the default token grants the rest read-only.
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Extract the release notes for the tagged version from CHANGELOG.md.
+      #
+      # CHANGELOG headers carry the v-prefix inside the brackets and a trailing
+      # date, e.g. "## [v3.5.1] - 2026-06-10". The tag (GITHUB_REF_NAME) is the
+      # full "v3.5.1", so it is matched verbatim with no prefix stripping.
+      # index() does a literal substring match on "[v3.5.1]", which avoids
+      # treating the brackets as a regex character class. awk captures every
+      # line after the matched header until the next "## [" header (or EOF).
+      - name: Extract release notes from CHANGELOG
+        id: changelog
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          awk -v ver="$TAG" '
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "[" ver "]")) found=1
+              next
+            }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+
+          # Fail loudly rather than publishing an empty Release if the tag has
+          # no matching CHANGELOG section (a missed entry or a header-format
+          # drift). A silent empty body is worse than a failed run.
+          if [ ! -s release_notes.md ]; then
+            echo "No CHANGELOG section found for tag $TAG" >&2
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release_notes.md
+          name: ${{ github.ref_name }}
