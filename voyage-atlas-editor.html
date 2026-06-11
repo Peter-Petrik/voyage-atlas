@@ -548,7 +548,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed">Voyage Atlas Editor v3.5</span>
+  <span class="footer-ver-ed">Voyage Atlas Editor v3.6</span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -756,6 +756,8 @@ let selectedChapterNum = null, selectedWptIdx = null;  // #56: the one selected 
 let rapidClickMode = false;
 let pendingCSVChapters = null; // temp storage during 2-step CSV import
 let isDirty = false; // unsaved changes flag
+let firstEditFired = false; // set once the first content-creating action of the session is announced
+let geocodeFired = false; // set once the first geocode lookup of the session is announced
 // Single setter so the header indicator stays in sync with the flag (#59).
 function setDirty(v) {
   isDirty = v;
@@ -765,6 +767,26 @@ function setDirty(v) {
     btn.textContent = v ? 'Save *' : 'Save';
     btn.title = v ? 'Unsaved changes' : 'Save to voyage-data.json';
   }
+}
+
+// Announce a meaningful app lifecycle moment as a generic custom event on document. The app does not
+// listen for this itself; the deployed surface adds the listener. With no listener present it is a no-op.
+function announce(kind, format) {
+  const detail = { kind };
+  if (format) detail.format = format;
+  document.dispatchEvent(new CustomEvent('voyage:action', { detail }));
+}
+// First content-creating action of the session — announced once, then never again this session.
+function noteFirstEdit() {
+  if (firstEditFired) return;
+  firstEditFired = true;
+  announce('firstedit');
+}
+// First geocode lookup of the session — announced once, then never again this session.
+function noteGeocodeUse() {
+  if (geocodeFired) return;
+  geocodeFired = true;
+  announce('geocode');
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -800,6 +822,7 @@ function onMapClick(e) {
   if (!rapidClickMode || activeChapterNum === null || ghostDragTarget) return;
   const ch = getChapter(activeChapterNum);
   if (!ch) return;
+  noteFirstEdit();
   const wpt = makeWaypoint();
   wpt.lat = round5(e.latlng.lat);
   wpt.lon = normLon(round5(e.latlng.lng));
@@ -1349,6 +1372,7 @@ function processRevGeoQueue() {
   if (revGeoRunning || revGeoQueue.length === 0) return;
   revGeoRunning = true;
   const { lat, lon, callback } = revGeoQueue.shift();
+  noteGeocodeUse();
   fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=5&addressdetails=1`, {
     headers: { 'Accept-Language': 'en' }
   })
@@ -1512,6 +1536,7 @@ function processFwdGeoQueue() {
   if (fwdGeoRunning || fwdGeoQueue.length === 0) return;
   fwdGeoRunning = true;
   const { chNum, wptRef, name } = fwdGeoQueue.shift();
+  noteGeocodeUse();
   fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&limit=1&addressdetails=1`, {
     headers: { 'Accept-Language': 'en' }
   })
@@ -2142,6 +2167,7 @@ function updateWpt(chNum, idx, field, value) {
 function addWaypoint(chNum) {
   const ch = getChapter(chNum);
   if (!ch) return;
+  noteFirstEdit();
   // Item 6: insert the new row after the selected row when one is selected in this chapter;
   // otherwise append at the end. (Map-click and geocode adds still append.)
   let insertIdx = ch.waypoints.length;
@@ -2248,6 +2274,7 @@ function toggleWpts(chNum, btn) {
 }
 
 function addChapter() {
+  noteFirstEdit();
   const num = STATE.chapters.length + 1;
   STATE.chapters.push(makeChapter(num));
   renderAllChapters();
@@ -2371,6 +2398,8 @@ function doBulkAdd() {
   const ch = getChapter(bulkTargetChNum);
   if (!ch) return;
   for (let i = 0; i < n; i++) ch.waypoints.push(makeWaypoint());
+  noteFirstEdit();
+  announce('import', 'bulk');
   closeBulkModal();
   renderChapterWaypoints(bulkTargetChNum);
   updateHeroStats();
@@ -2408,6 +2437,9 @@ function doPaste() {
     ch.waypoints.push(wpt);
   });
 
+  noteFirstEdit();
+  announce('import', 'paste');
+
   closePasteModal();
   renderChapterWaypoints(pasteTargetChNum);
   updateMapChapter(pasteTargetChNum);
@@ -2439,6 +2471,7 @@ function handleJSONFile(e) {
     try {
       const data = JSON.parse(ev.target.result);
       loadFromJSON(data);
+      announce('import', 'json');
     } catch (err) {
       alert("Couldn't read this file — it may be malformed or not a Voyage Atlas JSON.\n\n(Details: " + err.message + ")");
     }
@@ -2585,6 +2618,7 @@ function mergeCSVImport(chapRows, wptRows) {
   // P1: size the map before fitting (this path previously fit with no invalidateSize at all).
   setTimeout(() => { map.invalidateSize(); fitAllChapters(STATE.chapters); }, 100); // #58: frame the whole voyage; no chapter auto-selected
   setDirty(false);
+  announce('import', 'csv');
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2592,6 +2626,7 @@ function mergeCSVImport(chapRows, wptRows) {
    ═══════════════════════════════════════════════════════════════ */
 function saveDefault() {
   closeDropdowns();
+  announce('export', 'json');
   // Save as voyage-data.json with no timestamp (the overwrite pattern), via the shared downloadFile.
   downloadFile('voyage-data.json', buildExportJSON(), 'application/json', false);
   setDirty(false);
@@ -2632,6 +2667,7 @@ function buildExportJSON() {
 
 function exportJSON() {
   closeDropdowns();
+  announce('export', 'json');
   downloadFile('voyage-data.json', buildExportJSON(), 'application/json');
   setDirty(false);
 }
@@ -2641,6 +2677,7 @@ function exportJSON() {
    ═══════════════════════════════════════════════════════════════ */
 function exportCSVs() {
   closeDropdowns();
+  announce('export', 'csv');
   exportChaptersCSV();
   setTimeout(() => exportWaypointsCSV(), 500); // slight delay so browser doesn't block second download
 }
@@ -2692,6 +2729,7 @@ function exportWaypointsCSV() {
    ═══════════════════════════════════════════════════════════════ */
 function exportKML() {
   closeDropdowns();
+  announce('export', 'kml');
   let kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 <Document>

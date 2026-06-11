@@ -13,6 +13,11 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.6] - 2026-06-11
+
+### Added
+- **Editor lifecycle events.** The editor now announces four kinds of meaningful moment as a generic custom DOM event (`voyage:action`) carrying a `kind` and an optional `format`: a voyage file produced for download (`export`, with `json`/`csv`/`kml`), external data brought in (`import`, with `json`/`csv`/`paste`/`bulk`), the first content-creating action of a session (`firstedit`, once per page load), and the first geocode lookup of a session (`geocode`, once per page load). The editor only dispatches; it adds no listener and references no analytics vendor, so the events are inert unless an external listener is present. The JSON-import event fires only on a user file-pick, not on the startup auto-load of the co-located `voyage-data.json`, so a plain page visit produces no false import. The CSV-pair export reports a single `export`/`csv` event rather than one per file. Shared map logic is untouched.
+
 ## [v3.5.1] - 2026-06-10
 
 ### Changed
