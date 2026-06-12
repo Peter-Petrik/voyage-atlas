@@ -6,7 +6,7 @@ In the cruising community, *plan* is a dangerous four-letter word — *"sailors'
 
 The project's home page, with the narrative behind the tool, is at [sailingamazinggrace.com/resources/voyage-atlas](https://sailingamazinggrace.com/resources/voyage-atlas).
 
-![Voyage Atlas viewer](docs/voyage-atlas-preview.png)
+![Voyage Atlas viewer](docs/voyage-atlas-preview.webp)
 
 ## What's in the box
 
@@ -15,9 +15,11 @@ The project's home page, with the narrative behind the tool, is at [sailingamazi
 
 Both are single HTML files. No build step, no framework, no server — open them in any modern browser, host them on any static server, or hand them to someone else, and they behave identically.
 
+The repository also ships a set of optional icon assets (`favicon.ico`, the `favicon-*.png` and `apple-touch-icon.png` images, the `android-chrome-*.png` images) and `site.webmanifest`, which provide the browser-tab favicon and home-screen icons. They are purely cosmetic: a copy hosted without them still runs identically, with the browser falling back to its default tab icon.
+
 ## Quick start
 
-1. Download `voyage-atlas-editor.html`, `voyage-atlas.html`, and (optionally) the sample `voyage-data.json` into the same folder.
+1. Download `voyage-atlas-editor.html`, `voyage-atlas.html`, and (optionally) the sample `voyage-data.json` into the same folder. For the favicon and home-screen icons, also include the icon assets and `site.webmanifest` from the repository; they are optional and can be skipped.
 2. **To explore the sample:** serve the folder over HTTP (see the note below) and open `voyage-atlas.html`. When `voyage-data.json` sits alongside it, the chart loads automatically; otherwise the viewer opens to a landing screen with a file picker.
 3. **To build a new atlas:** open `voyage-atlas-editor.html`, add a chapter, and start placing waypoints (click the chart, search by name, or type coordinates). Click **Save** to download `voyage-data.json`.
 4. **To view a finished atlas:** put the `voyage-data.json` next to `voyage-atlas.html` and open the viewer — or load the file from the viewer's landing screen.
@@ -38,7 +40,7 @@ Auto-loading `voyage-data.json` from the same directory requires the files to be
 6. **Geocoding** via OpenStreetMap / Nominatim (rate-limited per their usage policy) — type a name to get coordinates, or fill countries from positions.
 7. **Automatic nation / territory classification** against a built-in reference list, with manual overrides.
 8. **Exports** — JSON (the master file), CSV (chapters + waypoints, for spreadsheet editing), and KML (for Google Earth).
-9. **Self-hosting** — two files in a directory; the viewer auto-loads its data when served over HTTP.
+9. **Self-hosting** — at minimum two HTML files in a directory; the viewer auto-loads its data when served over HTTP. The optional icon assets and manifest can sit alongside for favicon and home-screen support.
 10. **Viewer niceties** — on load the chart frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's info panel links out to its blog post when one is set; and `?import=yes` forces the file picker for opening a different atlas.
 
 ## Using the editor

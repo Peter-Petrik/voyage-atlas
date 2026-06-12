@@ -253,7 +253,7 @@ The header shows total distance, the nations and territories touched, the chapte
 
 ## Self-hosting
 
-The viewer is designed to host as two files. Put `voyage-atlas.html` and `voyage-data.json` in the same directory on any static web host (or open the HTML locally) and the chart loads automatically — no build step, no server code, no database. To update the published chart, replace `voyage-data.json` with a fresh export.
+The viewer is designed to host as two files. Put `voyage-atlas.html` and `voyage-data.json` in the same directory on any static web host (or open the HTML locally) and the chart loads automatically — no build step, no server code, no database. To update the published chart, replace `voyage-data.json` with a fresh export. The repository also ships optional icon assets and `site.webmanifest` for the favicon and home-screen icons; they sit alongside the HTML when wanted and can be omitted without affecting how the tool runs.
 
 ---
 
@@ -261,7 +261,7 @@ The viewer is designed to host as two files. Put `voyage-atlas.html` and `voyage
 
 ## Why self-contained HTML files?
 
-Each tool is a single HTML file with all its CSS and JavaScript inline, pulling only well-known libraries (Leaflet, PapaParse, SortableJS) from a CDN. No build step, no framework, no server. This means the exact same file runs identically whether opened from the local file system, hosted on a static server, or hand it to someone else. One file, one behavior, nothing to install.
+Each tool is a single HTML file with all its CSS and JavaScript inline, pulling only well-known libraries (Leaflet, PapaParse, SortableJS) from a CDN. No build step, no framework, no server. This means the exact same file runs identically whether opened from the local file system, hosted on a static server, or hand it to someone else. One file, one behavior, nothing to install. The optional icon assets and `site.webmanifest` that ship alongside add a favicon and home-screen icons but change none of this — they are cosmetic, and a copy hosted without them behaves exactly the same.
 
 The editor and viewer are deliberately *vanilla* (not React or another framework): a framework would need a build pipeline to host, defeating the "open it anywhere" goal.
 

@@ -13,6 +13,17 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.7.1] - 2026-06-12
+
+### Added
+- **Favicon and home-screen icons for both tools.** The editor and viewer now reference a favicon, an Apple touch icon, and a web manifest (`site.webmanifest`), so a browser tab shows the project icon and the tools can be saved to a mobile home screen with a proper icon. The icon assets are optional repository files; a copy hosted without them runs identically and falls back to the browser's default tab icon.
+- **Mobile/standalone meta tags in the editor.** The editor gained the `theme-color` and `apple-mobile-web-app-*` tags the viewer already carried, bringing the two tools to parity for mobile appearance and standalone (home-screen) launch.
+
+### Changed
+- **Preview image switched to WebP.** The shared social preview image referenced by both tools' `og:image` and the README is now a WebP (`voyage-atlas-preview.webp`) rather than a PNG, cutting the file to roughly a third of the size with no visible difference at link-thumbnail scale. Both tools also gained an `og:image:type` hint for the WebP.
+- **Footer version links to the repository.** The version label in both footers (e.g. "Voyage Atlas v3.7") now links to the project's GitHub repository.
+- **Documentation:** The README and FAQ note the optional icon assets and `site.webmanifest` alongside the two HTML files, framed as cosmetic additions that do not change the no-build-step, runs-anywhere model.
+
 ## [v3.7] - 2026-06-11
 
 ### Added

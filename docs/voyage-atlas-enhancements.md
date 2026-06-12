@@ -5,7 +5,7 @@ The forward-looking backlog for the **editor** (`voyage-atlas-editor.html`) and 
 version. (The ~21 previously-"queued" items that had already shipped were pruned from this doc; all
 were confirmed present in the CHANGELOG first. The v3.0 release then pruned #53, #56, and #62 — shipped, and
 confirmed in the CHANGELOG — and dropped #52 as moot, since the CSV carries no distance figures to
-label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG. The v3.2–v3.4 releases then pruned #16, #49, #51, #55, #57, #58, and #61 — all shipped, and confirmed in the CHANGELOG.) Build decisions live in `voyage-atlas-runbook.md`.
+label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG. The v3.2–v3.4 releases then pruned #16, #49, #51, #55, #57, #58, and #61 — all shipped, and confirmed in the CHANGELOG. The v3.7 release pruned #38 and #39 — shipped, and confirmed in the CHANGELOG — and retired #40 as superseded by the Cloudflare-served deployment at `sailingamazinggrace.com/resources/voyage-atlas`, which provides the one-click live demo #40 sought without GitHub Pages. The v3.7 release also delivered the Open Graph / Twitter Card half of #32 and the favicon/manifest groundwork of #31, both of which remain open for their unshipped scope.) Build decisions live in `voyage-atlas-runbook.md`.
 
 Items keep their **original numbers** — cross-references and the runbook depend on them, so the numbers
 are stable IDs, not sequence. They're grouped into **phases** meant to be worked roughly in order, each
@@ -24,8 +24,11 @@ Small, mostly independent tweaks; largely the v2.7/v2.8 test-pass captures, so t
 One or two sessions.
 
 ### 48. Footer version → CHANGELOG link
-`Effort S · Impact Low · both footers · dep: approach from the Turkey Pump-Out project (to supply or rebuild)`
-Make the version footer in both tools link to the matching CHANGELOG entry.
+`Effort S · Impact Low · both footers · —`
+The footer version label in both tools now links to the GitHub repository (added in v3.7.1). The
+original intent of this item was a link to the *matching CHANGELOG entry* specifically; if that
+deep-link is still wanted, it remains as the unshipped variant (the repo link is the simpler form now
+in place).
 
 ### 50. Editor → Viewer preview link
 `Effort S · Impact Low · editor UI · —`
@@ -223,29 +226,17 @@ follow later. Net-new UI with its own data-model surface; deserves its own cycle
 
 Operational tasks for the public release; mostly non-code; can run anytime; some blocked.
 
-### 39. README screenshot
-`Effort S · Impact Low · repo (non-code) · —`
-Add a viewer screenshot to the README (a light + dark pair, or a single light-theme shot of a populated
-map). Placeholder TODO is in place.
+### 32. Social / SEO metadata — JSON-LD remaining
+`Effort S · Impact Low · both heads · OG/Twitter shipped in v3.7`
+The Open Graph and Twitter Card tags (with a WebP `og:image`) shipped in v3.7 for both tools. What
+remains is JSON-LD structured data for richer search-result presentation; lower priority than the
+social-unfurl tags already in place.
 
-### 40. GitHub Pages live demo
-`Effort S · Impact Low · repo config · —`
-Host `voyage-atlas.html` + the sample `voyage-data.json` on GitHub Pages for a one-click demo (the
-viewer auto-loads the co-located data). Mainly a Pages config plus a README link.
-
-### 32. Social / SEO metadata
-`Effort S · Impact Low · viewer head · —`
-`og:image` and JSON-LD structured data for shared links.
-
-### 31. PWA manifest + iframe embed
+### 31. PWA manifest + iframe embed — manifest shipped
 `Effort M · Impact Low · viewer · trades against the single-file goal`
-Full PWA support (currently basic mobile meta only) plus iframe embedding.
-
-### 38. Live example URL
-`Effort S · Impact Low · repo README · blocked: the full atlas must be published on sailingamazinggrace.com first`
-Insert the live atlas URL into the README ("full live example" line, currently a TODO) and anywhere the
-FAQ would benefit. The repo ships a minimal sample `voyage-data.json` for an immediate demo; the live
-URL is the "see a real voyage" companion.
+A web manifest (`site.webmanifest`) and the editor's mobile/standalone meta tags shipped in v3.7,
+bringing both tools to basic installable-PWA parity. What remains is fuller PWA support (e.g. a service
+worker for offline use) and iframe embedding — the latter still traded against the single-file goal.
 
 ---
 
