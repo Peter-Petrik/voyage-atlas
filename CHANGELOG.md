@@ -13,6 +13,24 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.7] - 2026-06-11
+
+### Added
+- **Active-row waypoint selection in the editor.** Focusing any field in a waypoint row now selects that waypoint and lights its marker on the chart, so editing a name or coordinate shows which point is being edited. Selection fires only when focus crosses into a different row than the one already selected, so tabbing between fields within a row does nothing, and it neither moves the chart nor steals focus from the field being edited.
+- **Deselect a waypoint without switching chapters.** A waypoint selection can now be cleared by pressing **Escape** (when no dialog is open) or by clicking empty chart space away from any marker, in addition to the existing clear-on-chapter-switch. Both remove the row highlight and return the marker to its normal style.
+- **Larger click target on circle waypoint markers.** Named-waypoint circles are small (radius 2–10), so their clickable area was a hard target for a mouse. Each circle now carries an invisible larger hit-circle behind it that responds to the same click, drag, and right-click actions, widening the target without changing how the marker looks. Applies to circle markers; diamond and star markers are unchanged.
+- **Editor landing prompt.** When no co-located `voyage-data.json` auto-loads — including when the editor is opened from disk, where browsers block the local fetch — the editor now shows a landing prompt offering to load an atlas JSON or to dismiss and begin a new atlas, matching the viewer's existing landing screen instead of silently opening empty.
+- **Social and search metadata in both tools (#32).** The editor and viewer now carry a meta description, Open Graph tags, and Twitter Card tags in their `<head>`, so a shared link unfurls with a title, description, and preview image rather than a bare URL.
+
+### Changed
+- **Waypoint emphasis columns reordered to M, G, D.** The editor's waypoint table previously showed the flag columns as M, D, G. They now read M, G, D — ascending emphasis priority (Major lowest, Gateway middle, Decision highest) — so the column order matches the priority by which overlapping marker shapes resolve. The underlying marker-shape resolution (Decision's diamond wins, then Gateway's star, with Major adding size) is unchanged; only the column order and the documentation that describes it were aligned.
+- **"Chart" replaces "map" in user-facing text.** In the marine domain the surface is a chart, not a map. All user-facing strings and documentation that refer to the tool's own surface now say "chart" — the viewer's "Chart & Layers" panel, tooltips, the README, the FAQ, and the schema. References to external tools keep their own terminology (Leaflet as a mapping library, Google Earth, basemap tiles), and code identifiers (the Leaflet `map` object and related names) are unchanged.
+- **Footer backlink target updated (#51).** The "A project of Sailing Grace" link in both footers now points to `https://sailingamazinggrace.com/resources/voyage-atlas`, the project's resource hub, rather than the prior `/plans` destination.
+- **Documentation:** The README gained a live-example link to the published viewer (#38), a screenshot of the viewer (#39), a "Using the editor" section covering the chapter metadata and waypoint layers, the emphasis flags, the country lookups, expand/collapse-all, and Rapid-click navigation, and an explicit note that auto-loading `voyage-data.json` requires the files to be served over HTTP — a `file://` open falls back to the landing picker. The FAQ documents the new row-focus selection and Escape/click-empty deselect, the Rapid-click pan and zoom gestures, and the landing prompt. The README, FAQ, and schema were swept to the M, G, D order and the chart terminology.
+
+### Fixed
+- **Endpoint sync indicators now refresh when a chapter's first or last waypoint changes.** The 🔗 / ⇄ connection indicators are derived from each chapter's start and end coordinates, but several editor actions redrew only the affected chapter's waypoint table and not the chapter list where the indicators live, so an indicator could go stale — most visibly, deleting a pulled-in handoff waypoint left the 🔗 showing as if the chapters were still linked. Deleting a waypoint, editing a waypoint's latitude or longitude, and dragging a marker to a new position now refresh the chapter list, so the indicator reflects the real connection state. The connection itself was never stored; only the on-screen indicator lagged.
+
 ## [v3.6] - 2026-06-11
 
 ### Added

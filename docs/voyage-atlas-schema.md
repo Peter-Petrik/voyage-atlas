@@ -180,17 +180,17 @@ included (they are recomputed on load). Import is two-step: `chapters.csv` then 
 ### Waypoint rendering rules
 
 1. Empty `name` → shaping vertex: contributes to the route line, renders no marker, and its flags are ignored.
-2. Non-empty `name` → a marker is rendered on the map.
+2. Non-empty `name` → a marker is rendered on the chart.
 3. `major` → a circle, slightly larger and with a heavier stroke.
-4. `decision` → a diamond marker.
-5. `gateway` → a star marker.
-6. The flags are independent and combinable. **On the map, a Decision diamond takes priority over a Gateway star when both are set**, and `major` affects size rather than shape. (KML uses the opposite icon priority — see the KML section.)
+4. `gateway` → a star marker.
+5. `decision` → a diamond marker.
+6. The flags are independent and combinable. The editor columns are shown in the order M, G, D — ascending emphasis priority, Major lowest and Decision highest. **On the chart, when more than one flag is set the highest-priority flag wins the marker shape: a Decision diamond over a Gateway star**, while `major` affects size rather than shape. (KML uses the opposite icon priority — see the KML section.)
 
 ### Route line construction
 
 A chapter's route line connects **all** its waypoints — shaping vertices included — in `order` sequence,
 passing through every row whether or not it has a name. Dateline-crossing legs are split at the ±180°
-antimeridian and drawn across three world copies, so a crossing route stays continuous at any map pan.
+antimeridian and drawn across three world copies, so a crossing route stays continuous at any chart pan.
 
 ### Chapter endpoint convention
 
@@ -228,7 +228,7 @@ The editor exports KML (`voyage-route.kml`, date-prefixed) for Google Earth and 
 2. **Folders.** One per chapter, named `Ch N — Chapter Name`.
 3. **Route.** One `LineString` Placemark per chapter through all coordinate-bearing waypoints; its color is the chapter's palette color (written in KML `aabbggrr` order).
 4. **Waypoints.** A `Point` Placemark per **named** waypoint (shaping vertices are skipped).
-5. **Icon priority.** The `styleUrl` is assigned in the order major → decision → gateway, so the **last applicable flag wins: gateway, then decision, then major**. This is the reverse of the on-map shape priority (where Decision wins), and is the one place the two presentations disagree.
+5. **Icon priority.** The `styleUrl` is assigned in the order major → decision → gateway, so the **last applicable flag wins: gateway, then decision, then major**. This is the reverse of the on-chart shape priority (where Decision wins), and is the one place the two presentations disagree.
 
 ---
 

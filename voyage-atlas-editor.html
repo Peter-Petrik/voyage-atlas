@@ -4,6 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voyage Atlas — Editor</title>
+<meta name="description" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Voyage Atlas">
+<meta property="og:title" content="Voyage Atlas — Editor">
+<meta property="og:description" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
+<meta property="og:url" content="https://sailingamazinggrace.com/resources/voyage-atlas/editor">
+<meta property="og:image" content="https://sailingamazinggrace.com/resources/voyage-atlas/voyage-atlas-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Voyage Atlas — Editor">
+<meta name="twitter:description" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
+<meta name="twitter:image" content="https://sailingamazinggrace.com/resources/voyage-atlas/voyage-atlas-preview.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#f4efe4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Voyage Atlas Editor">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -440,8 +460,36 @@ th .hi { margin-left: 2px; }
   #chapter-panel { width: 100%; max-width: none; min-width: 0; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--border); }
   #map-panel { min-height: 40vh; }
 }
+/* ═══════════ LANDING OVERLAY (item 5) ═══════════ */
+#landing {
+  position: fixed; inset: 0; z-index: 4000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.15); backdrop-filter: blur(2px);
+}
+#landing.hidden { display: none; }
+.landing-box {
+  background: var(--panel-solid); border: 1px solid var(--border-strong);
+  border-radius: 8px; box-shadow: var(--shadow);
+  padding: 36px 40px; text-align: center; max-width: 440px;
+}
+.landing-box h2 {
+  font-family: 'Fraunces', serif; font-weight: 500;
+  font-size: 22px; color: var(--accent); margin-bottom: 10px;
+}
+.landing-box p { font-size: 11px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+.landing-actions { display: flex; gap: 10px; justify-content: center; }
+.landing-btn {
+  font-family: inherit; font-size: 12px; padding: 8px 20px;
+  background: var(--accent-soft); color: var(--accent);
+  border: 1px solid var(--accent); border-radius: 4px;
+  cursor: pointer; transition: background 0.15s;
+}
+.landing-btn:hover { background: var(--accent); color: var(--panel-solid); }
+.landing-btn-ghost {
+  background: transparent; color: var(--muted); border-color: var(--border-strong);
+}
+.landing-btn-ghost:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
 </style>
-</head>
 <body>
 
 <!-- ═══════════ HEADER ═══════════ -->
@@ -547,14 +595,26 @@ th .hi { margin-left: 2px; }
 <!-- ═══════════ FOOTER ═══════════ -->
 <div id="footer">
   <span class="footer-left"></span>
-  <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed">Voyage Atlas Editor v3.6</span>
+  <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
+  <span class="footer-ver-ed">Voyage Atlas Editor v3.7</span>
 </div>
 
 <!-- Hidden file inputs -->
 <input type="file" id="file-json" accept=".json" style="display:none" onchange="handleJSONFile(event)">
 <input type="file" id="file-csv-chapters" accept=".csv" style="display:none" onchange="handleCSVChaptersFile(event)">
 <input type="file" id="file-csv-waypoints" accept=".csv" style="display:none" onchange="handleCSVWaypointsFile(event)">
+
+<!-- Landing overlay (item 5) — shown when no voyage-data.json auto-loads -->
+<div id="landing" class="hidden">
+  <div class="landing-box">
+    <h2>Voyage Atlas Editor</h2>
+    <p>Load a voyage atlas JSON file to continue editing it, or dismiss to begin a new atlas from scratch.</p>
+    <div class="landing-actions">
+      <button class="landing-btn" onclick="importJSON()">Load JSON…</button>
+      <button class="landing-btn landing-btn-ghost" onclick="dismissLanding()">Start a new atlas</button>
+    </div>
+  </div>
+</div>
 
 <!-- Paste modal -->
 <div class="modal-overlay" id="paste-modal">
@@ -819,17 +879,24 @@ function initMap() {
 }
 
 function onMapClick(e) {
-  if (!rapidClickMode || activeChapterNum === null || ghostDragTarget) return;
-  const ch = getChapter(activeChapterNum);
-  if (!ch) return;
-  noteFirstEdit();
-  const wpt = makeWaypoint();
-  wpt.lat = round5(e.latlng.lat);
-  wpt.lon = normLon(round5(e.latlng.lng));
-  ch.waypoints.push(wpt);
-  renderChapterWaypoints(activeChapterNum);
-  updateMapChapter(activeChapterNum);
-  updateHeroStats();
+  // Rapid-click mode: a click on empty chart space drops a new waypoint.
+  if (rapidClickMode) {
+    if (activeChapterNum === null || ghostDragTarget) return;
+    const ch = getChapter(activeChapterNum);
+    if (!ch) return;
+    noteFirstEdit();
+    const wpt = makeWaypoint();
+    wpt.lat = round5(e.latlng.lat);
+    wpt.lon = normLon(round5(e.latlng.lng));
+    ch.waypoints.push(wpt);
+    renderChapterWaypoints(activeChapterNum);
+    updateMapChapter(activeChapterNum);
+    updateHeroStats();
+    return;
+  }
+  // Outside Rapid mode: a click on empty chart space (markers stop propagation, so this is genuinely
+  // empty) clears any active waypoint selection — the deselect counterpart to clicking a marker.
+  if (selectedWptIdx != null) deselectWaypoint();
 }
 
 function updateMapAll() {
@@ -937,7 +1004,16 @@ function updateMapChapter(chNum) {
 
     WORLD_COPIES.forEach(off => {
       let marker;
+      let hitMarker = null;
       if (!shaped) {
+        // Item 11: circle markers are small (radius 2–10), so their clickable area is a tiny target.
+        // Add an invisible, larger circle behind the visible one to widen the hit area without
+        // changing appearance. Same chapter, drawn together, so the "active wins" stacking holds.
+        const hitRadius = Math.max(circleOpts.radius + 6, 12);
+        hitMarker = L.circleMarker([w.lat, lon0 + off], {
+          radius: hitRadius, fillColor: '#000', color: '#000',
+          weight: 0, opacity: 0, fillOpacity: 0, interactive: true
+        }).addTo(map);
         marker = L.circleMarker([w.lat, lon0 + off], circleOpts).addTo(map);
       } else {
         const icon = L.divIcon({ html: shapeSvg, className: '', iconSize: [shapeSize, shapeSize], iconAnchor: [shapeHalf, shapeHalf] });
@@ -946,31 +1022,37 @@ function updateMapChapter(chNum) {
 
       marker.bindTooltip(tip, { permanent: false, direction: 'top', offset: [0, -6] });
 
-      // Click selects this waypoint — on any chapter. selectWaypoint activates the
-      // waypoint's chapter first (item 5), so clicking an inactive chapter both activates
-      // it and selects the point.
-      marker.on('click', function(e) {
-        L.DomEvent.stopPropagation(e);
-        selectWaypoint(chNum, idx);
-      });
-      // Drag and right-click delete stay active-chapter-only operations.
-      if (isActive) {
-        marker.on('mousedown', function(e) {
-          if (e.originalEvent && e.originalEvent.button > 0) return; // ignore right/middle buttons; right-click is delete (touch reports button 0/undefined and still drags)
-          dragMarkerLink = { chNum: chNum, wptIdx: idx };
-          markerDidMove = false;
-          map.dragging.disable();
-          map.on('mousemove', onMarkerDrag);
-          map.on('mouseup', onMarkerDragEnd);
+      // Wire the selection/drag/delete handlers onto a marker. Applied to both the visible marker and
+      // (for circles) the invisible hit-target so either responds identically.
+      const wireMarkerHandlers = function(m) {
+        // Click selects this waypoint — on any chapter. selectWaypoint activates the
+        // waypoint's chapter first (item 5), so clicking an inactive chapter both activates
+        // it and selects the point.
+        m.on('click', function(e) {
           L.DomEvent.stopPropagation(e);
+          selectWaypoint(chNum, idx);
         });
-        // Right-click delete
-        marker.on('contextmenu', function(e) {
-          L.DomEvent.stopPropagation(e);
-          L.DomEvent.preventDefault(e);
-          confirmDeleteWaypoint(chNum, idx);
-        });
-      }
+        // Drag and right-click delete stay active-chapter-only operations.
+        if (isActive) {
+          m.on('mousedown', function(e) {
+            if (e.originalEvent && e.originalEvent.button > 0) return; // ignore right/middle buttons; right-click is delete (touch reports button 0/undefined and still drags)
+            dragMarkerLink = { chNum: chNum, wptIdx: idx };
+            markerDidMove = false;
+            map.dragging.disable();
+            map.on('mousemove', onMarkerDrag);
+            map.on('mouseup', onMarkerDragEnd);
+            L.DomEvent.stopPropagation(e);
+          });
+          // Right-click delete
+          m.on('contextmenu', function(e) {
+            L.DomEvent.stopPropagation(e);
+            L.DomEvent.preventDefault(e);
+            confirmDeleteWaypoint(chNum, idx);
+          });
+        }
+      };
+      if (hitMarker) { wireMarkerHandlers(hitMarker); markers.push(hitMarker); }
+      wireMarkerHandlers(marker);
 
       markers.push(marker);
     });
@@ -1082,6 +1164,9 @@ function cancelMarkerDrag() {
 function onMarkerDragEnd() {
   if (dragMarkerLink && markerDidMove) {
     updateHeroStats();
+    // A drag that moved a first/last waypoint changes this chapter's start/end, so refresh the
+    // cross-chapter sync indicators (🔗 / ⇄). Done once at drag end, not per drag frame.
+    renderAllChapters();
   }
   cancelMarkerDrag();
 }
@@ -1203,12 +1288,33 @@ function selectWaypoint(chNum, idx, opts = {}) {
     const lon = normLon(w.lon); // normalize so a dateline-side waypoint centers correctly
     map.setView([w.lat, lon], 7); // B4: fixed zoom level 7
   }
-  revealWaypointRow(chNum, idx);
+  revealWaypointRow(chNum, idx, opts.keepFocus);
+}
+
+// Clear the current waypoint selection (item: deselect). Drops the selection state, removes the row
+// highlight, and redraws the affected chapter so the crimson selected marker reverts to normal.
+// Used by Escape and by a click on empty chart space.
+function deselectWaypoint() {
+  if (selectedWptIdx == null) return;
+  const chNum = selectedChapterNum;
+  selectedChapterNum = null;
+  selectedWptIdx = null;
+  document.querySelectorAll('.wpt-row-selected').forEach(r => r.classList.remove('wpt-row-selected'));
+  if (chNum != null) updateMapChapter(chNum);
+}
+
+// Row-change selection (item 9). Focusing any field in a row selects that waypoint so its map marker
+// lights up — but only when focus crosses into a DIFFERENT row than the one already selected, so
+// tabbing between fields within the same row does nothing. No zoom (the map must not jump while
+// editing) and keepFocus so the user's focused field is not yanked to the name input.
+function onWptRowFocus(chNum, idx) {
+  if (chNum === selectedChapterNum && idx === selectedWptIdx) return; // same row — leave it alone
+  selectWaypoint(chNum, idx, { keepFocus: true });
 }
 
 // Reveal the selected waypoint's row: open the table if collapsed, mark the row selected (clearing any
 // prior), scroll it just into view, flash it briefly, and focus the name field.
-function revealWaypointRow(chNum, idx) {
+function revealWaypointRow(chNum, idx, keepFocus) {
   const panel = document.getElementById(`ch-wpts-${chNum}`);
   if (panel && !panel.classList.contains('open')) {
     panel.classList.add('open');
@@ -1223,6 +1329,9 @@ function revealWaypointRow(chNum, idx) {
   row.scrollIntoView({ block: 'nearest' });
   row.classList.add('row-flash');
   setTimeout(() => row.classList.remove('row-flash'), 1200);
+  // keepFocus: the selection was triggered by the user focusing a field in this row (item 9), so
+  // don't yank focus to the name input — that would interrupt editing of lat/lon/country/notes.
+  if (keepFocus) return;
   const nameInput = document.getElementById(`wpt-name-${chNum}-${idx}`);
   if (nameInput) nameInput.focus({ preventScroll: true });
 }
@@ -2080,12 +2189,12 @@ function renderWaypointPanel(ch) {
         <thead><tr>
           <th style="width:20px"></th>
           <th style="width:28px"># <span class="hi" data-tip="Position in route sequence. Drag ≡ to reorder.">i</span></th>
-          <th class="col-name">Name <span class="hi" data-tip="Waypoint name. Leave empty for a shaping vertex (route geometry only, no marker on map).">i</span></th>
-          <th class="col-lat">Lat <span class="hi" data-tip="Latitude in decimal degrees. Set via search, map click, or manual entry. Drag map markers to adjust.">i</span></th>
+          <th class="col-name">Name <span class="hi" data-tip="Waypoint name. Leave empty for a shaping vertex (route geometry only, no marker on chart).">i</span></th>
+          <th class="col-lat">Lat <span class="hi" data-tip="Latitude in decimal degrees. Set via search, chart click, or manual entry. Drag chart markers to adjust.">i</span></th>
           <th class="col-lon">Lon <span class="hi" data-tip="Longitude in decimal degrees.">i</span></th>
-          <th class="col-cb">M <span class="hi" data-tip="Major: provisioning hub, spares, repairs, or extended stay. Larger circle marker on map.">i</span></th>
-          <th class="col-cb">D <span class="hi" data-tip="Decision: routing fork or go/no-go point. Diamond marker on map.">i</span></th>
-          <th class="col-cb">G <span class="hi" data-tip="Gateway: customs entry or strategic staging port. Star marker on map.">i</span></th>
+          <th class="col-cb">M <span class="hi" data-tip="Major: provisioning hub, spares, repairs, or extended stay. Larger circle marker on chart.">i</span></th>
+          <th class="col-cb">G <span class="hi" data-tip="Gateway: customs entry or strategic staging port. Star marker on chart.">i</span></th>
+          <th class="col-cb">D <span class="hi" data-tip="Decision: routing fork or go/no-go point. Diamond marker on chart.">i</span></th>
           <th class="col-country">Country <span class="hi" data-tip="Looked up from the waypoint's coordinates. Editable. Feeds the chapter-level countries list.">i</span></th>
           <th class="col-notes">Notes</th>
           <th style="width:24px"></th>
@@ -2101,15 +2210,15 @@ function renderWaypointPanel(ch) {
 function renderWaypointRow(chNum, w, idx) {
   const isShaping = !w.name || w.name.trim() === '';
   return `
-    <tr class="${isShaping ? 'shaping' : ''}" data-idx="${idx}">
+    <tr class="${isShaping ? 'shaping' : ''}" data-idx="${idx}" onfocusin="onWptRowFocus(${chNum},${idx})">
       <td class="wpt-row-drag">≡</td>
       <td class="wpt-row-num" title="Zoom to and select this waypoint" onclick="selectWaypoint(${chNum},${idx},{zoom:true})">${idx + 1}</td>
       <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" value="${esc(w.name)}" placeholder="(shaping vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
       <td class="col-lat"><input type="number" step="any" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="updateWpt(${chNum},${idx},'lat',parseFloat(this.value)||null)"></td>
       <td class="col-lon"><input type="number" step="any" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="updateWpt(${chNum},${idx},'lon',parseFloat(this.value)||null)"></td>
       <td class="col-cb"><input type="checkbox" ${w.major?'checked':''} onchange="updateWpt(${chNum},${idx},'major',this.checked)"></td>
-      <td class="col-cb"><input type="checkbox" ${w.decision?'checked':''} onchange="updateWpt(${chNum},${idx},'decision',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.gateway?'checked':''} onchange="updateWpt(${chNum},${idx},'gateway',this.checked)"></td>
+      <td class="col-cb"><input type="checkbox" ${w.decision?'checked':''} onchange="updateWpt(${chNum},${idx},'decision',this.checked)"></td>
       <td class="col-country${(w.country && w.country.trim()) ? ' country-filled' : ''}"><input type="text" id="wpt-country-${chNum}-${idx}" value="${esc(w.country || '')}" onchange="updateWpt(${chNum},${idx},'country',this.value);syncCountryFlag(this)"></td>
       <td class="col-notes"><input type="text" value="${esc(w.notes || '')}" onchange="updateWpt(${chNum},${idx},'notes',this.value)"></td>
       <td><button class="wpt-del" onclick="deleteWpt(${chNum},${idx})" title="Delete row">✕</button></td>
@@ -2157,6 +2266,9 @@ function updateWpt(chNum, idx, field, value) {
   }
   if (field === 'lat' || field === 'lon') {
     updateMapChapter(chNum);
+    // A coordinate change on a first/last waypoint moves this chapter's start/end, which can open or
+    // close the gap to a neighbour, so refresh the cross-chapter sync indicators (🔗 / ⇄).
+    renderAllChapters();
   }
   if (field === 'major' || field === 'decision' || field === 'gateway') {
     updateMapChapter(chNum);
@@ -2187,6 +2299,9 @@ function deleteWpt(chNum, idx) {
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
   updateChapterCountries(chNum);
+  // Deleting a first/last waypoint changes this chapter's connection to its neighbours, so the
+  // cross-chapter sync indicators (🔗 linked / ⇄ pull) must be recomputed, not just this table.
+  renderAllChapters();
   updateHeroStats();
 }
 
@@ -2463,6 +2578,20 @@ function importJSON() {
   document.getElementById('file-json').click();
 }
 
+// Landing prompt (item 5) — parity with the viewer. Shown on load when no voyage-data.json is found
+// (including from disk, where the fetch is blocked). The user can load an atlas or dismiss to start fresh.
+function showLanding() {
+  const el = document.getElementById('landing');
+  if (el) el.classList.remove('hidden');
+}
+function hideLanding() {
+  const el = document.getElementById('landing');
+  if (el) el.classList.add('hidden');
+}
+function dismissLanding() {
+  hideLanding(); // dismissed — begin a new atlas from the empty editor
+}
+
 function handleJSONFile(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -2482,6 +2611,7 @@ function handleJSONFile(e) {
 
 function loadFromJSON(data) {
   if (data.chapters) {
+    hideLanding(); // a voyage is loading — dismiss the landing prompt if it is showing
     loadVoyage(data);
   } else {
     alert('Unrecognized JSON format. Expected a "chapters" array.');
@@ -2877,13 +3007,15 @@ document.addEventListener('DOMContentLoaded', function() {
   renderAllChapters();
   updateHeroStats();
   setDirty(false);
-  // Auto-load voyage-data.json from same directory if present
+  // Auto-load voyage-data.json from the same directory if present (served over HTTP). When it is
+  // absent — including when the editor is opened from disk, where browsers block the fetch — show the
+  // landing prompt so the user can load an atlas or dismiss it to begin a new one.
   fetch('./voyage-data.json').then(r => {
     if (r.ok) return r.json();
     throw new Error('not found');
   }).then(data => {
     loadFromJSON(data);
-  }).catch(() => { /* no auto-load file, start empty */ });
+  }).catch(() => { showLanding(); });
 });
 
 window.addEventListener('beforeunload', function(e) {
@@ -2893,12 +3025,21 @@ window.addEventListener('beforeunload', function(e) {
 /* Global modal keyboard: Enter = submit, ESC = cancel */
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
+    const anyModalOpen =
+      document.getElementById('bulk-modal').classList.contains('open') ||
+      document.getElementById('paste-modal').classList.contains('open') ||
+      document.getElementById('csv-step2-modal').classList.contains('open') ||
+      document.getElementById('delete-wpt-modal').classList.contains('open') ||
+      document.getElementById('confirm-modal').classList.contains('open');
     if (document.getElementById('bulk-modal').classList.contains('open')) closeBulkModal();
     if (document.getElementById('paste-modal').classList.contains('open')) closePasteModal();
     if (document.getElementById('csv-step2-modal').classList.contains('open')) closeCSVStep2();
     if (document.getElementById('delete-wpt-modal').classList.contains('open')) closeDeleteWptModal();
     if (document.getElementById('confirm-modal').classList.contains('open')) closeConfirmModal();
     closeDropdowns();
+    // Deselect: with no modal open, Escape clears an active waypoint selection (its highlight + the
+    // crimson chart marker). Guarded so it never competes with modal-close or the search Escape.
+    if (!anyModalOpen && selectedWptIdx != null) deselectWaypoint();
   }
   if (e.key === 'Enter' && !e.shiftKey) {
     if (document.getElementById('bulk-modal').classList.contains('open')) { e.preventDefault(); doBulkAdd(); }

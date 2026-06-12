@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voyage Atlas</title>
+<meta name="description" content="An interactive nautical chart of a voyage, charted as a sequence of regional chapters. Pan the route, click through waypoints, and follow the passage from start to landfall.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Voyage Atlas">
+<meta property="og:title" content="Voyage Atlas">
+<meta property="og:description" content="An interactive nautical chart of a voyage, charted as a sequence of regional chapters. Pan the route, click through waypoints, and follow the passage from start to landfall.">
+<meta property="og:url" content="https://sailingamazinggrace.com/resources/voyage-atlas/viewer">
+<meta property="og:image" content="https://sailingamazinggrace.com/resources/voyage-atlas/voyage-atlas-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Voyage Atlas">
+<meta name="twitter:description" content="An interactive nautical chart of a voyage, charted as a sequence of regional chapters. Pan the route, click through waypoints, and follow the passage from start to landfall.">
+<meta name="twitter:image" content="https://sailingamazinggrace.com/resources/voyage-atlas/voyage-atlas-preview.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
 <meta name="theme-color" content="#f4efe4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -265,7 +281,7 @@
   <div class="landing-box">
     <h2>Voyage Atlas</h2>
     <p>Load a voyage atlas JSON file exported from the Voyage Atlas Editor to see your chapters,
-       waypoints, and route lines on an interactive map.</p>
+       waypoints, and route lines on an interactive chart.</p>
     <button class="landing-btn" onclick="document.getElementById('file-input').click()">Load JSON…</button>
   </div>
 </div>
@@ -273,7 +289,7 @@
 <!-- Filter / layers -->
 <div class="panel" id="filter" style="display:none;">
   <div class="panel-h" onclick="document.getElementById('filter').classList.toggle('collapsed')">
-    <span>Map &amp; Layers</span><span class="caret">▾</span>
+    <span>Chart &amp; Layers</span><span class="caret">▾</span>
   </div>
   <div class="panel-body">
     <label class="toggle"><input type="checkbox" id="t-routes" checked> Routes</label>
@@ -316,8 +332,8 @@
 
 <div id="footer">
   <span id="footer-data"></span>
-  <span class="footer-credit"><a href="https://sailingamazinggrace.com/plans" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span id="footer-ver">Voyage Atlas v3.5</span>
+  <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
+  <span id="footer-ver">Voyage Atlas v3.7</span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -887,7 +903,7 @@ function fitVoyageOnLoad(chapters) {
   // Vertical center: keep the focus chapter's latitude band in view.
   const focusLatMean = focusPts.reduce((s, p) => s + p.lat, 0) / focusPts.length;
 
-  // Place the trailing waypoint at LOAD_ANCHOR_INSET in from the usable edge. The Map & Layers panel
+  // Place the trailing waypoint at LOAD_ANCHOR_INSET in from the usable edge. The Chart & Layers panel
   // occupies the top-right (~208px); when anchoring to the right edge, inset from inside that panel so
   // the waypoint isn't tucked under it. Work in pixels via Leaflet's projection at zoom z.
   const size = map.getSize();

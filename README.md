@@ -1,46 +1,59 @@
 # Voyage Atlas
 
-A pair of self-contained, dependency-light web tools for charting a long voyage as a sequence of
-**chapters** — strategic groupings of waypoints by region and season. Built for cruisers planning
-ocean passages and multi-year voyages, but generic enough for any voyage.
+A pair of self-contained, dependency-light web tools for charting a long voyage as a sequence of **chapters** — strategic groupings of waypoints by region and season. Built for cruisers planning ocean passages and multi-year voyages, but generic enough for any voyage.
 
-In the cruising community, *plan* is a dangerous four-letter word — *"sailors' plans are written
-in sand and at low tide."* This isn't a planner. An **atlas** is a collection of charts: routes
-routes to navigate *by*, not a schedule to be bound *to*.
+In the cruising community, *plan* is a dangerous four-letter word — *"sailors' plans are written in sand and at low tide."* This isn't a planner. An **atlas** is a collection of charts: routes to navigate *by*, not a schedule to be bound *to*.
 
-<!-- TODO: add a screenshot of the viewer here, e.g. ![Voyage Atlas viewer](docs/screenshot.png) -->
+The project's home page, with the narrative behind the tool, is at [sailingamazinggrace.com/resources/voyage-atlas](https://sailingamazinggrace.com/resources/voyage-atlas).
+
+![Voyage Atlas viewer](docs/voyage-atlas-preview.png)
 
 ## What's in the box
 
-1. **Editor** (`voyage-atlas-editor.html`) — builds and maintains an atlas: chapters, waypoints, route geometry, and voyage metadata. Map-based and table-based editing, geocoding, drag-to-reorder, and JSON / CSV / KML export.
-2. **Viewer** (`voyage-atlas.html`) — a read-only interactive map of a finished atlas. This is what is published or shared.
+1. **Editor** (`voyage-atlas-editor.html`) — builds and maintains an atlas: chapters, waypoints, route geometry, and voyage metadata. Chart-based and table-based editing, geocoding, drag-to-reorder, and JSON / CSV / KML export. Try it live at [sailingamazinggrace.com/resources/voyage-atlas/editor](https://sailingamazinggrace.com/resources/voyage-atlas/editor).
+2. **Viewer** (`voyage-atlas.html`) — a read-only interactive chart of a finished atlas. This is what is published or shared. See a full voyage live at [sailingamazinggrace.com/resources/voyage-atlas/viewer](https://sailingamazinggrace.com/resources/voyage-atlas/viewer).
 
-Both are single HTML files. No build step, no framework, no server — open them in any modern
-browser, host them on any static server, or hand them to someone else, and they behave identically.
+Both are single HTML files. No build step, no framework, no server — open them in any modern browser, host them on any static server, or hand them to someone else, and they behave identically.
 
 ## Quick start
 
 1. Download `voyage-atlas-editor.html`, `voyage-atlas.html`, and (optionally) the sample `voyage-data.json` into the same folder.
-2. **To explore the sample:** open `voyage-atlas.html` in a browser. If `voyage-data.json` is alongside it, the map loads automatically.
-3. **To build a new atlas:** open `voyage-atlas-editor.html`, add a chapter, and start placing waypoints (click the map, search by name, or type coordinates). Click **Save** to download `voyage-data.json`.
+2. **To explore the sample:** serve the folder over HTTP (see the note below) and open `voyage-atlas.html`. When `voyage-data.json` sits alongside it, the chart loads automatically; otherwise the viewer opens to a landing screen with a file picker.
+3. **To build a new atlas:** open `voyage-atlas-editor.html`, add a chapter, and start placing waypoints (click the chart, search by name, or type coordinates). Click **Save** to download `voyage-data.json`.
 4. **To view a finished atlas:** put the `voyage-data.json` next to `voyage-atlas.html` and open the viewer — or load the file from the viewer's landing screen.
 
-The repository ships with a small sample `voyage-data.json` (a short Greek Ionian cruise) so the
-tools open to a working example. <!-- TODO: link to the full live example once published, e.g.
-"See a full voyage at https://sailingamazinggrace.com/..." -->
+The repository ships with a small sample `voyage-data.json` (a short Greek Ionian cruise) so the tools open to a working example. See a full multi-year voyage at the live viewer linked above.
+
+### A note on auto-load and `file://`
+
+Auto-loading `voyage-data.json` from the same directory requires the files to be served over HTTP — from the published site, a static host, or a one-line local server such as `python3 -m http.server` run in the folder. Opening the HTML files directly from disk (a `file://` URL) does not auto-load: browsers block the underlying fetch for local files as a security measure. In that case both tools fall back to their landing screen, where the data file can be loaded manually through the picker.
 
 ## Features
 
 1. **Chapters** group waypoints by region and season, each with its own color, season window, era (past / current / future), countries, key destinations, notes, and an optional blog link.
-2. **Unified waypoint model** — one ordered list per chapter; named rows render as markers, unnamed rows act as shaping vertices that bend the route line without cluttering the map.
-3. **Three independent emphasis flags** per waypoint — Major (M), Decision (D), Gateway (G) — each with distinct map rendering.
+2. **Unified waypoint model** — one ordered list per chapter; named rows render as markers, unnamed rows act as shaping vertices that bend the route line without cluttering the chart.
+3. **Three independent emphasis flags** per waypoint — Major (M), Gateway (G), Decision (D) — each with distinct chart rendering.
 4. **Distance with a pad multiplier** per chapter (accounting for tacking and cruising-ground exploration a straight-line track undercounts), plus an inter-chapter "approach leg" attributed to the destination chapter. All distances can display in nautical miles, kilometers, or miles (stored canonically as nm).
 5. **Endpoint sync** — chapters connect end-to-start; a one-click pull keeps shared handoff points aligned, and an indicator shows when a real gap exists.
 6. **Geocoding** via OpenStreetMap / Nominatim (rate-limited per their usage policy) — type a name to get coordinates, or fill countries from positions.
 7. **Automatic nation / territory classification** against a built-in reference list, with manual overrides.
 8. **Exports** — JSON (the master file), CSV (chapters + waypoints, for spreadsheet editing), and KML (for Google Earth).
-9. **Self-hosting** — two files in a directory; the viewer auto-loads its data.
-10. **Viewer niceties** — on load the map frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's info panel links out to its blog post when one is set; and `?import=yes` forces the file picker for opening a different atlas.
+9. **Self-hosting** — two files in a directory; the viewer auto-loads its data when served over HTTP.
+10. **Viewer niceties** — on load the chart frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's info panel links out to its blog post when one is set; and `?import=yes` forces the file picker for opening a different atlas.
+
+## Using the editor
+
+The editor surface has two layers per chapter, opened from the chapter row:
+
+1. **Chapter metadata** — the chapter's name, color, season window, era, countries, key destinations, notes, and blog link. Countries auto-derive from each waypoint's country, with an optional per-chapter override.
+2. **Waypoints** — the ordered table of waypoints for the chapter. Each row carries a name, latitude, longitude, the three emphasis flags (M / G / D), a country, and notes. A row with no name is a shaping vertex: it bends the route line but draws no marker.
+
+Additional controls worth knowing:
+
+1. **Emphasis flags** — Major (M) marks a provisioning hub or extended-stay port and draws a larger circle; Gateway (G) marks a customs entry or strategic staging port and draws a star; Decision (D) marks a routing fork or go/no-go point and draws a diamond. Where a waypoint carries more than one flag, the marker shape resolves in priority order M, G, D — the same order the columns are shown in.
+2. **Look up countries** — the per-chapter button fills empty country fields for that chapter's waypoints from their coordinates; the global button does the same across every chapter. Both are rate-limited to respect the Nominatim usage policy, so a large lookup runs as a queue rather than all at once.
+3. **Expand / collapse all** — toggles every chapter's panels open or closed at once, for surveying the whole voyage or focusing on one chapter.
+4. **Rapid click** — when enabled, a single click on the chart drops a new waypoint into the active chapter. Standard chart navigation still works in this mode: drag to pan and scroll to zoom; only the single click is repurposed to place a waypoint.
 
 ## Documentation
 
@@ -50,28 +63,18 @@ tools open to a working example. <!-- TODO: link to the full live example once p
 
 ## A note on data correctness
 
-The atlas shows exactly what is entered. A charted backtrack, a waypoint on land, or a leg that
-overshoots a harbor is rendered faithfully and counted honestly — no second-guessing, no
-silent "corrections." Accuracy of the data is the navigator's responsibility, by design.
+The atlas shows exactly what is entered. A charted backtrack, a waypoint on land, or a leg that overshoots a harbor is rendered faithfully and counted honestly — no second-guessing, no silent "corrections." Accuracy of the data is the navigator's responsibility, by design.
 
 ## Contributing
 
-Issues and feature suggestions are welcome via the issue tracker. Contributions to the code are
-best raised in an issue first to discuss the change. The design rationale behind the architecture (why
-chapters, the predecessor seam, the distance model) is documented for maintainers; non-trivial work
-is worth a question in an issue before starting.
+Issues and feature suggestions are welcome via the issue tracker. Contributions to the code are best raised in an issue first to discuss the change. The design rationale behind the architecture (why chapters, the predecessor seam, the distance model) is documented for maintainers; non-trivial work is worth a question in an issue before starting.
 
 ## License
 
 Copyright (C) 2026 Peter Petrik
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU
-General Public License as published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
-even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with this program (see the
-[`LICENSE`](LICENSE) file). If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program (see the [`LICENSE`](LICENSE) file). If not, see <https://www.gnu.org/licenses/>.
