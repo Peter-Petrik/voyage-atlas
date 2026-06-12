@@ -15,7 +15,7 @@ The project's home page, with the narrative behind the tool, is at [sailingamazi
 
 Both are single HTML files. No build step, no framework, no server — open them in any modern browser, host them on any static server, or hand them to someone else, and they behave identically.
 
-The repository also ships a set of optional icon assets (`favicon.ico`, the `favicon-*.png` and `apple-touch-icon.png` images, the `android-chrome-*.png` images) and `site.webmanifest`, which provide the browser-tab favicon and home-screen icons. They are purely cosmetic: a copy hosted without them still runs identically, with the browser falling back to its default tab icon.
+The repository also ships a set of optional icon assets (`favicon.svg`, `favicon.ico`, the `favicon-*.png` and `apple-touch-icon.png` images, the `android-chrome-*.png` images) and `site.webmanifest`, which provide the browser-tab favicon and home-screen icons. They are purely cosmetic: a copy hosted without them still runs identically, with the browser falling back to its default tab icon.
 
 ## Quick start
 

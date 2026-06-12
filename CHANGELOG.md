@@ -13,6 +13,17 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.8] - 2026-06-12
+
+### Added
+- **Complete social and SEO metadata in both tools.** The `<head>` of each tool now carries a full Open Graph and Twitter Card set — including `og:image:width`/`og:image:height` (1200×630), `og:image:alt` and `twitter:image:alt`, `og:locale`, and a `rel="canonical"` link — so shared links unfurl correctly on first fetch across social platforms and the canonical URL is declared for search engines. The `og:url` and canonical URLs were aligned (with trailing slashes) so the social-aggregation target and the search-engine signal match.
+
+### Changed
+- **Favicon set reconciled to the modern minimal standard.** Both tools now reference an SVG favicon as the primary icon (crisp at any size, dark-mode capable), with 32px and 16px PNG fallbacks, a multi-size `favicon.ico` (16/32/48) carrying `sizes="32x32"` to keep browsers from preferring it over the SVG, and a 180×180 Apple touch icon. The icon filenames were corrected to match the repository's assets.
+
+### Fixed
+- **Endpoint sync indicators now refresh after reorder, bulk add, and paste.** The 🔗 / ⇄ connection indicators already refreshed on waypoint delete, coordinate edit, and marker drag (v3.7); they now also refresh when a waypoint reorder, a bulk add, or a paste changes a chapter's first or last waypoint, completing the coverage so the indicator never lags the real connection state.
+
 ## [v3.7.1] - 2026-06-12
 
 ### Added

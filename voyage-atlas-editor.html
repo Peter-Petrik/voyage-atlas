@@ -5,20 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voyage Atlas — Editor</title>
 <meta name="description" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
+<link rel="canonical" href="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Voyage Atlas">
 <meta property="og:title" content="Voyage Atlas — Editor">
 <meta property="og:description" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
-<meta property="og:url" content="https://sailingamazinggrace.com/resources/voyage-atlas/editor">
+<meta property="og:url" content="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://sailingamazinggrace.com/resources/voyage-atlas/voyage-atlas-preview.webp">
 <meta property="og:image:type" content="image/webp">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Voyage Atlas — Editor">
 <meta name="twitter:description" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
 <meta name="twitter:image" content="https://sailingamazinggrace.com/resources/voyage-atlas/voyage-atlas-preview.webp">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-<link rel="icon" href="favicon.ico" sizes="any">
+<meta name="twitter:image:alt" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="icon" href="favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
 <meta name="theme-color" content="#f4efe4">
@@ -597,7 +604,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.7</a></span>
+  <span class="footer-ver-ed"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.8</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -2476,6 +2483,9 @@ function initWaypointSortable(chNum) {
       ch.waypoints.splice(evt.newIndex, 0, moved);
       renderChapterWaypoints(chNum);
       updateMapChapter(chNum);
+      // Reordering can move a waypoint into or out of the first/last slot, changing this chapter's
+      // start/end, so refresh the cross-chapter sync indicators (🔗 / ⇄).
+      renderAllChapters();
       updateHeroStats();
     }
   });
@@ -2518,6 +2528,9 @@ function doBulkAdd() {
   announce('import', 'bulk');
   closeBulkModal();
   renderChapterWaypoints(bulkTargetChNum);
+  // Appending waypoints changes this chapter's last point, which can alter the connection to the
+  // next chapter, so refresh the cross-chapter sync indicators (🔗 / ⇄).
+  renderAllChapters();
   updateHeroStats();
 }
 
@@ -2559,6 +2572,9 @@ function doPaste() {
   closePasteModal();
   renderChapterWaypoints(pasteTargetChNum);
   updateMapChapter(pasteTargetChNum);
+  // Pasted rows append to the chapter, changing its last point and possibly the connection to the
+  // next chapter, so refresh the cross-chapter sync indicators (🔗 / ⇄).
+  renderAllChapters();
   updateHeroStats();
   // Forward-geocode ONLY the pasted rows that have a name but no coordinates.
   // The country rides along free in that same response, so it's filled too (only-if-empty);
