@@ -13,6 +13,19 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.9.3] - 2026-06-16
+
+### Added
+- **Unsaved-changes guard on every action that abandons the current voyage (editor).** Loading a voyage file, importing CSVs, starting a new voyage, and loading the sample now warn before discarding unsaved work, where previously only "New voyage" did. The prompt fires under exactly the conditions the Save button's unsaved marker is showing, and reads the same for all four actions. Its buttons name their outcomes — "Keep editing" and "Discard changes" — instead of a generic Cancel/Confirm, and the safe choice ("Keep editing") takes focus and is what the Enter key triggers, so a stray keystroke cannot discard work. At arrival, where the editor is empty, these actions proceed without a prompt.
+
+### Changed
+- **Small-screen advisory restyled as a labelled note in both tools.** The "view on a larger screen" advisory now renders as an amber note with an icon and a bold "Note:" lead-in, visually distinct from the chooser's action buttons — previously it shared the buttons' colouring and could be mistaken for one. The editor keeps its stronger wording.
+- **Unified footer structure across both tools.** Both footers now use identical markup and styling (only the version label differs), and collapse to three centred lines on a phone. Previously the two tools had drifted to different class names, sizes, and responsive behaviour.
+
+### Fixed
+- **Editor small-screen advisory now appears.** A CSS source-order bug left the advisory's hidden state overriding its shown state at the narrow-screen breakpoint, so it never displayed on a phone; the rules are now ordered so the breakpoint wins.
+- **Viewer header no longer crowds at intermediate widths.** The header's stats, call-to-action, and Load button now relocate into the chapter drawer below 900px rather than 640px, clearing the tablet and landscape-phone range where the full row was too wide to fit and the subtitle collapsed into a sliver.
+
 ## [v3.9.2] - 2026-06-16
 
 ### Changed

@@ -53,6 +53,9 @@
   --border:  rgba(29,43,58,0.16);
   --border-strong: rgba(29,43,58,0.30);
   --hazard:  #9b2d20;
+  --advisory: #ba7517;
+  --advisory-soft: #faeeda;
+  --advisory-ink: #854f0b;
   --success: #2d7a3a;
   --shadow:  0 4px 16px rgba(29,43,58,0.12);
   --tile-bg: #e9e3d4;
@@ -72,6 +75,9 @@ body.dark {
   --border:  rgba(212,98,108,0.22);
   --border-strong: rgba(212,98,108,0.40);
   --hazard:  #e2574a;
+  --advisory: #e0a23a;
+  --advisory-soft: rgba(224,162,58,0.14);
+  --advisory-ink: #f0c775;
   --success: #4caf6a;
   --shadow:  0 4px 16px rgba(0,0,0,0.45);
   --tile-bg: #061018;
@@ -388,15 +394,14 @@ html, body {
 
 /* ═══════════ FOOTER ═══════════ */
 #footer {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 5px 14px; font-size: 10px; color: var(--muted);
-  background: var(--panel-solid); border-top: 1px solid var(--border);
-  flex-shrink: 0;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 16px; font-size: 9.5px; color: var(--muted);
+  background: var(--panel-solid); border-top: 1px solid var(--border); z-index: 1200;
 }
 #footer a { color: var(--accent); cursor: pointer; text-decoration: none; }
 #footer a:hover { text-decoration: underline; }
-#footer > .footer-left, #footer > .footer-ver-ed { flex: 1 1 0; }
-#footer > .footer-ver-ed { text-align: right; }
+#footer > .footer-left, #footer > .footer-ver { flex: 1 1 0; }
+#footer > .footer-ver { text-align: right; }
 #footer .footer-credit { flex: 0 1 auto; text-align: center; white-space: nowrap; padding: 0 10px; }
 
 /* ═══════════ VOYAGE SETTINGS ═══════════ */
@@ -478,7 +483,8 @@ th .hi { margin-left: 2px; }
   .hdr-sub { display: none; }
   .hdr-stats { display: none; }
   .hdr-actions { margin-left: auto; }
-  .landing-advisory { display: block; }
+  #footer { flex-direction: column; gap: 2px; font-size: 9px; }
+  #footer > .footer-left, #footer > .footer-ver { flex: none; text-align: center; }
 }
 /* ═══════════ CHOOSER MODAL (v3.9 unified) ═══════════ */
 #landing {
@@ -508,9 +514,21 @@ th .hi { margin-left: 2px; }
 .landing-box p.landing-intro { font-size: 11.5px; color: var(--muted); margin-bottom: 18px; line-height: 1.55; }
 /* Small-screen advisory — editor is prominent (authoring on a phone is difficult). CSS-only at the breakpoint. */
 .landing-advisory {
-  display: none; font-size: 11.5px; line-height: 1.5; color: var(--ink);
-  background: var(--accent-soft); border: 1px solid var(--accent); border-left-width: 3px;
+  display: none; font-size: 11.5px; line-height: 1.5; color: var(--advisory-ink);
+  background: var(--advisory-soft); border: 1px solid var(--advisory); border-left: 3px solid var(--advisory);
   border-radius: 4px; padding: 10px 13px; margin-bottom: 16px; text-align: left;
+}
+.landing-advisory .adv-icon {
+  flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--advisory); color: var(--panel-solid); font-weight: 700; font-size: 11px;
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.landing-advisory .adv-body { flex: 1; }
+.landing-advisory .adv-lead { font-weight: 700; }
+/* Shown at the small-screen breakpoint. Placed after the base rule so the equal-specificity
+   display:block wins by source order (a media query adds no specificity). */
+@media (max-width: 640px) {
+  .landing-advisory { display: flex; gap: 9px; align-items: flex-start; }
 }
 .landing-actions { display: flex; flex-direction: column; gap: 10px; }
 .landing-btn {
@@ -637,7 +655,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.2</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.3</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -650,7 +668,7 @@ th .hi { margin-left: 2px; }
   <div class="landing-box">
     <button id="landing-close" onclick="closeChooser()" title="Close">×</button>
     <h2>Welcome to Voyage Atlas</h2>
-    <div class="landing-advisory">Voyage Atlas Editor is designed for a larger screen. Charting and editing waypoints on a phone is difficult — a tablet or desktop is strongly recommended.</div>
+    <div class="landing-advisory"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> Voyage Atlas Editor is designed for a larger screen. Charting and editing waypoints on a phone is difficult — a tablet or desktop is strongly recommended.</span></div>
     <p class="landing-intro">Chart a multi-year voyage as a sequence of chapters — regions and seasons, not a list of waypoints. Pick a starting point:</p>
     <div class="landing-actions">
       <button id="landing-sample" class="landing-btn" onclick="loadSampleFromChooser()" style="display:none;">
@@ -734,7 +752,7 @@ th .hi { margin-left: 2px; }
     <h2 id="confirm-modal-title">Confirm</h2>
     <p id="confirm-modal-msg"></p>
     <div class="modal-actions">
-      <button class="btn" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn" id="confirm-modal-cancel" onclick="closeConfirmModal()">Cancel</button>
       <button class="btn btn-danger" id="confirm-modal-ok" onclick="proceedConfirmModal()">Confirm</button>
     </div>
   </div>
@@ -2403,20 +2421,36 @@ function doDeleteWpt() {
 // Generic styled confirmation (replaces native confirm()). Stores the pending callback and runs it on
 // Proceed. Used for chapter delete; available for any future destructive action.
 let pendingConfirmAction = null;
-function confirmModal(title, message, onConfirm) {
+let confirmSafeDefault = false; // when true, Enter maps to cancel (safe) instead of proceed
+function confirmModal(title, message, onConfirm, okLabel, cancelLabel, safeDefault) {
   pendingConfirmAction = onConfirm;
+  // safeDefault marks a confirmation whose dangerous outcome should NOT be what a reflexive Enter
+  // hits — for those, Enter maps to cancel and the cancel button takes initial focus. Defaults to
+  // false, so existing confirmations (e.g. Delete Chapter) keep Enter-confirms behaviour.
+  confirmSafeDefault = !!safeDefault;
   document.getElementById('confirm-modal-title').textContent = title;
   document.getElementById('confirm-modal-msg').textContent = message;
+  // Button labels are parameterized so each confirmation can name its own outcome (e.g. "Discard
+  // changes" / "Keep editing"); they default to the generic Confirm / Cancel when not supplied.
+  document.getElementById('confirm-modal-ok').textContent = okLabel || 'Confirm';
+  document.getElementById('confirm-modal-cancel').textContent = cancelLabel || 'Cancel';
   document.getElementById('confirm-modal').classList.add('open');
+  // Focus the safe button on a safe-default confirmation so the keyboard default and the visual
+  // default both favour not losing work; otherwise leave focus on the proceed button as before.
+  const focusBtn = confirmSafeDefault ? 'confirm-modal-cancel' : 'confirm-modal-ok';
+  const el = document.getElementById(focusBtn);
+  if (el) el.focus();
 }
 function closeConfirmModal() {
   document.getElementById('confirm-modal').classList.remove('open');
   pendingConfirmAction = null;
+  confirmSafeDefault = false;
 }
 function proceedConfirmModal() {
   const action = pendingConfirmAction;
   document.getElementById('confirm-modal').classList.remove('open');
   pendingConfirmAction = null;
+  confirmSafeDefault = false;
   if (action) action();
 }
 
@@ -2657,7 +2691,7 @@ function doPaste() {
    ═══════════════════════════════════════════════════════════════ */
 function importJSON() {
   closeDropdowns();
-  document.getElementById('file-json').click();
+  guardDirty(function() { document.getElementById('file-json').click(); });
 }
 
 // Landing prompt (item 5) — parity with the viewer. Shown on load when no voyage-data.json is found
@@ -2698,7 +2732,7 @@ function closeChooser() {
 }
 function loadSampleFromChooser() {
   closeDropdowns();
-  if (sampleVoyage) { hideLanding(); loadVoyage(sampleVoyage); }
+  guardDirty(function() { if (sampleVoyage) { hideLanding(); loadVoyage(sampleVoyage); } });
 }
 // A tap on the backdrop (outside the box) mirrors the × — the standard touch gesture and the only
 // dismiss path on a device without a keyboard.
@@ -2720,8 +2754,27 @@ function newVoyageFromMenu() {
 // Reset to an empty voyage. Clears chapters, settings, and title, redraws (which wipes the map
 // layers), and clears the dirty flag — the same state-replacement loadVoyage performs, with no data.
 // Guards against silent data loss: when the current voyage has unsaved changes, confirm first.
+// Single dirty-state guard for every action that abandons the current voyage (load a file, import
+// CSVs, start a new voyage, load the sample). Gated on isDirty — the same flag that drives the Save
+// asterisk — so the warning fires under exactly the conditions the unsaved marker is showing. When
+// the voyage is clean (including at arrival, where the editor is empty), the action runs immediately.
+function guardDirty(action) {
+  if (isDirty) {
+    confirmModal(
+      'Discard unsaved changes?',
+      'The current voyage has unsaved changes that will be lost. Save it first if you want to keep it.',
+      action,
+      'Discard changes',
+      'Keep editing',
+      true
+    );
+  } else {
+    action();
+  }
+}
+
 function startNewVoyage() {
-  const reset = function() {
+  guardDirty(function() {
     hideLanding();
     STATE.chapters = [];
     STATE.settings = defaultSettings();
@@ -2733,12 +2786,7 @@ function startNewVoyage() {
     loadSettings();
     updateHeroStats();
     setDirty(false);
-  };
-  if (isDirty) {
-    confirmModal('Start a new voyage', 'Starting a new voyage will discard the current one. Unsaved changes will be lost. Continue?', reset);
-  } else {
-    reset();
-  }
+  });
 }
 
 function handleJSONFile(e) {
@@ -2837,7 +2885,7 @@ function loadVoyage(data) {
    ═══════════════════════════════════════════════════════════════ */
 function importCSV() {
   closeDropdowns();
-  document.getElementById('file-csv-chapters').click();
+  guardDirty(function() { document.getElementById('file-csv-chapters').click(); });
 }
 
 function handleCSVChaptersFile(e) {
@@ -3207,7 +3255,7 @@ document.addEventListener('keydown', function(e) {
     if (document.getElementById('bulk-modal').classList.contains('open')) { e.preventDefault(); doBulkAdd(); }
     if (document.getElementById('csv-step2-modal').classList.contains('open')) { e.preventDefault(); document.getElementById('file-csv-waypoints').click(); }
     if (document.getElementById('delete-wpt-modal').classList.contains('open')) { e.preventDefault(); doDeleteWpt(); }
-    if (document.getElementById('confirm-modal').classList.contains('open')) { e.preventDefault(); proceedConfirmModal(); }
+    if (document.getElementById('confirm-modal').classList.contains('open')) { e.preventDefault(); if (confirmSafeDefault) { closeConfirmModal(); } else { proceedConfirmModal(); } }
   }
 });
 
