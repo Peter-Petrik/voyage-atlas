@@ -41,7 +41,7 @@ Each tool resolves its voyage from a `VOYAGE_DATA_PATH` constant near the top of
 7. **Automatic nation / territory classification** against a built-in reference list, with manual overrides.
 8. **Exports** — JSON (the master file), CSV (chapters + waypoints, for spreadsheet editing), and KML (for Google Earth).
 9. **Self-hosting** — at minimum two HTML files in a directory; the viewer displays its data automatically when served over HTTP, with the source file configurable via a `VOYAGE_DATA_PATH` constant or a `?data=` parameter (relative paths only). The optional icon assets and manifest can sit alongside for favicon and home-screen support.
-10. **Viewer niceties** — a header **Load…** button and a "Chart your own voyage" link to the editor (both fold into the chapter drawer on small screens); on load the chart frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's info panel links out to its blog post when one is set; and `?import=yes` opens the chooser for loading a different atlas.
+10. **Viewer niceties** — a header **Load…** button and a "Chart your own voyage" link to the editor (both fold into the chapter drawer on small screens); the chooser can be dismissed by its close button, a tap outside it, or Escape when a voyage is already shown; on load the chart frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's info panel links out to its blog post when one is set; and `?import=yes` opens the chooser for loading a different atlas.
 
 ## Using the editor
 

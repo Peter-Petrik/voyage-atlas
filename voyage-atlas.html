@@ -274,7 +274,14 @@
     border-radius: 8px; box-shadow: var(--shadow);
     padding: 30px 32px; text-align: center; max-width: 440px; width: 100%;
     max-height: calc(100% - 32px); overflow-y: auto;
+    position: relative;
   }
+  #landing-close {
+    position: absolute; top: 8px; right: 12px;
+    background: none; border: none; color: var(--muted);
+    font-size: 24px; line-height: 1; cursor: pointer; padding: 2px 6px;
+  }
+  #landing-close:hover { color: var(--accent); }
   .landing-box h2 {
     font-family: 'Fraunces', serif; font-weight: 500;
     font-size: 22px; color: var(--accent); margin-bottom: 8px;
@@ -330,11 +337,11 @@
     <h1 id="page-title">Voyage Atlas</h1>
     <div class="head-sub">Load a voyage atlas to explore</div>
   </div>
-  <a id="head-cta" href="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">Chart your own voyage →</a>
   <div class="head-stats" id="hero"></div>
   <div class="head-actions">
     <button class="head-btn" onclick="openChooser()">Load…</button>
   </div>
+  <a id="head-cta" href="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">Chart your own voyage →</a>
   <button id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark theme" style="background:none;border:1px solid var(--border-strong);color:var(--ink);border-radius:4px;width:34px;height:34px;cursor:pointer;font-size:15px;flex-shrink:0;">◐</button>
 </div>
 
@@ -344,6 +351,7 @@
 <!-- Chooser modal (v3.9 unified) -->
 <div id="landing" class="hidden">
   <div class="landing-box">
+    <button id="landing-close" onclick="closeChooser()" title="Close" style="display:none;">×</button>
     <h2>Voyage Atlas</h2>
     <div class="landing-advisory">For the full experience, view on a larger screen.</div>
     <p class="landing-intro">Chart a multi-year voyage as a sequence of chapters — regions and seasons, not a list of waypoints.</p>
@@ -413,7 +421,7 @@
 <div id="footer">
   <span id="footer-data"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span id="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9</a></span>
+  <span id="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.1</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -1110,18 +1118,32 @@ let sampleAvailable = false;  // whether the chooser should offer "Explore the s
 
 function openChooser() {
   document.getElementById('landing-sample').style.display = sampleAvailable ? '' : 'none';
+  // The close affordance (× and backdrop dismiss) is offered only when a voyage is already on
+  // screen to return to. At a cold start the chooser is the only content, so it cannot be dismissed.
+  document.getElementById('landing-close').style.display = DATA ? '' : 'none';
   document.getElementById('landing').classList.remove('hidden');
+}
+
+// Close the chooser and return to the current voyage. Guarded on DATA so it is a no-op when there
+// is nothing to return to (a cold start).
+function closeChooser() {
+  if (DATA) document.getElementById('landing').classList.add('hidden');
 }
 
 function loadSampleFromChooser() {
   if (sampleVoyage) loadVoyageData(sampleVoyage);
 }
 
-// Escape closes the chooser only when a voyage is already on screen — a cold start has nothing
-// to fall back to, so the chooser stays until the user picks an option.
+// A tap on the backdrop (outside the box) dismisses, matching the × — the standard touch gesture,
+// and the only dismiss path on a device with no keyboard. Guarded on DATA via closeChooser.
+document.getElementById('landing').addEventListener('click', function(e) {
+  if (e.target === this) closeChooser();
+});
+
+// Escape mirrors the close button: dismiss only when a voyage is already on screen.
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && DATA && !document.getElementById('landing').classList.contains('hidden')) {
-    document.getElementById('landing').classList.add('hidden');
+  if (e.key === 'Escape' && !document.getElementById('landing').classList.contains('hidden')) {
+    closeChooser();
   }
 });
 

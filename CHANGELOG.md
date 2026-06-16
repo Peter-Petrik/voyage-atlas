@@ -13,6 +13,18 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.9.1] - 2026-06-16
+
+### Added
+- **Close affordances on the arrival chooser in both tools.** The chooser modal now carries a close (×) button and dismisses on a tap outside the box, so it can be closed without a keyboard — the previous Escape-only dismissal was unreachable on a phone or tablet. In the viewer the close affordances appear only when a voyage is already on screen to return to; at a cold start, with nothing behind it, the chooser stays until an option is picked. In the editor the close affordances mirror Escape: load the sample when one is available, otherwise start a new voyage.
+
+### Changed
+- **Viewer header call-to-action repositioned.** The "Chart your own voyage" link moved to sit between the Load button and the theme toggle, grouping it with the other header controls rather than between the title and the stats.
+
+### Fixed
+- **"New voyage" now resets the editor instead of doing nothing.** Choosing "New voyage" from the Load menu mid-session had no effect — it only hid an already-hidden chooser, leaving the current voyage in place. It now clears chapters, settings, title, selection, and the chart back to an empty voyage. To prevent a mis-click from discarding work, it confirms first when there are unsaved changes; from the arrival chooser, where the editor is already empty, it proceeds without a prompt.
+- **Viewer chooser covered only the chart area, not the whole screen.** The chooser was positioned within the chart stage, so the header (with its links and controls) and the footer stayed clickable behind it. It now covers the full viewport, so nothing behind it can be activated while it is open.
+
 ## [v3.9] - 2026-06-16
 
 ### Added

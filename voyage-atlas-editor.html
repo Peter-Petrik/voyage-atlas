@@ -493,7 +493,14 @@ th .hi { margin-left: 2px; }
   border-radius: 8px; box-shadow: var(--shadow);
   padding: 30px 32px; text-align: center; max-width: 440px; width: 100%;
   max-height: calc(100% - 32px); overflow-y: auto;
+  position: relative;
 }
+#landing-close {
+  position: absolute; top: 8px; right: 12px;
+  background: none; border: none; color: var(--muted);
+  font-size: 24px; line-height: 1; cursor: pointer; padding: 2px 6px;
+}
+#landing-close:hover { color: var(--accent); }
 .landing-box h2 {
   font-family: 'Fraunces', serif; font-weight: 500;
   font-size: 22px; color: var(--accent); margin-bottom: 8px;
@@ -630,7 +637,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9</a></span>
+  <span class="footer-ver-ed"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.1</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -641,6 +648,7 @@ th .hi { margin-left: 2px; }
 <!-- Chooser modal (v3.9 unified) — shown on arrival; sample option appears only when the configured file resolves. -->
 <div id="landing" class="hidden">
   <div class="landing-box">
+    <button id="landing-close" onclick="closeChooser()" title="Close">×</button>
     <h2>Welcome to Voyage Atlas</h2>
     <div class="landing-advisory">Voyage Atlas Editor is designed for a larger screen. Charting and editing waypoints on a phone is difficult — a tablet or desktop is strongly recommended.</div>
     <p class="landing-intro">Chart a multi-year voyage as a sequence of chapters — regions and seasons, not a list of waypoints. Pick a starting point:</p>
@@ -2663,18 +2671,57 @@ function openChooser() {
   document.getElementById('landing-sample').style.display = sampleAvailable ? '' : 'none';
   showLanding();
 }
+// The × button and Escape both route here: load the sample when one is available, otherwise start a
+// new voyage. The chooser only opens at arrival (the empty editor), so the new-voyage path is not
+// dirty and proceeds without a prompt; the dirty-guard in startNewVoyage covers the mid-session
+// menu path instead.
+function closeChooser() {
+  if (sampleAvailable) loadSampleFromChooser();
+  else startNewVoyage();
+}
 function loadSampleFromChooser() {
   closeDropdowns();
   if (sampleVoyage) { hideLanding(); loadVoyage(sampleVoyage); }
 }
-// "Start a new voyage" from the chooser: dismiss to the empty editor (already initialized on load).
+// A tap on the backdrop (outside the box) mirrors the × — the standard touch gesture and the only
+// dismiss path on a device without a keyboard.
+document.addEventListener('DOMContentLoaded', function() {
+  const landing = document.getElementById('landing');
+  if (landing) landing.addEventListener('click', function(e) { if (e.target === this) closeChooser(); });
+});
+// "Start a new voyage" from the chooser. At arrival the editor is already empty, so this just
+// dismisses; mid-session (a voyage loaded) it resets to an empty voyage, confirming first when there
+// are unsaved changes so a mis-click never wipes work.
 function newVoyageFromChooser() {
-  hideLanding();
+  startNewVoyage();
 }
-// "New voyage" from the Load menu: same intent, invoked on demand after a session is underway.
+// "New voyage" from the Load menu — same intent, invoked on demand after a session is underway.
 function newVoyageFromMenu() {
   closeDropdowns();
-  hideLanding();
+  startNewVoyage();
+}
+// Reset to an empty voyage. Clears chapters, settings, and title, redraws (which wipes the map
+// layers), and clears the dirty flag — the same state-replacement loadVoyage performs, with no data.
+// Guards against silent data loss: when the current voyage has unsaved changes, confirm first.
+function startNewVoyage() {
+  const reset = function() {
+    hideLanding();
+    STATE.chapters = [];
+    STATE.settings = defaultSettings();
+    STATE.metaTitle = '';
+    activeChapterNum = null;
+    selectedChapterNum = null;
+    selectedWptIdx = null;
+    renderAllChapters();
+    loadSettings();
+    updateHeroStats();
+    setDirty(false);
+  };
+  if (isDirty) {
+    confirmModal('Start a new voyage', 'Starting a new voyage will discard the current one. Unsaved changes will be lost. Continue?', reset);
+  } else {
+    reset();
+  }
 }
 
 function handleJSONFile(e) {
@@ -3117,10 +3164,10 @@ window.addEventListener('beforeunload', function(e) {
 /* Global modal keyboard: Enter = submit, ESC = cancel */
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    // Chooser: Escape dismisses by loading the sample when one is available; with no sample it stays
-    // open so the user picks "Start a new voyage" or "Load a voyage file" explicitly.
+    // Chooser: Escape mirrors the × button — load the sample when one is available, otherwise start
+    // a new voyage. At arrival the editor is empty so starting new proceeds without a prompt.
     if (!document.getElementById('landing').classList.contains('hidden')) {
-      if (sampleAvailable) loadSampleFromChooser();
+      closeChooser();
       return;
     }
     const anyModalOpen =
