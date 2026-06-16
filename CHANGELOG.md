@@ -13,6 +13,26 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.9] - 2026-06-16
+
+### Added
+- **Configurable voyage-data source in both tools.** Both the editor and the viewer now resolve their voyage file from a single `VOYAGE_DATA_PATH` constant declared near the top of the script, replacing the hardcoded `./voyage-data.json` fetch. A `?data=path` query parameter overrides the constant per visit. Both accept relative paths only — the JSON may live in a subdirectory or a sibling folder and still load. Remote `http(s)` sources are deliberately not supported: a single static file cannot guarantee a cross-origin fetch will succeed, because the allow rule is set by the remote server, not by the tool.
+- **Unified arrival chooser in both tools.** The two tools' separate landing overlays are replaced by one chooser modal with stacked, full-width options carrying a title and a one-line description. The viewer offers "Explore the sample voyage" (shown only when the configured file resolves) and "Load a voyage file"; the editor adds "Start a new voyage". The chooser is the single entry point — the header Load control, a cold start, and `?import=yes` all open it.
+- **Persistent Load control and editor call-to-action in the viewer header.** The viewer header now carries a "Load…" button beside the voyage stats (opening the chooser, so a different voyage can be opened without editing the URL) and a "Chart your own voyage" call-to-action linking to the editor. On narrow screens both relocate, with the full stat set, into the chapter drawer; the theme toggle stays in the header.
+- **Small-screen advisory in the chooser.** On viewports at or below the component breakpoint the chooser shows an advisory: prominent in the editor, where charting on a phone is impractical, and gentle in the viewer, where viewing works but a larger screen is better. The advisory is driven by a CSS media query, so it appears and disappears live as the viewport crosses the breakpoint.
+
+### Changed
+- **Editor opens to the chooser on every arrival.** The editor previously auto-loaded a co-located `voyage-data.json` silently and showed a landing prompt only when none was found. It now opens the chooser on every visit; the configured file, when it resolves, is offered as the sample rather than loaded silently, so the starting point is always an explicit choice. The Load menu gained "New voyage" and "Sample voyage" items (the sample item appears only when the configured file resolves), at parity with the chooser.
+- **Header stat tiles brought to parity across both tools.** The editor and viewer rendered the same computed stat tiles at different sizes and spacing. Both now use one canonical set of sizes, spacing, and header padding, and both scope the tile styles under the stats container so the markup cannot leak styling elsewhere. The shared stat computation and tile markup are unchanged.
+- **Footer brought to parity across both tools.** Both footers now carry a "FAQ / Owner's Manual" link to the repository's FAQ document. The viewer's left footer cell, which displayed the data-schema version, now holds that link.
+- **Responsive breakpoints aligned across both tools.** The shared header, chooser, and footer now respond at one common component breakpoint (640px) in both tools, so identical elements behave identically. The editor retains its separate 768px layout breakpoint for the column-to-stack panel switch, which is structural and specific to the editor.
+
+### Removed
+- **Viewer data-schema version string.** The viewer footer no longer displays the loaded file's data-schema version; the dead code that wrote it was removed when the FAQ link took its place.
+
+### Fixed
+- **Editor header no longer overflows on small screens.** The editor header placed the title, voyage stats, and the Load/Save controls in one row with no narrow-width handling, so on a phone the row crowded or overflowed. At the component breakpoint the author-facing stats now hide (the chapter panel still shows counts), the title shrinks, and the Load/Save controls stay reachable.
+
 ## [v3.8] - 2026-06-12
 
 ### Added

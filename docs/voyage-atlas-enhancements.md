@@ -5,7 +5,7 @@ The forward-looking backlog for the **editor** (`voyage-atlas-editor.html`) and 
 version. (The ~21 previously-"queued" items that had already shipped were pruned from this doc; all
 were confirmed present in the CHANGELOG first. The v3.0 release then pruned #53, #56, and #62 — shipped, and
 confirmed in the CHANGELOG — and dropped #52 as moot, since the CSV carries no distance figures to
-label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG. The v3.2–v3.4 releases then pruned #16, #49, #51, #55, #57, #58, and #61 — all shipped, and confirmed in the CHANGELOG. The v3.7 release pruned #38 and #39 — shipped, and confirmed in the CHANGELOG — and retired #40 as superseded by the Cloudflare-served deployment at `sailingamazinggrace.com/resources/voyage-atlas`, which provides the one-click live demo #40 sought without GitHub Pages. The v3.7 release also delivered the Open Graph / Twitter Card half of #32 and the favicon/manifest groundwork of #31, both of which remain open for their unshipped scope.) Build decisions live in `voyage-atlas-runbook.md`.
+label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG. The v3.2–v3.4 releases then pruned #16, #49, #51, #55, #57, #58, and #61 — all shipped, and confirmed in the CHANGELOG. The v3.7 release pruned #38 and #39 — shipped, and confirmed in the CHANGELOG — and retired #40 as superseded by the Cloudflare-served deployment at `sailingamazinggrace.com/resources/voyage-atlas`, which provides the one-click live demo #40 sought without GitHub Pages. The v3.7 release also delivered the Open Graph / Twitter Card half of #32 and the favicon/manifest groundwork of #31, both of which remain open for their unshipped scope. The v3.9 release added #69 (opt-in remote-source loading), the deferred remainder of the configurable-data-path work that shipped in that release.) Build decisions live in `voyage-atlas-runbook.md`.
 
 Items keep their **original numbers** — cross-references and the runbook depend on them, so the numbers
 are stable IDs, not sequence. They're grouped into **phases** meant to be worked roughly in order, each
@@ -111,6 +111,17 @@ auto-load model.
 `showSaveFilePicker` / writable streams let the editor write back to the *same file on disk* after a
 one-time permission grant — Save behaves like a desktop app. Feature-detect and fall back to the
 download model on Safari/Firefox.
+
+### 69. Opt-in remote-source loading from CORS-permissive hosts
+`Effort S · Impact Low-Med · editor + viewer load path · deferred · relates to #24`
+The v3.9 `VOYAGE_DATA_PATH` constant and `?data=` parameter resolve relative paths only; a full
+`http(s)` address is rejected by design because a static file cannot guarantee a cross-origin fetch
+will succeed — the allow rule (CORS) is set by the remote server, not the tool, so arbitrary hosts
+fail silently. A scoped version is viable: accept an absolute URL only when the host is known to send
+permissive CORS headers (raw GitHub, for instance, does), with the limitation stated plainly in the UI
+rather than implying any URL works. **Open:** whether to allowlist known-good hosts or attempt-and-
+report; how to surface a CORS failure without a confusing console-only error. **Prerequisite:** a real
+demand signal — relative-path loading covers the realistic self-hosting cases today.
 
 ---
 

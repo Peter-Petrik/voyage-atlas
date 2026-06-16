@@ -98,12 +98,17 @@ The data schema (field names, types, structure) is documented separately in `voy
 
 ## Getting data in
 
-There are several ways to populate the atlas:
+The editor opens to a chooser on every visit, offering three starting points:
 
-1. **Auto-load.** If a file named `voyage-data.json` sits in the same directory as the editor, it loads automatically on open — the normal way to resume work on a hosted copy. Auto-load requires the files to be served over HTTP; opening the editor directly from disk (a `file://` URL) cannot fetch the local file, so the landing prompt appears instead. A file that is present but unreadable shows a clear error rather than silently opening empty.
-2. **Load JSON.** Open a v3.0 atlas JSON. Earlier formats are no longer supported. A malformed or non-Voyage-Atlas file is reported with a clear message, not silently swallowed.
-3. **Import CSV.** Load the chapters and waypoints CSVs.
-4. **Start fresh.** When no `voyage-data.json` auto-loads, the editor shows a landing prompt offering to load an atlas JSON or to dismiss and begin a new atlas from scratch; dismissing opens the empty editor, ready for the first chapter.
+1. **Explore the sample voyage.** When a voyage file resolves at the configured path (see below), the chooser offers it as the sample — a complete voyage to open and reshape. This option is hidden when no file resolves. The configured file is never loaded silently; it is always offered as an explicit choice.
+2. **Start a new voyage.** Dismisses the chooser to the empty editor, ready for the first chapter.
+3. **Load a voyage file.** Opens a v3.0 atlas JSON. Earlier formats are no longer supported. A malformed or non-Voyage-Atlas file is reported with a clear message, not silently swallowed.
+
+The same three actions, plus CSV import, are available on demand from the header **Load** menu once a session is underway: "Load a voyage file," "Import CSVs," "New voyage," and "Sample voyage" (the sample item appears only when a file resolves at the configured path).
+
+The voyage file is resolved from a `VOYAGE_DATA_PATH` constant declared near the top of the editor's script — `voyage-data.json` by default. Editing that constant points the editor at a different file, including one in a subdirectory or a sibling folder, since relative paths are honored. A `?data=path` query parameter overrides the constant for a single visit. Both accept relative paths only; see "Can the voyage file be loaded from a web address?" below.
+
+Resolving the file requires the editor to be served over HTTP. Opening it directly from disk (a `file://` URL) cannot fetch a local file, so the sample option does not appear and the chooser offers only "Start a new voyage" and "Load a voyage file."
 
 **On load, the chart frames the whole voyage** — it fits to the combined extent of every chapter's waypoints, so an all-Mediterranean voyage opens on the Mediterranean and a global one on the world. **No chapter is selected to start:** the status bar above the chart reads "No chapter selected — click a chapter to begin." This matters because adding a waypoint — whether by clicking the chart, searching, or pasting — adds it to the *active* chapter, so a chapter must be selected (click it in the list) before those actions do anything. A place search with no chapter active pans the chart to the result and prompts for a chapter rather than dropping the point.
 
@@ -217,9 +222,12 @@ The editor header shows the live totals as tiles — distance, nations, territor
 
 ## Loading data
 
-1. **Auto-load.** If `voyage-data.json` is in the same directory as the viewer, it loads automatically on open — the basis of the self-hosting model (below). A file that is present but unreadable shows an error rather than the empty landing screen.
-2. **File picker.** With no data present, the viewer shows a landing screen; pick a v3.0 voyage JSON to load it. Loading lives only on this landing screen — once an atlas is shown the viewer is read-only. Earlier formats are no longer supported, and a malformed file is reported rather than silently swallowed.
-3. **Force the picker.** Adding `?import=yes` to the viewer's URL shows the landing screen even when a co-located `voyage-data.json` would otherwise auto-load — handy for opening a different file without removing the default. The match is case-insensitive (`yes`/`YES`/`Yes`).
+The viewer resolves its voyage from a `VOYAGE_DATA_PATH` constant declared near the top of its script — `voyage-data.json` by default. Editing that constant, or passing a `?data=path` query parameter, points the viewer at a different file, including one in a subdirectory or sibling folder, since relative paths are honored. Both accept relative paths only; see "Can the voyage file be loaded from a web address?" below.
+
+1. **Auto-display.** When the configured file resolves, the viewer loads and displays it on open — the basis of the self-hosting model (below). A file that is present but unreadable is reported rather than silently treated as absent.
+2. **Chooser.** When no file resolves, the viewer shows the chooser: "Explore the sample voyage" (when a file resolves) and "Load a voyage file" (pick a v3.0 voyage JSON). Earlier formats are no longer supported, and a malformed file is reported rather than silently swallowed.
+3. **Load button.** The header carries a persistent **Load…** button that opens the chooser at any time, so a different voyage can be opened without editing the URL. Once an atlas is shown the viewer remains read-only; the Load button only swaps which voyage is displayed.
+4. **Force the chooser.** Adding `?import=yes` to the viewer's URL opens the chooser on arrival even when the configured file would otherwise auto-display — handy for opening a different file without removing the default. The match is case-insensitive (`yes`/`YES`/`Yes`).
 
 On load, how the viewer frames the chart depends on the voyage's span. A voyage that fits within a single (non-repeating) view of the world — a coastal cruise, one ocean, a season — is framed whole, so it opens on its own region. A voyage that wraps most or all of the way around the globe can't be shown complete in one view without the world repeating, so instead the viewer anchors on the **current chapter** (taken from each chapter's era, falling back to the first upcoming chapter, then the last) and shifts the frame so the route opens toward where the voyage is heading — the point it departs from sits near the trailing edge, with the rest of the width given to the passages ahead. Either way no chapter is selected to start.
 
@@ -268,6 +276,10 @@ The editor and viewer are deliberately *vanilla* (not React or another framework
 ## Why is the data separate from the tool?
 
 The tools are generic; the voyage lives in `voyage-data.json`. Separating data from code means the same editor and viewer work for any voyage, the data is portable and inspectable, and the data file can be versioned, backed up, or shared on its own. The viewer loads data at runtime rather than having it baked in.
+
+## Can the voyage file be loaded from a web address?
+
+No — the voyage file is loaded by relative path only, whether through the `VOYAGE_DATA_PATH` constant or the `?data=` parameter. A full `http(s)` address is not supported. This is a deliberate choice, not an oversight. A browser only permits a page to fetch a file from another origin when that remote server returns the headers that allow it (the cross-origin resource sharing, or CORS, rules), and a self-contained static file has no control over those headers on a server it does not own. Supporting arbitrary web addresses would therefore work for some hosts and fail silently for most, which is worse than not offering it. The relative-path model keeps loading predictable: the file travels with the tool. (The technical groundwork for opt-in remote loading from CORS-permissive hosts is noted in the enhancements backlog.)
 
 ## Why is data correctness my responsibility?
 

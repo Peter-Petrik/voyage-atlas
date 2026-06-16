@@ -82,8 +82,8 @@
   /* ---- Header ---- */
   #header {
     flex-shrink: 0;
-    display: flex; align-items: center; gap: 14px;
-    padding: 9px 18px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 16px;
     background: var(--panel-solid);
     border-bottom: 1px solid var(--border);
     z-index: 1200;
@@ -104,10 +104,28 @@
     overflow: hidden; text-overflow: ellipsis;
   }
   .head-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; margin-top: 1px; }
-  .head-stats { display: flex; gap: 22px; flex-shrink: 0; }
-  .stat { text-align: center; }
-  .stat-val { font-family: 'Fraunces', serif; font-size: 16px; color: var(--accent); display: block; line-height: 1.1; }
-  .stat-lbl { font-size: 8.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
+  /* Header stat tiles — canonical sizing shared with the editor (v3.9 parity). */
+  .head-stats { display: flex; gap: 20px; flex-shrink: 0; }
+  .head-stats .stat { text-align: center; }
+  .head-stats .stat-val { font-family: 'Fraunces', serif; font-size: 16px; color: var(--accent); display: block; line-height: 1.1; white-space: nowrap; }
+  .head-stats .stat-lbl { font-size: 8.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; white-space: nowrap; }
+  /* Header CTA — links the viewer to the editor (v3.9). Hidden on narrow widths; relocated into the drawer. */
+  #head-cta {
+    flex-shrink: 0; font-family: inherit; font-size: 11px; letter-spacing: 0.04em;
+    padding: 6px 12px; background: var(--accent-soft); color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 4px; text-decoration: none;
+    white-space: nowrap; transition: background 0.15s, color 0.15s;
+  }
+  #head-cta:hover { background: var(--accent); color: var(--panel-solid); }
+  /* Header actions (Load button) — mirrors the editor's hdr-actions placement. */
+  .head-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+  .head-btn {
+    font-family: inherit; font-size: 12px; padding: 5px 12px;
+    background: none; border: 1px solid var(--border-strong); color: var(--ink);
+    border-radius: 4px; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .head-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 
   /* ---- Map ---- */
   #stage { position: relative; flex: 1; min-height: 0; }
@@ -188,6 +206,25 @@
   #drawer-close { background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer; line-height: 1; }
   #drawer-close:hover { color: var(--accent); }
   .drawer-body { overflow-y: auto; padding: 6px 0; }
+  /* Drawer overflow section (v3.9): on narrow widths the header CTA, stats, and Load relocate here.
+     Hidden by default (desktop keeps them in the header bar); shown at the 640px component breakpoint. */
+  #drawer-overflow { display: none; }
+  #drawer-overflow .dr-of-cta {
+    display: block; text-align: center; font-family: inherit; font-size: 12px; letter-spacing: 0.04em;
+    margin: 10px 16px; padding: 9px 12px; background: var(--accent-soft); color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 4px; text-decoration: none;
+  }
+  #drawer-overflow .dr-of-load {
+    display: block; width: calc(100% - 32px); text-align: center; font-family: inherit; font-size: 12px;
+    margin: 0 16px 12px; padding: 9px 12px; background: none; color: var(--ink);
+    border: 1px solid var(--border-strong); border-radius: 4px; cursor: pointer;
+  }
+  #drawer-overflow .dr-of-load:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  #drawer-overflow .dr-of-stats { padding: 4px 16px 12px; border-bottom: 1px solid var(--border); }
+  #drawer-overflow .dr-of-stats .stat { display: flex; align-items: baseline; gap: 8px; padding: 4px 0; text-align: left; }
+  #drawer-overflow .dr-of-stats .stat-val { font-family: 'Fraunces', serif; font-size: 17px; color: var(--accent); line-height: 1.1; }
+  #drawer-overflow .dr-of-stats .stat-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
+  #drawer-overflow .dr-of-divider { border-bottom: 1px solid var(--border); margin: 0; }
   .dr-row { display: flex; gap: 11px; padding: 11px 16px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.12s; }
   .dr-row:hover { background: var(--accent-soft); }
   .dr-row.active { background: var(--accent-soft); border-left: 3px solid var(--accent); padding-left: 13px; }
@@ -224,37 +261,55 @@
   .leaflet-control-attribution { background: var(--panel) !important; color: var(--muted) !important; font-size: 9px !important; }
   .leaflet-control-attribution a { color: var(--accent) !important; }
 
-  /* Landing overlay */
+  /* Landing / chooser modal (v3.9 unified chooser) */
   #landing {
-    position: absolute; inset: 0; z-index: 1800;
+    position: fixed; inset: 0; z-index: 4000;
     display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,0.15); backdrop-filter: blur(2px);
+    padding: 16px;
   }
   #landing.hidden { display: none; }
   .landing-box {
     background: var(--panel-solid); border: 1px solid var(--border-strong);
     border-radius: 8px; box-shadow: var(--shadow);
-    padding: 36px 40px; text-align: center; max-width: 420px;
+    padding: 30px 32px; text-align: center; max-width: 440px; width: 100%;
+    max-height: calc(100% - 32px); overflow-y: auto;
   }
   .landing-box h2 {
     font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 22px; color: var(--accent); margin-bottom: 10px;
+    font-size: 22px; color: var(--accent); margin-bottom: 8px;
   }
-  .landing-box p { font-size: 11px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+  .landing-box p.landing-intro { font-size: 11.5px; color: var(--muted); margin-bottom: 18px; line-height: 1.55; }
+  /* Small-screen advisory — shown only at the component breakpoint via @media (no JS). */
+  .landing-advisory {
+    display: none; font-size: 11px; line-height: 1.5; color: var(--ink);
+    background: var(--accent-soft); border: 1px solid var(--accent); border-left-width: 3px;
+    border-radius: 4px; padding: 9px 12px; margin-bottom: 16px; text-align: left;
+  }
+  .landing-actions { display: flex; flex-direction: column; gap: 10px; }
   .landing-btn {
-    font-family: inherit; font-size: 12px; padding: 8px 20px;
-    background: var(--accent-soft); color: var(--accent);
-    border: 1px solid var(--accent); border-radius: 4px;
-    cursor: pointer; transition: background 0.15s;
+    font-family: inherit; display: block; width: 100%; text-align: left;
+    padding: 12px 16px; border-radius: 5px; cursor: pointer;
+    border: 1px solid var(--accent); background: var(--accent-soft);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
-  .landing-btn:hover { background: var(--accent); color: var(--panel-solid); }
+  .landing-btn .lb-title { display: block; font-size: 13px; color: var(--accent); letter-spacing: 0.01em; }
+  .landing-btn .lb-desc { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.45; margin-top: 3px; }
+  .landing-btn:hover { background: var(--accent); border-color: var(--accent); }
+  .landing-btn:hover .lb-title, .landing-btn:hover .lb-desc { color: var(--panel-solid); }
+  .landing-btn-ghost { background: transparent; border-color: var(--border-strong); }
+  .landing-btn-ghost .lb-title { color: var(--ink); }
+  .landing-btn-ghost:hover { background: var(--accent-soft); border-color: var(--accent); }
+  .landing-btn-ghost:hover .lb-title { color: var(--accent); }
+  .landing-btn-ghost:hover .lb-desc { color: var(--muted); }
 
   @media (max-width: 640px) {
     .head-sub { display: none; }
     #header h1 { font-size: 15px; }
-    .head-stats { gap: 12px; }
-    .stat-val { font-size: 13px; }
-    .stat-lbl { font-size: 7.5px; }
+    /* Relocate CTA, stats, and Load into the drawer on narrow widths (theme toggle stays in header). */
+    #head-cta, .head-stats, #header .head-actions { display: none; }
+    #drawer-overflow { display: block; }
+    .landing-advisory { display: block; }
     #filter { top: 74px; left: 8px; right: 8px; width: auto; }
     #legend { display: none; }
     #info {
@@ -263,9 +318,7 @@
       max-height: 56vh; overflow-y: auto;
     }
     #drawer { width: 100%; max-width: 100%; }
-  }
-  @media (max-width: 640px) {
-    .head-stats .stat:nth-child(n+3) { display: none; }
+    #footer { flex-wrap: wrap; row-gap: 2px; font-size: 9px; }
   }
 </style>
 </head>
@@ -277,20 +330,33 @@
     <h1 id="page-title">Voyage Atlas</h1>
     <div class="head-sub">Load a voyage atlas to explore</div>
   </div>
+  <a id="head-cta" href="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">Chart your own voyage →</a>
   <div class="head-stats" id="hero"></div>
+  <div class="head-actions">
+    <button class="head-btn" onclick="openChooser()">Load…</button>
+  </div>
   <button id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark theme" style="background:none;border:1px solid var(--border-strong);color:var(--ink);border-radius:4px;width:34px;height:34px;cursor:pointer;font-size:15px;flex-shrink:0;">◐</button>
 </div>
 
 <div id="stage">
 <div id="map"></div>
 
-<!-- Landing overlay -->
+<!-- Chooser modal (v3.9 unified) -->
 <div id="landing" class="hidden">
   <div class="landing-box">
     <h2>Voyage Atlas</h2>
-    <p>Load a voyage atlas JSON file exported from the Voyage Atlas Editor to see your chapters,
-       waypoints, and route lines on an interactive chart.</p>
-    <button class="landing-btn" onclick="document.getElementById('file-input').click()">Load JSON…</button>
+    <div class="landing-advisory">For the full experience, view on a larger screen.</div>
+    <p class="landing-intro">Chart a multi-year voyage as a sequence of chapters — regions and seasons, not a list of waypoints.</p>
+    <div class="landing-actions">
+      <button id="landing-sample" class="landing-btn" onclick="loadSampleFromChooser()" style="display:none;">
+        <span class="lb-title">Explore the sample voyage</span>
+        <span class="lb-desc">Open the sample voyage and explore how the chart works.</span>
+      </button>
+      <button class="landing-btn landing-btn-ghost" onclick="document.getElementById('file-input').click()">
+        <span class="lb-title">Load a voyage file…</span>
+        <span class="lb-desc">Open a saved voyage atlas file, or one shared from someone else.</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -334,14 +400,20 @@
     <h2>Voyage Chapters</h2>
     <button id="drawer-close" onclick="toggleDrawer()">×</button>
   </div>
+  <div id="drawer-overflow">
+    <a class="dr-of-cta" href="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">Chart your own voyage →</a>
+    <div class="dr-of-stats" id="drawer-hero"></div>
+    <button class="dr-of-load" onclick="openChooser()">Load…</button>
+    <div class="dr-of-divider"></div>
+  </div>
   <div class="drawer-body" id="drawer-body"></div>
 </div>
 </div><!-- /stage -->
 
 <div id="footer">
-  <span id="footer-data"></span>
+  <span id="footer-data"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span id="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.8</a></span>
+  <span id="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -681,10 +753,7 @@ function loadVoyageData(raw) {
   if (h.chapters) heroItems.push([h.chapters, h.chapters === 1 ? 'Chapter' : 'Chapters']);
   if (h.namedWaypoints) heroItems.push([h.namedWaypoints, h.namedWaypoints === 1 ? 'Waypoint' : 'Waypoints']);
   document.getElementById('hero').innerHTML = heroTilesHTML(heroItems);
-
-  // Footer
-  const ver = (DATA.meta && DATA.meta.version) || '';
-  document.getElementById('footer-data').textContent = ver ? `Data v${ver}` : '';
+  document.getElementById('drawer-hero').innerHTML = heroTilesHTML(heroItems);
 
   const stroke = document.body.classList.contains('dark') ? '#0b1622' : '#fbf8f1';
 
@@ -1022,26 +1091,65 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeInfo(); closeDrawer(); }
 });
 
-/* Auto-load voyage-data.json from same directory if present.
-   #49: ?import=yes forces the load UI even when a co-located voyage-data.json exists, so a user can open
-   a different file without removing the default. */
-if ((new URLSearchParams(location.search).get('import') || '').toLowerCase() === 'yes') {
-  document.getElementById('landing').classList.remove('hidden');
-} else {
-fetch('./voyage-data.json').then(r => {
-  if (!r.ok) { document.getElementById('landing').classList.remove('hidden'); return; }
-  // The file is present: parse + load. A failure here means it IS there but malformed or not a
-  // Voyage Atlas file — surface it rather than silently falling back to the landing screen.
-  return r.text().then(text => {
-    try {
-      loadVoyageData(JSON.parse(text));
-    } catch (err) {
-      alert("Found voyage-data.json but couldn't read it — it may be malformed or not a Voyage Atlas JSON.\n\n(Details: " + err.message + ")");
-      document.getElementById('landing').classList.remove('hidden');
-    }
-  });
-}).catch(() => { document.getElementById('landing').classList.remove('hidden'); });
+/* ============================ Voyage data source ============================
+   The viewer loads its voyage from VOYAGE_DATA_PATH. Edit the constant to point at a
+   different file, or override per-visit with ?data=path (relative paths only — see the FAQ
+   on why http(s) sources are deliberately not supported). On load the path is fetched once:
+   if it resolves, the voyage is shown and the chooser's sample option becomes available; if
+   it does not, the chooser opens with the sample option hidden. ?import=yes opens the chooser
+   on arrival without auto-displaying. */
+const VOYAGE_DATA_PATH = 'voyage-data.json';
+
+function resolveDataPath() {
+  const override = (new URLSearchParams(location.search).get('data') || '').trim();
+  return override || VOYAGE_DATA_PATH;
 }
+
+let sampleVoyage = null;      // parsed voyage from the resolved path, when it loaded cleanly
+let sampleAvailable = false;  // whether the chooser should offer "Explore the sample voyage"
+
+function openChooser() {
+  document.getElementById('landing-sample').style.display = sampleAvailable ? '' : 'none';
+  document.getElementById('landing').classList.remove('hidden');
+}
+
+function loadSampleFromChooser() {
+  if (sampleVoyage) loadVoyageData(sampleVoyage);
+}
+
+// Escape closes the chooser only when a voyage is already on screen — a cold start has nothing
+// to fall back to, so the chooser stays until the user picks an option.
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && DATA && !document.getElementById('landing').classList.contains('hidden')) {
+    document.getElementById('landing').classList.add('hidden');
+  }
+});
+
+(function initialLoad() {
+  const forceChooser = (new URLSearchParams(location.search).get('import') || '').toLowerCase() === 'yes';
+  fetch(resolveDataPath()).then(r => {
+    if (!r.ok) throw new Error('not found');
+    return r.text();
+  }).then(text => {
+    // The file is present: parse it. A parse failure means it IS there but malformed or not a
+    // Voyage Atlas file — surface that rather than silently treating it as absent.
+    let parsed;
+    try { parsed = JSON.parse(text); }
+    catch (err) {
+      alert("Found a voyage file but couldn't read it — it may be malformed or not a Voyage Atlas JSON.\n\n(Details: " + err.message + ")");
+      openChooser();
+      return;
+    }
+    sampleVoyage = parsed;
+    sampleAvailable = true;
+    if (forceChooser) { openChooser(); }   // ?import=yes: offer the chooser instead of auto-displaying
+    else { loadVoyageData(parsed); }
+  }).catch(() => {
+    // No file at the resolved path (including from disk, where the fetch is blocked): show the
+    // chooser with the sample option hidden.
+    openChooser();
+  });
+})();
 </script>
 </body>
 </html>

@@ -20,15 +20,15 @@ The repository also ships a set of optional icon assets (`favicon.svg`, `favicon
 ## Quick start
 
 1. Download `voyage-atlas-editor.html`, `voyage-atlas.html`, and (optionally) the sample `voyage-data.json` into the same folder. For the favicon and home-screen icons, also include the icon assets and `site.webmanifest` from the repository; they are optional and can be skipped.
-2. **To explore the sample:** serve the folder over HTTP (see the note below) and open `voyage-atlas.html`. When `voyage-data.json` sits alongside it, the chart loads automatically; otherwise the viewer opens to a landing screen with a file picker.
-3. **To build a new atlas:** open `voyage-atlas-editor.html`, add a chapter, and start placing waypoints (click the chart, search by name, or type coordinates). Click **Save** to download `voyage-data.json`.
-4. **To view a finished atlas:** put the `voyage-data.json` next to `voyage-atlas.html` and open the viewer — or load the file from the viewer's landing screen.
+2. **To explore the sample:** serve the folder over HTTP (see the note below) and open `voyage-atlas.html`. When `voyage-data.json` sits alongside it, the chart displays automatically; otherwise the viewer opens to a chooser offering the sample (when present) or a file to load.
+3. **To build a new atlas:** open `voyage-atlas-editor.html`. It opens to a chooser — pick "Start a new voyage," add a chapter, and start placing waypoints (click the chart, search by name, or type coordinates). Click **Save** to download `voyage-data.json`.
+4. **To view a finished atlas:** put the `voyage-data.json` next to `voyage-atlas.html` and open the viewer — or load the file from the viewer's chooser, reachable any time from the header **Load…** button.
 
 The repository ships with a small sample `voyage-data.json` (a short Greek Ionian cruise) so the tools open to a working example. See a full multi-year voyage at the live viewer linked above.
 
-### A note on auto-load and `file://`
+### A note on the data path and `file://`
 
-Auto-loading `voyage-data.json` from the same directory requires the files to be served over HTTP — from the published site, a static host, or a one-line local server such as `python3 -m http.server` run in the folder. Opening the HTML files directly from disk (a `file://` URL) does not auto-load: browsers block the underlying fetch for local files as a security measure. In that case both tools fall back to their landing screen, where the data file can be loaded manually through the picker.
+Each tool resolves its voyage from a `VOYAGE_DATA_PATH` constant near the top of its script (`voyage-data.json` by default); a `?data=path` query parameter overrides it per visit. Both accept relative paths only — a remote `http(s)` address is not supported, because a static file cannot guarantee a cross-origin fetch will succeed. Resolving the file requires serving over HTTP — from the published site, a static host, or a one-line local server such as `python3 -m http.server` run in the folder. Opening the HTML files directly from disk (a `file://` URL) cannot fetch a local file: browsers block it as a security measure. In that case the viewer opens to its chooser with a file picker, and the editor opens to its chooser without the sample option.
 
 ## Features
 
@@ -40,8 +40,8 @@ Auto-loading `voyage-data.json` from the same directory requires the files to be
 6. **Geocoding** via OpenStreetMap / Nominatim (rate-limited per their usage policy) — type a name to get coordinates, or fill countries from positions.
 7. **Automatic nation / territory classification** against a built-in reference list, with manual overrides.
 8. **Exports** — JSON (the master file), CSV (chapters + waypoints, for spreadsheet editing), and KML (for Google Earth).
-9. **Self-hosting** — at minimum two HTML files in a directory; the viewer auto-loads its data when served over HTTP. The optional icon assets and manifest can sit alongside for favicon and home-screen support.
-10. **Viewer niceties** — on load the chart frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's info panel links out to its blog post when one is set; and `?import=yes` forces the file picker for opening a different atlas.
+9. **Self-hosting** — at minimum two HTML files in a directory; the viewer displays its data automatically when served over HTTP, with the source file configurable via a `VOYAGE_DATA_PATH` constant or a `?data=` parameter (relative paths only). The optional icon assets and manifest can sit alongside for favicon and home-screen support.
+10. **Viewer niceties** — a header **Load…** button and a "Chart your own voyage" link to the editor (both fold into the chapter drawer on small screens); on load the chart frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's info panel links out to its blog post when one is set; and `?import=yes` opens the chooser for loading a different atlas.
 
 ## Using the editor
 
