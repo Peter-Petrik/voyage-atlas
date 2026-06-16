@@ -421,12 +421,27 @@
 <div id="footer">
   <span id="footer-data"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span id="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.1</a></span>
+  <span id="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.2</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
 
 <script>
+/* ─── Configuration ─────────────────────────────────────────
+   Self-hosting settings. Edit the values below; nothing else in the script needs to change.
+
+   The voyage file to load.
+   Relative paths only (a subdirectory or sibling folder is fine); a remote http(s) address is not
+   supported. A ?data=path query parameter overrides this for a single visit. */
+const URL_VOYAGE_DATA = 'voyage-data.json';
+
+/* Day and night basemap tile layers. If these are changed to another provider, update the
+   attribution string on the tile layers below to match that provider's terms. */
+const URL_TILE_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+const URL_TILE_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+/* ───────────────────────────────────────────────────────── */
+
 /* ========================= Palette ========================= */
 const TOL_PALETTE = ['#332288','#88CCEE','#44AA99','#117733','#999933','#DDCC77','#CC6677','#882255','#AA4499'];
 const COLOR_ASSIGN = [0,0,1,2,3,4,5,6,7,8,1,5,3,6,0,4,7,2,8,5];
@@ -468,11 +483,11 @@ function splitAtDateline(coords) {
 
 /* ========================== Map init ========================== */
 const map = L.map('map', { center: [20, 0], zoom: 2, worldCopyJump: true, zoomControl: true });
-const baseLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+const baseLight = L.tileLayer(URL_TILE_LIGHT, {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd', maxZoom: 19
 });
-const baseDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+const baseDark = L.tileLayer(URL_TILE_DARK, {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd', maxZoom: 19
 });
@@ -1100,17 +1115,14 @@ document.addEventListener('keydown', e => {
 });
 
 /* ============================ Voyage data source ============================
-   The viewer loads its voyage from VOYAGE_DATA_PATH. Edit the constant to point at a
-   different file, or override per-visit with ?data=path (relative paths only — see the FAQ
-   on why http(s) sources are deliberately not supported). On load the path is fetched once:
-   if it resolves, the voyage is shown and the chooser's sample option becomes available; if
-   it does not, the chooser opens with the sample option hidden. ?import=yes opens the chooser
-   on arrival without auto-displaying. */
-const VOYAGE_DATA_PATH = 'voyage-data.json';
-
+   The voyage source (URL_VOYAGE_DATA) is set in the Configuration block at the top of this
+   script; ?data=path overrides it per visit. On load the path is fetched once: if it resolves,
+   the voyage is shown and the chooser's sample option becomes available; if it does not, the
+   chooser opens with the sample option hidden. ?import=yes opens the chooser on arrival without
+   auto-displaying. */
 function resolveDataPath() {
   const override = (new URLSearchParams(location.search).get('data') || '').trim();
-  return override || VOYAGE_DATA_PATH;
+  return override || URL_VOYAGE_DATA;
 }
 
 let sampleVoyage = null;      // parsed voyage from the resolved path, when it loaded cleanly

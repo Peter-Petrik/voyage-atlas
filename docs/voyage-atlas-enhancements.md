@@ -114,7 +114,7 @@ download model on Safari/Firefox.
 
 ### 69. Opt-in remote-source loading from CORS-permissive hosts
 `Effort S · Impact Low-Med · editor + viewer load path · deferred · relates to #24`
-The v3.9 `VOYAGE_DATA_PATH` constant and `?data=` parameter resolve relative paths only; a full
+The v3.9 `URL_VOYAGE_DATA` constant and `?data=` parameter resolve relative paths only; a full
 `http(s)` address is rejected by design because a static file cannot guarantee a cross-origin fetch
 will succeed — the allow rule (CORS) is set by the remote server, not the tool, so arbitrary hosts
 fail silently. A scoped version is viable: accept an absolute URL only when the host is known to send

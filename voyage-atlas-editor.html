@@ -637,7 +637,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver-ed"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.1</a></span>
+  <span class="footer-ver-ed"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.2</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -756,6 +756,26 @@ th .hi { margin-left: 2px; }
 /* ═══════════════════════════════════════════════════════════════
    CONSTANTS
    ═══════════════════════════════════════════════════════════════ */
+/* ─── Configuration ─────────────────────────────────────────
+   Self-hosting settings. Edit the values below; nothing else in the script needs to change. */
+
+/* The voyage file the chooser offers as the sample.
+   Relative paths only (a subdirectory or sibling folder is fine); a remote http(s) address is not
+   supported. A ?data=path query parameter overrides this for a single visit. */
+const URL_VOYAGE_DATA = 'voyage-data.json';
+
+/* Day and night basemap tile layers. If these are changed to another provider, update the
+   attribution string on the tile layers below to match that provider's terms. */
+const URL_TILE_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+const URL_TILE_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
+/* Geocoder base URL (used for name → coordinates and reverse country lookup). Point this at a
+   different Nominatim-compatible instance if needed. The 1-request-per-second pacing is fixed in
+   the request queue below to comply with the public Nominatim usage policy — do not remove it. */
+const URL_GEOCODE = 'https://nominatim.openstreetmap.org';
+/* ───────────────────────────────────────────────────────── */
+
 const TOL_PALETTE = [
   '#332288','#88CCEE','#44AA99','#117733','#999933',
   '#DDCC77','#CC6677','#882255','#AA4499'
@@ -918,11 +938,11 @@ function initMap() {
     worldCopyJump: true,
     zoomControl: true
   });
-  tileLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  tileLight = L.tileLayer(URL_TILE_LIGHT, {
     maxZoom: 19,
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>'
   });
-  tileDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  tileDark = L.tileLayer(URL_TILE_DARK, {
     maxZoom: 19,
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>'
   });
@@ -1401,7 +1421,7 @@ function debounceNominatim() {
 function nomSearch() {
   const q = document.getElementById('nom-input').value.trim();
   if (q.length < 2) { hideSearchResults(); return; }
-  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1`, {
+  fetch(`${URL_GEOCODE}/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1`, {
     headers: { 'Accept-Language': 'en' }
   })
     .then(r => r.json())
@@ -1535,7 +1555,7 @@ function processRevGeoQueue() {
   revGeoRunning = true;
   const { lat, lon, callback } = revGeoQueue.shift();
   noteGeocodeUse();
-  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=5&addressdetails=1`, {
+  fetch(`${URL_GEOCODE}/reverse?format=json&lat=${lat}&lon=${lon}&zoom=5&addressdetails=1`, {
     headers: { 'Accept-Language': 'en' }
   })
     .then(r => r.json())
@@ -1699,7 +1719,7 @@ function processFwdGeoQueue() {
   fwdGeoRunning = true;
   const { chNum, wptRef, name } = fwdGeoQueue.shift();
   noteGeocodeUse();
-  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&limit=1&addressdetails=1`, {
+  fetch(`${URL_GEOCODE}/search?format=json&q=${encodeURIComponent(name)}&limit=1&addressdetails=1`, {
     headers: { 'Accept-Language': 'en' }
   })
     .then(r => r.json())
@@ -2643,16 +2663,13 @@ function importJSON() {
 // Landing prompt (item 5) — parity with the viewer. Shown on load when no voyage-data.json is found
 // (including from disk, where the fetch is blocked). The user can load an atlas or dismiss to start fresh.
 /* ============================ Voyage data source ============================
-   The editor resolves its sample voyage from VOYAGE_DATA_PATH. Edit the constant to point at a
-   different file, or override per-visit with ?data=path (relative paths only — see the FAQ on why
-   http(s) sources are deliberately not supported). On arrival the chooser opens; the path is fetched
+   The sample-voyage source (URL_VOYAGE_DATA) is set in the Configuration block at the top of this
+   script; ?data=path overrides it per visit. On arrival the chooser opens; the path is fetched
    once and, if it resolves, the chooser offers "Explore the sample voyage" (and the Load menu's
    "Sample voyage" item appears). If it does not resolve, those sample affordances stay hidden. */
-const VOYAGE_DATA_PATH = 'voyage-data.json';
-
 function resolveDataPath() {
   const override = (new URLSearchParams(location.search).get('data') || '').trim();
-  return override || VOYAGE_DATA_PATH;
+  return override || URL_VOYAGE_DATA;
 }
 
 let sampleVoyage = null;      // parsed voyage from the resolved path, when it loaded cleanly

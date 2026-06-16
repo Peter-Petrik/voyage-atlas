@@ -28,7 +28,20 @@ The repository ships with a small sample `voyage-data.json` (a short Greek Ionia
 
 ### A note on the data path and `file://`
 
-Each tool resolves its voyage from a `VOYAGE_DATA_PATH` constant near the top of its script (`voyage-data.json` by default); a `?data=path` query parameter overrides it per visit. Both accept relative paths only — a remote `http(s)` address is not supported, because a static file cannot guarantee a cross-origin fetch will succeed. Resolving the file requires serving over HTTP — from the published site, a static host, or a one-line local server such as `python3 -m http.server` run in the folder. Opening the HTML files directly from disk (a `file://` URL) cannot fetch a local file: browsers block it as a security measure. In that case the viewer opens to its chooser with a file picker, and the editor opens to its chooser without the sample option.
+Each tool resolves its voyage from a `URL_VOYAGE_DATA` constant in the configuration block at the top of its script (`voyage-data.json` by default); a `?data=path` query parameter overrides it per visit. Both accept relative paths only — a remote `http(s)` address is not supported, because a static file cannot guarantee a cross-origin fetch will succeed. Resolving the file requires serving over HTTP — from the published site, a static host, or a one-line local server such as `python3 -m http.server` run in the folder. Opening the HTML files directly from disk (a `file://` URL) cannot fetch a local file: browsers block it as a security measure. In that case the viewer opens to its chooser with a file picker, and the editor opens to its chooser without the sample option.
+
+## Configuration
+
+Both tools keep their self-hosting settings in a labeled configuration block at the top of the script — for the viewer, immediately after the opening `<script>` tag; for the editor, at the top of the `CONSTANTS` section. Editing the values there is all that is needed to point a copy at different data, basemaps, or a different geocoder; the rest of the script is untouched. An unedited copy uses the defaults shown.
+
+| Constant | Tool | Default | Purpose |
+|----------|------|---------|---------|
+| `URL_VOYAGE_DATA` | both | `voyage-data.json` | The voyage file to load. Relative paths only (a subdirectory or sibling folder is fine); a remote `http(s)` address is not supported. The `?data=path` query parameter overrides it for a single visit. |
+| `URL_TILE_LIGHT` | both | CARTO Positron | The day basemap tile layer. |
+| `URL_TILE_DARK` | both | CARTO Dark Matter | The night basemap tile layer. |
+| `URL_GEOCODE` | editor | `https://nominatim.openstreetmap.org` | The geocoder base URL, used for name-to-coordinate search and reverse country lookup. Point it at a different Nominatim-compatible instance if needed. |
+
+If the tile URLs are changed to another provider, update the attribution string on the tile layers (just below the configuration block) to match that provider's terms. The editor's geocoding requests are paced at one per second to comply with the public Nominatim usage policy; that pacing is fixed in the request queue and is intentionally not a configurable value.
 
 ## Features
 
@@ -40,7 +53,7 @@ Each tool resolves its voyage from a `VOYAGE_DATA_PATH` constant near the top of
 6. **Geocoding** via OpenStreetMap / Nominatim (rate-limited per their usage policy) — type a name to get coordinates, or fill countries from positions.
 7. **Automatic nation / territory classification** against a built-in reference list, with manual overrides.
 8. **Exports** — JSON (the master file), CSV (chapters + waypoints, for spreadsheet editing), and KML (for Google Earth).
-9. **Self-hosting** — at minimum two HTML files in a directory; the viewer displays its data automatically when served over HTTP, with the source file configurable via a `VOYAGE_DATA_PATH` constant or a `?data=` parameter (relative paths only). The optional icon assets and manifest can sit alongside for favicon and home-screen support.
+9. **Self-hosting** — at minimum two HTML files in a directory; the viewer displays its data automatically when served over HTTP, with the source file configurable via a `URL_VOYAGE_DATA` constant or a `?data=` parameter (relative paths only). The optional icon assets and manifest can sit alongside for favicon and home-screen support.
 10. **Viewer niceties** — a header **Load…** button and a "Chart your own voyage" link to the editor (both fold into the chapter drawer on small screens); the chooser can be dismissed by its close button, a tap outside it, or Escape when a voyage is already shown; on load the chart frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's info panel links out to its blog post when one is set; and `?import=yes` opens the chooser for loading a different atlas.
 
 ## Using the editor

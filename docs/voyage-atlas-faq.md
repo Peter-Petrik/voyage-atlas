@@ -108,7 +108,7 @@ The same three actions, plus CSV import, are available on demand from the header
 
 The chooser can be dismissed with its close (×) button, a tap outside the box, or the Escape key — all equivalent. Dismissing loads the sample when one is available; with no sample it starts a new voyage. (At arrival the editor is empty, so starting a new voyage needs no confirmation; the confirm only guards the mid-session "New voyage" path above.)
 
-The voyage file is resolved from a `VOYAGE_DATA_PATH` constant declared near the top of the editor's script — `voyage-data.json` by default. Editing that constant points the editor at a different file, including one in a subdirectory or a sibling folder, since relative paths are honored. A `?data=path` query parameter overrides the constant for a single visit. Both accept relative paths only; see "Can the voyage file be loaded from a web address?" below.
+The voyage file is resolved from a `URL_VOYAGE_DATA` constant in the configuration block at the top of the editor's script — `voyage-data.json` by default. Editing that constant points the editor at a different file, including one in a subdirectory or a sibling folder, since relative paths are honored. A `?data=path` query parameter overrides the constant for a single visit. Both accept relative paths only; see "Can the voyage file be loaded from a web address?" below.
 
 Resolving the file requires the editor to be served over HTTP. Opening it directly from disk (a `file://` URL) cannot fetch a local file, so the sample option does not appear and the chooser offers only "Start a new voyage" and "Load a voyage file."
 
@@ -224,7 +224,7 @@ The editor header shows the live totals as tiles — distance, nations, territor
 
 ## Loading data
 
-The viewer resolves its voyage from a `VOYAGE_DATA_PATH` constant declared near the top of its script — `voyage-data.json` by default. Editing that constant, or passing a `?data=path` query parameter, points the viewer at a different file, including one in a subdirectory or sibling folder, since relative paths are honored. Both accept relative paths only; see "Can the voyage file be loaded from a web address?" below.
+The viewer resolves its voyage from a `URL_VOYAGE_DATA` constant in the configuration block at the top of its script — `voyage-data.json` by default. Editing that constant, or passing a `?data=path` query parameter, points the viewer at a different file, including one in a subdirectory or sibling folder, since relative paths are honored. Both accept relative paths only; see "Can the voyage file be loaded from a web address?" below.
 
 1. **Auto-display.** When the configured file resolves, the viewer loads and displays it on open — the basis of the self-hosting model (below). A file that is present but unreadable is reported rather than silently treated as absent.
 2. **Chooser.** When no file resolves, the viewer shows the chooser: "Explore the sample voyage" (when a file resolves) and "Load a voyage file" (pick a v3.0 voyage JSON). Earlier formats are no longer supported, and a malformed file is reported rather than silently swallowed.
@@ -281,7 +281,11 @@ The tools are generic; the voyage lives in `voyage-data.json`. Separating data f
 
 ## Can the voyage file be loaded from a web address?
 
-No — the voyage file is loaded by relative path only, whether through the `VOYAGE_DATA_PATH` constant or the `?data=` parameter. A full `http(s)` address is not supported. This is a deliberate choice, not an oversight. A browser only permits a page to fetch a file from another origin when that remote server returns the headers that allow it (the cross-origin resource sharing, or CORS, rules), and a self-contained static file has no control over those headers on a server it does not own. Supporting arbitrary web addresses would therefore work for some hosts and fail silently for most, which is worse than not offering it. The relative-path model keeps loading predictable: the file travels with the tool. (The technical groundwork for opt-in remote loading from CORS-permissive hosts is noted in the enhancements backlog.)
+No — the voyage file is loaded by relative path only, whether through the `URL_VOYAGE_DATA` constant or the `?data=` parameter. A full `http(s)` address is not supported. This is a deliberate choice, not an oversight. A browser only permits a page to fetch a file from another origin when that remote server returns the headers that allow it (the cross-origin resource sharing, or CORS, rules), and a self-contained static file has no control over those headers on a server it does not own. Supporting arbitrary web addresses would therefore work for some hosts and fail silently for most, which is worse than not offering it. The relative-path model keeps loading predictable: the file travels with the tool. (The technical groundwork for opt-in remote loading from CORS-permissive hosts is noted in the enhancements backlog.)
+
+## How do I change the basemap or use a different geocoder?
+
+Both settings live in a labeled configuration block at the top of each tool's script, alongside the data-file path. The basemap tile layers are `URL_TILE_LIGHT` (day) and `URL_TILE_DARK` (night), in both tools; the default is CARTO's Positron and Dark Matter. Replacing those URLs with another tile provider's template changes the chart's appearance — and if the provider is changed, the attribution string just below the configuration block should be updated to match that provider's terms. The editor additionally has `URL_GEOCODE`, the base URL of the geocoder used for name-to-coordinate search and reverse country lookup; it defaults to the public Nominatim service and can be pointed at a different Nominatim-compatible instance. The one-request-per-second pacing on geocoding is fixed in the code rather than exposed as a setting, because it is what the public Nominatim usage policy requires; a private instance with a different policy would still be reached at that pace.
 
 ## Why is data correctness my responsibility?
 

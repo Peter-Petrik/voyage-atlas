@@ -13,6 +13,11 @@ Queued improvements tracked in `voyage-atlas-enhancements.md`:
 1. PAZ (avoidance-zone) authoring in the editor
 2. GPX import and export
 
+## [v3.9.2] - 2026-06-16
+
+### Changed
+- **Self-hosting settings surfaced into a configuration block.** The data-source path, basemap tile URLs, and (in the editor) the geocoder base URL are now declared in a labeled configuration block at the top of each tool's script, rather than scattered through the code. A self-hoster can open either file, edit the values at the top, and leave the rest of the script untouched. The constants are `URL_VOYAGE_DATA` (the voyage file; relative paths only, with the existing `?data=` per-visit override), `URL_TILE_LIGHT` and `URL_TILE_DARK` (the day and night basemaps), and `URL_GEOCODE` (the editor's Nominatim base, for pointing at a different compatible instance). The Nominatim 1-request-per-second pacing remains fixed in the request queue, as the public usage policy requires. No behavior changes for an unedited copy — the defaults are the values used before — and no new query parameters were added.
+
 ## [v3.9.1] - 2026-06-16
 
 ### Added
