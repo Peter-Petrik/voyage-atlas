@@ -122,7 +122,7 @@ Within a chapter, there are five ways to add points:
 2. **+ Add N rows** — appends several blank rows at once (useful before a paste or bulk entry).
 3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line becomes a row. **Cmd/Ctrl+Enter** in the paste box adds the rows (plain Enter inserts a newline).
 4. **Click on the chart** — with **Rapid click** mode ON (toggle above the chart), each click on the chart drops a new waypoint at that location. Standard chart navigation still works in this mode: drag to pan and scroll to zoom; only the single click is repurposed to place a waypoint. Turn the mode OFF to return the single click to normal selection.
-5. **Search (Nominatim)** — type a place name in the search box and press **Enter** to search; use the **arrow keys** to move through results, **Enter** to add the highlighted one, **Escape** to dismiss. Adding a result drops a waypoint with coordinates (and country, when empty) filled.
+5. **Search (Nominatim)** — type a place name in the search box and press **Enter** (or click **Search**) to search; typing alone sends nothing, because the Nominatim usage policy forbids client-side autocomplete; use the **arrow keys** to move through results, **Enter** to add the highlighted one, **Escape** to dismiss. Adding a result drops a waypoint with coordinates (and country, when empty) filled.
 
 ## Geocoding (name ↔ coordinates)
 
@@ -133,7 +133,9 @@ The editor uses the free Nominatim (OpenStreetMap) service two ways:
 
 Before a long sweep runs, the editor shows a quick confirmation — how many waypoints it will look up and a rough time estimate at one per second — so a long run is never a surprise. The all-chapters sweep always confirms; a per-chapter sweep confirms only when 30 or more waypoints are eligible. While a sweep runs, the status line shows live progress; when it finishes it shows how many were actually resolved (for example "Geocoded 4/5") and, when some can't be placed — an open-ocean shaping vertex Nominatim has no entry for, say — reports how many were left unresolved rather than implying every one succeeded. A country cell that already holds a value is flagged, so it is clear at a glance which cells a sweep will skip; it never overwrites a hand-typed value.
 
-**Rate limit:** Nominatim's usage policy allows one request per second. The editor queues all geocoding requests and spaces them accordingly, so a paste of many named rows will fill in gradually rather than all at once. This is deliberate — firing requests in parallel would get the service to rate-limit or block the requests.
+**Rate limit:** Nominatim's usage policy allows one request per second. The editor sends every geocoding request (searches, name lookups and country lookups) through one queue that spaces them accordingly, so a paste of many named rows will fill in gradually rather than all at once. This is deliberate — firing requests in parallel would get the service to rate-limit or block the requests. A search goes to the front of that queue, so even while a long country lookup runs it is sent next, usually within about a second.
+
+**Caching:** answers are kept in memory for the session, including "nothing found" answers, as the usage policy requires. Repeating a lookup (running **Look up countries** again over points in open water, say) is answered from memory without a new request. Reloading the page clears the cache.
 
 While any look-up is in flight, both the per-chapter **Look up countries** and the global **🌍 Look up all countries** buttons are visibly grayed and disabled, re-enabling only once the queue has drained. That stops a second click from stacking a duplicate sweep onto a queue already running.
 

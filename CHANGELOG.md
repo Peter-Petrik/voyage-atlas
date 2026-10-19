@@ -6,6 +6,13 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.6] - 2026-10-20
+
+### Fixed
+- **Place Search Runs Only When Asked**: The editor's place search no longer sends a request while the name is being typed. Previously it searched after every 400 ms pause in typing, which the Nominatim usage policy forbids as client-side autocomplete. A search now runs on Enter or the Search button, as the FAQ already described, and editing the query hides results that no longer match it.
+- **One Request per Second Across All Geocoding**: Place searches, name-to-coordinate lookups and country lookups now share one queue that sends at most one request every 1.1 seconds. Previously the search had no pacing at all, and the name and country lookups each kept their own pace, so running both at once could send two requests a second, against the policy's limit of one per second for an application. A search goes to the front of the queue, so during a long country lookup it is sent next rather than after every queued lookup, and a newer search replaces one still waiting. A request that gets no answer within 20 seconds is abandoned, so it cannot hold up the rest of the queue.
+- **Geocoding Answers Cached for the Session**: Every geocoding answer, including "nothing found", is kept in memory for the session and reused when the same request comes up again, as the usage policy requires. Previously each "Look up countries" run sent the same requests again for points that never resolve, such as routing points in open water, which the policy warns can get a client blocked. Nothing is stored in the browser between visits.
+
 ## [v3.9.5] - 2026-10-19
 
 ### Security
@@ -648,6 +655,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.6]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.5...v3.9.6
 [v3.9.5]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.4...v3.9.5
 [v3.9.4]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.3...v3.9.4
 [v3.9.3]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.2...v3.9.3

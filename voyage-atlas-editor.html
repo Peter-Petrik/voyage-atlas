@@ -638,7 +638,7 @@ th .hi { margin-left: 2px; }
   <div id="map-panel">
     <div id="search-bar" style="position:relative;">
       <input type="text" id="nom-input" placeholder="Search places (Nominatim)…"
-             oninput="debounceNominatim()" onkeydown="nomKeydown(event)">
+             oninput="hideSearchResults()" onkeydown="nomKeydown(event)">
       <button class="btn btn-sm" onclick="nomSearch()">Search</button>
       <div id="search-results"></div>
     </div>
@@ -657,7 +657,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.5</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.6</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1469,21 +1469,19 @@ function revealWaypointRow(chNum, idx, keepFocus) {
 /* ═══════════════════════════════════════════════════════════════
    NOMINATIM SEARCH
    ═══════════════════════════════════════════════════════════════ */
-let nomTimer = null;
-function debounceNominatim() {
-  clearTimeout(nomTimer);
-  nomTimer = setTimeout(nomSearch, 400);
-}
-
+// The place search runs only when asked, on Enter or the Search button. The Nominatim usage policy
+// forbids client-side autocomplete against its API, so typing alone sends nothing, and editing the query
+// hides results that no longer match it. The request goes through the shared geocoder queue ahead of
+// any queued lookups, so a search made during a long country lookup is sent next. A newer search
+// replaces one still waiting (the replaced one settles as null), and an answer or failure that arrives
+// after the query has changed is ignored, so it can never hide or overwrite the current results.
 function nomSearch() {
   const q = document.getElementById('nom-input').value.trim();
   if (q.length < 2) { hideSearchResults(); return; }
-  fetch(`${URL_GEOCODE}/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1`, {
-    headers: { 'Accept-Language': 'en' }
-  })
-    .then(r => r.json())
-    .then(results => showSearchResults(results))
-    .catch(() => hideSearchResults());
+  const stillCurrent = () => document.getElementById('nom-input').value.trim() === q;
+  geoRequest(`${URL_GEOCODE}/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1`, true)
+    .then(results => { if (results !== null && stillCurrent()) showSearchResults(results); })
+    .catch(() => { if (stillCurrent()) hideSearchResults(); });
 }
 
 function nomKeydown(e) {
@@ -1571,6 +1569,72 @@ function pickSearchResult(i) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   GEOCODER REQUESTS (shared queue and session cache)
+   ═══════════════════════════════════════════════════════════════ */
+// Every request to the geocoder (place search, name-to-coordinate, country lookup) goes through this
+// one queue, so the editor as a whole never sends more than one request per GEO_SPACING_MS. The
+// Nominatim usage policy sets an absolute maximum of one request per second for an application;
+// before this queue, the forward and reverse lookups each kept their own pace, and together they could
+// reach two a second. The fixed pace is a policy requirement, not a setting.
+const GEO_SPACING_MS = 1100;
+// A request still unanswered after this long is abandoned (and not cached), so one hung connection
+// cannot hold up every other search and lookup behind it in the shared queue.
+const GEO_TIMEOUT_MS = 20000;
+let geoJobs = [];         // waiting requests, in send order: { url, first, resolve, reject }
+let geoBusy = false;      // a request is waiting for its slot or in flight
+let geoLastSent = -Infinity; // performance.now() when the last request was sent (a monotonic clock,
+                             // so a change to the system clock cannot shorten or stretch the spacing)
+// Answers already received this session, keyed by request address, including empty "nothing found"
+// answers. The policy requires results to be cached and warns that clients repeating the same query
+// may be blocked, so a repeated lookup (a second "Look up countries" run over the same open-ocean
+// points, say) is answered here without a request. Kept in memory only, for the session.
+const geoCache = new Map();
+
+// Resolve with the parsed JSON answer for a geocoder address: from the session cache when present,
+// otherwise in turn through the queue. `first` puts the request at the front of the queue, for a
+// search the user is waiting on; it also replaces any earlier `first` request not yet sent, which
+// settles as null, so superseded searches never reach the service. Failed requests (network errors,
+// refusals, timeouts) are not cached.
+function geoRequest(url, first) {
+  if (geoCache.has(url)) return Promise.resolve(geoCache.get(url));
+  return new Promise((resolve, reject) => {
+    const job = { url, first: !!first, resolve, reject };
+    if (first) {
+      geoJobs.filter(j => j.first).forEach(j => j.resolve(null));
+      geoJobs = geoJobs.filter(j => !j.first);
+      geoJobs.unshift(job);
+    } else {
+      geoJobs.push(job);
+    }
+    pumpGeoQueue();
+  });
+}
+
+function pumpGeoQueue() {
+  if (geoBusy || geoJobs.length === 0) return;
+  geoBusy = true;
+  const wait = Math.max(0, geoLastSent + GEO_SPACING_MS - performance.now());
+  setTimeout(() => {
+    const job = geoJobs.shift();
+    // Every waiting job may have been replaced while this slot was pending.
+    if (!job) { geoBusy = false; return; }
+    // The same address may have been answered while this request waited for its slot.
+    if (geoCache.has(job.url)) {
+      geoBusy = false;
+      job.resolve(geoCache.get(job.url));
+      pumpGeoQueue();
+      return;
+    }
+    geoLastSent = performance.now();
+    fetch(job.url, { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(GEO_TIMEOUT_MS) })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(data => { geoCache.set(job.url, data); job.resolve(data); })
+      .catch(err => job.reject(err))
+      .finally(() => { geoBusy = false; pumpGeoQueue(); });
+  }, wait);
+}
+
+/* ═══════════════════════════════════════════════════════════════
    REVERSE GEOCODING (country auto-populate)
    ═══════════════════════════════════════════════════════════════ */
 let revGeoQueue = [];
@@ -1612,10 +1676,7 @@ function processRevGeoQueue() {
   revGeoRunning = true;
   const { lat, lon, callback } = revGeoQueue.shift();
   noteGeocodeUse();
-  fetch(`${URL_GEOCODE}/reverse?format=json&lat=${lat}&lon=${lon}&zoom=5&addressdetails=1`, {
-    headers: { 'Accept-Language': 'en' }
-  })
-    .then(r => r.json())
+  geoRequest(`${URL_GEOCODE}/reverse?format=json&lat=${lat}&lon=${lon}&zoom=5&addressdetails=1`)
     .then(data => {
       const country = (data.address && data.address.country) || '';
       if (country) geoResolved++;
@@ -1626,9 +1687,7 @@ function processRevGeoQueue() {
       revGeoRunning = false;
       geoDone++;
       renderGeoStatus();
-      if (revGeoQueue.length > 0) {
-        setTimeout(processRevGeoQueue, 1100); // Nominatim 1 req/sec
-      }
+      if (revGeoQueue.length > 0) processRevGeoQueue(); // pacing is enforced by geoRequest
     });
 }
 
@@ -1776,10 +1835,7 @@ function processFwdGeoQueue() {
   fwdGeoRunning = true;
   const { chNum, wptRef, name } = fwdGeoQueue.shift();
   noteGeocodeUse();
-  fetch(`${URL_GEOCODE}/search?format=json&q=${encodeURIComponent(name)}&limit=1&addressdetails=1`, {
-    headers: { 'Accept-Language': 'en' }
-  })
-    .then(r => r.json())
+  geoRequest(`${URL_GEOCODE}/search?format=json&q=${encodeURIComponent(name)}&limit=1&addressdetails=1`)
     .then(results => {
       if (!results || results.length === 0) return;
       const r = results[0];
@@ -1814,7 +1870,7 @@ function processFwdGeoQueue() {
       fwdGeoRunning = false;
       geoDone++;
       renderGeoStatus();
-      if (fwdGeoQueue.length > 0) setTimeout(processFwdGeoQueue, 1100); // Nominatim 1 req/sec
+      if (fwdGeoQueue.length > 0) processFwdGeoQueue(); // pacing is enforced by geoRequest
     });
 }
 
