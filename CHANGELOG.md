@@ -6,12 +6,19 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
-## [Unreleased]
+## [v3.9.4] - 2026-10-19
 
-Queued improvements tracked in `voyage-atlas-enhancements.md`:
+### Added
+- **Basemap API Key Setting**: The configuration block in both tools gains `TILE_KEY`, empty by default. When a key is set, every basemap tile request carries it as a `key` parameter. A key supplied by the hosting server at run time, as `window.VOYAGE_ATLAS_CONFIG.tileKey` in a plain inline script that runs before the tool's own script, takes precedence over the constant, so a deployment can provide its key without editing the files. Without a key, tile requests carry no key parameter and CARTO marks every tile with its watermark.
 
-1. PAZ (avoidance-zone) authoring in the editor
-2. GPX import and export
+### Changed
+- **CARTO Tile Addresses**: The default `URL_TILE_LIGHT` and `URL_TILE_DARK` in both tools move to CARTO's documented `basemaps.cartocdn.com/rastertiles/` addresses for Positron and Dark Matter, the form CARTO's keys apply to. The old lettered subdomains are no longer used.
+- **Basemap Attribution**: The credit in both tools now reads "© OpenStreetMap contributors, © CARTO", linked to the OpenStreetMap copyright page and CARTO's attribution page, the wording CARTO's basemap terms require. It previously read "© OSM · © CARTO".
+- **Release Workflow on Node 24**: The tag-triggered workflow moves to `actions/checkout@v7` and `softprops/action-gh-release@v3`, which run on the Node 24 runtime that GitHub Actions now uses. Each GitHub Release also ends with a "Full changelog" link to the comparison with the previous tag.
+
+### Fixed
+- **Basemap Restored When a Key Is Set**: Since 25 September 2026 CARTO serves basemap tiles only with an API key; without one every tile shows an "API key required" watermark and no land or coastline. With a key in place through the new setting, the basemap draws normally again. A copy with no key still shows the watermark, so a self-hosted copy needs its own free key from CARTO.
+- **Editor Head Closed Before the Body**: The editor's markup now ends its head section with `</head>` before the body, matching the viewer. Content inserted at the end of the head by a hosting server therefore runs before the editor's script, which the run-time key relies on.
 
 ## [v3.9.3] - 2026-06-16
 
@@ -631,3 +638,14 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Initial release. 18 framework chapters (Ch 2–19) rendered from `grace-voyage-map.json`; Ch 1 (Med Eastward) reserved as a metadata-only stub for Phase 2.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
+
+[v3.9.4]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.3...v3.9.4
+[v3.9.3]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.2...v3.9.3
+[v3.9.2]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.1...v3.9.2
+[v3.9.1]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9...v3.9.1
+[v3.9]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.8...v3.9
+[v3.8]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.7.1...v3.8
+[v3.7.1]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.7...v3.7.1
+[v3.7]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.6...v3.7
+[v3.6]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.5.1...v3.6
+[v3.5.1]: https://github.com/Peter-Petrik/voyage-atlas/releases/tag/v3.5.1

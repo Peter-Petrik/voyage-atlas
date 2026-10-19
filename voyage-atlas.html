@@ -441,7 +441,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.3</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.4</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -455,12 +455,32 @@
    supported. A ?data=path query parameter overrides this for a single visit. */
 const URL_VOYAGE_DATA = 'voyage-data.json';
 
-/* Day and night basemap tile layers. If these are changed to another provider, update the
-   attribution string on the tile layers below to match that provider's terms. */
-const URL_TILE_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+/* Day and night basemap tile layers (CARTO Positron and Dark Matter). If these are changed to
+   another provider, update the attribution string on the tile layers below to match that
+   provider's terms. */
+const URL_TILE_LIGHT = 'https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png';
 
-const URL_TILE_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const URL_TILE_DARK = 'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png';
+
+/* Basemap API key. CARTO serves its tiles only with a key (free for most sites, requested at
+   carto.com/basemaps/apikey); without one every tile carries an "API key required" watermark.
+   Each site needs its own key, so a key belonging to another site must not be reused here. A key
+   supplied by the hosting server at run time (window.VOYAGE_ATLAS_CONFIG.tileKey, set by a plain
+   inline script that runs before this one) takes precedence over this value. */
+const TILE_KEY = '';
 /* ───────────────────────────────────────────────────────── */
+
+/* Basemap tile URL with the API key appended, when one is set: the key supplied by the hosting
+   server at run time (window.VOYAGE_ATLAS_CONFIG.tileKey) first, then TILE_KEY from the
+   configuration block. Each source is trimmed on its own, so a blank server value falls back to
+   TILE_KEY instead of suppressing it. With no key the template is returned unchanged. Shared
+   between editor and viewer (identical definitions in both). */
+function tileUrl(template) {
+  const cfg = (typeof window !== 'undefined' && window.VOYAGE_ATLAS_CONFIG) || {};
+  const key = [cfg.tileKey, TILE_KEY].map(v => String(v == null ? '' : v).trim()).find(Boolean) || '';
+  if (!key) return template;
+  return template + (template.indexOf('?') === -1 ? '?' : '&') + 'key=' + encodeURIComponent(key);
+}
 
 /* ========================= Palette ========================= */
 const TOL_PALETTE = ['#332288','#88CCEE','#44AA99','#117733','#999933','#DDCC77','#CC6677','#882255','#AA4499'];
@@ -503,13 +523,13 @@ function splitAtDateline(coords) {
 
 /* ========================== Map init ========================== */
 const map = L.map('map', { center: [20, 0], zoom: 2, worldCopyJump: true, zoomControl: true });
-const baseLight = L.tileLayer(URL_TILE_LIGHT, {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>',
-  subdomains: 'abcd', maxZoom: 19
+const baseLight = L.tileLayer(tileUrl(URL_TILE_LIGHT), {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © <a href="https://carto.com/attribution/">CARTO</a>',
+  maxZoom: 19
 });
-const baseDark = L.tileLayer(URL_TILE_DARK, {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>',
-  subdomains: 'abcd', maxZoom: 19
+const baseDark = L.tileLayer(tileUrl(URL_TILE_DARK), {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © <a href="https://carto.com/attribution/">CARTO</a>',
+  maxZoom: 19
 });
 baseLight.addTo(map);
 

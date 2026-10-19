@@ -32,14 +32,17 @@ Each tool resolves its voyage from a `URL_VOYAGE_DATA` constant in the configura
 
 ## Configuration
 
-Both tools keep their self-hosting settings in a labeled configuration block at the top of the script — for the viewer, immediately after the opening `<script>` tag; for the editor, at the top of the `CONSTANTS` section. Editing the values there is all that is needed to point a copy at different data, basemaps, or a different geocoder; the rest of the script is untouched. An unedited copy uses the defaults shown.
+Both tools keep their self-hosting settings in a labeled configuration block at the top of the script — for the viewer, immediately after the opening `<script>` tag; for the editor, at the top of the `CONSTANTS` section. Editing the values there is all that is needed to point a copy at different data, basemaps, a basemap key, or a different geocoder; the rest of the script is untouched. An unedited copy uses the defaults shown.
 
 | Constant | Tool | Default | Purpose |
 |----------|------|---------|---------|
 | `URL_VOYAGE_DATA` | both | `voyage-data.json` | The voyage file to load. Relative paths only (a subdirectory or sibling folder is fine); a remote `http(s)` address is not supported. The `?data=path` query parameter overrides it for a single visit. |
 | `URL_TILE_LIGHT` | both | CARTO Positron | The day basemap tile layer. |
 | `URL_TILE_DARK` | both | CARTO Dark Matter | The night basemap tile layer. |
+| `TILE_KEY` | both | empty | The basemap API key, added to every tile request when set. A key supplied by the hosting server at run time as `window.VOYAGE_ATLAS_CONFIG.tileKey` takes precedence. |
 | `URL_GEOCODE` | editor | `https://nominatim.openstreetmap.org` | The geocoder base URL, used for name-to-coordinate search and reverse country lookup. Point it at a different Nominatim-compatible instance if needed. |
+
+CARTO serves its basemap tiles only with an API key. A key is free for most sites and is requested at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/); each site needs its own, restricted to the site's host names in the CARTO dashboard (the bare domain and `www` are separate entries). Without a key the chart still works, but every tile carries an "API key required" watermark. A hosting server can supply the key at run time instead of editing the file, by defining `window.VOYAGE_ATLAS_CONFIG = { tileKey: "…" }` in a plain inline script (not `async`, `defer` or a module) placed before the tool's own script, for example at the end of the page head, since the viewer reads the key once as its chart is set up; the published site does this, so its key stays out of the repository.
 
 If the tile URLs are changed to another provider, update the attribution string on the tile layers (just below the configuration block) to match that provider's terms. The editor's geocoding requests are paced at one per second to comply with the public Nominatim usage policy; that pacing is fixed in the request queue and is intentionally not a configurable value.
 

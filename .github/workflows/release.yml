@@ -27,8 +27,13 @@ jobs:
       contents: write
 
     steps:
+      # The full history and all tags are fetched so that the previous
+      # version's tag can be found for the "Full changelog" link below. The
+      # default checkout is a single commit with no tags.
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       # Extract the release notes for the tagged version from CHANGELOG.md.
       #
@@ -59,8 +64,17 @@ jobs:
             exit 1
           fi
 
+          # Add a link to the comparison with the previous version: the
+          # nearest v* tag in the history before the tagged commit. A first
+          # release has none and gets no link.
+          PREVIOUS="$(git describe --tags --abbrev=0 --match 'v*' "${TAG}^" 2>/dev/null || true)"
+          if [ -n "$PREVIOUS" ]; then
+            echo "" >> release_notes.md
+            echo "**Full changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREVIOUS}...${TAG}" >> release_notes.md
+          fi
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: release_notes.md
           name: ${{ github.ref_name }}
