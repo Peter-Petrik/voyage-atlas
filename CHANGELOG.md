@@ -6,6 +6,15 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.5] - 2026-10-19
+
+### Security
+- **Voyage Files From This Site Only**: The `?data=` parameter in both tools now accepts only an address on the same site as the page: a relative path, or a full address with the same protocol and host. An address on another host, a protocol-relative `//host` address, or a scheme such as `data:` is refused, and the chooser opens with the note "Voyage files must be on this site." The voyage file is also fetched in same-origin mode, so a same-site address that redirects to another site fails as well, and `URL_VOYAGE_DATA` in the configuration block is held to the same site, as the README already documents. Previously any address was fetched, so a crafted link could make the viewer load a voyage from another site whose text then ran as script on this site.
+- **Voyage Text Escaped Before Display**: Chapter names, When, key destinations, waypoint names and avoidance-zone names are now escaped wherever the viewer writes them into the legend, the chapter drawer and the chart popups, and the editor now escapes waypoint names in its marker tooltips. Markup in a voyage file therefore displays as text instead of running. The header stat tiles escape their values too. Both tools share one escaping function.
+- **Chapter Fields Read as Their Expected Types**: When the editor loads a voyage file, each chapter number is read as a whole number, each era as `past`, `current` or `future` (any other value reads as `future`), and each coordinate as a number or blank. These values are written into the chapter list, the waypoint table and the KML export, so a file carrying text in their place could otherwise inject markup.
+- **Voyage Settings Read as Their Expected Types**: When either tool loads a voyage file, the distance unit is kept only when it is `nm`, `km` or `mi` (anything else reads as `nm`), and the distance, nations and territories overrides only when each is a positive number (anything else reads as unset). These settings are written into the header stats and every distance label, so a file carrying markup in their place could otherwise run it as soon as the voyage loaded.
+- **Blog Links Limited to Web Addresses**: The viewer shows a chapter's "Read the posts" link only for an `http` or `https` address. A `javascript:` or other address in a voyage file is no longer linked, so clicking the link can no longer run script.
+
 ## [v3.9.4] - 2026-10-19
 
 ### Added
@@ -639,6 +648,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.5]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.4...v3.9.5
 [v3.9.4]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.3...v3.9.4
 [v3.9.3]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.2...v3.9.3
 [v3.9.2]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.1...v3.9.2

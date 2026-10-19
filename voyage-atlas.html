@@ -299,6 +299,7 @@
     display: none; font-size: 11px; line-height: 1.5; color: var(--advisory-ink);
     background: var(--advisory-soft); border: 1px solid var(--advisory); border-left: 3px solid var(--advisory);
     border-radius: 4px; padding: 9px 12px; margin-bottom: 16px; text-align: left;
+    gap: 9px; align-items: flex-start;
   }
   .landing-advisory .adv-icon {
     flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%;
@@ -374,6 +375,7 @@
     <button id="landing-close" onclick="closeChooser()" title="Close" style="display:none;">×</button>
     <h2>Voyage Atlas</h2>
     <div class="landing-advisory"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> for the full experience, view on a larger screen.</span></div>
+    <div class="landing-advisory" id="landing-data-note" style="display:none;"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> Voyage files must be on this site.</span></div>
     <p class="landing-intro">Chart a multi-year voyage as a sequence of chapters — regions and seasons, not a list of waypoints.</p>
     <div class="landing-actions">
       <button id="landing-sample" class="landing-btn" onclick="loadSampleFromChooser()" style="display:none;">
@@ -441,7 +443,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.4</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.5</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -730,7 +732,7 @@ function computeHeroStats(chapters, settings) {
    [value, label] (with an optional third element: true to append the ⚙ manual-override marker). */
 function heroTilesHTML(items) {
   return items.map(([v, l, ov]) =>
-    `<div class="stat"><span class="stat-val">${v}${ov ? ' ⚙' : ''}</span><span class="stat-lbl">${l}</span></div>`
+    `<div class="stat"><span class="stat-val">${esc(v)}${ov ? ' ⚙' : ''}</span><span class="stat-lbl">${esc(l)}</span></div>`
   ).join('');
 }
 
@@ -767,8 +769,45 @@ function handleFile(e) {
   e.target.value = '';
 }
 
+// Escape text for insertion into HTML (element content or a double-quoted attribute), so names and
+// other text from a voyage file display as text and never run as markup. Shared between editor and
+// viewer (identical definitions in both).
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// The chapter's blog link as an absolute http(s) address, or '' when it is missing or uses any other
+// scheme. A javascript: or data: address in a voyage file would otherwise run when the reader clicks
+// "Read the posts". A relative address resolves against this page, so it stays on this site.
+function safeHttpUrl(value) {
+  const s = String(value == null ? '' : value).trim();
+  if (!s) return '';
+  let url;
+  try { url = new URL(s, location.href); } catch (e) { return ''; }
+  return (url.protocol === 'http:' || url.protocol === 'https:') ? url.href : '';
+}
+
+// Voyage settings from a file, reduced to the values the tools understand: distanceUnit is one of the
+// NM_TO keys (else 'nm'), and each override is a positive finite number (else null, which reads as
+// unset). The settings are written into the header stats and every distance label, so a value of
+// any other kind must never reach that markup. Shared between editor and viewer (identical
+// definitions in both).
+function normalizeSettings(raw) {
+  const s = (raw && typeof raw === 'object') ? raw : {};
+  const count = v => { const n = typeof v === 'number' ? v : parseFloat(v); return Number.isFinite(n) && n > 0 ? n : null; };
+  return {
+    distanceOverride: count(s.distanceOverride),
+    nationsOverride: count(s.nationsOverride),
+    territoriesOverride: count(s.territoriesOverride),
+    distanceUnit: Object.prototype.hasOwnProperty.call(NM_TO, s.distanceUnit) ? s.distanceUnit : 'nm'
+  };
+}
+
 /* ===================== Schema normalization ==================== */
 function normalizeData(data) {
+  data.meta = (data.meta && typeof data.meta === 'object') ? data.meta : {};
+  data.meta.settings = normalizeSettings(data.meta.settings);
   data.chapters.forEach(ch => {
     // Build the render route from the unified waypoint list (named + shaping vertices, in order).
     const coords = (ch.waypoints || [])
@@ -845,7 +884,7 @@ function loadVoyageData(raw) {
       const hasName = w.name && w.name.trim();
       if (!hasName) return; // skip shaping vertices in viewer
       const major = !!w.major;
-      const popup = `<div class="pop-name">${w.name}</div><div class="pop-when">${ch.when || ''}</div>` +
+      const popup = `<div class="pop-name">${esc(w.name)}</div><div class="pop-when">${esc(ch.when)}</div>` +
                     (major ? '<div class="pop-major">Major port</div>' : '');
       WORLD_COPIES.forEach(off => {
         const m = L.circleMarker([w.lat, w.lon + off], {
@@ -887,7 +926,7 @@ function loadVoyageData(raw) {
     const [s, w, n, e] = z.bounds;
     WORLD_COPIES.forEach(off => {
       L.rectangle([[s, w + off],[n, e + off]], { color: '#9b2d20', weight: 1, fillColor: '#b13327', fillOpacity: 0.22, stroke: true, dashArray: '4 3' })
-        .bindPopup(`<div class="pop-zone">${z.zone}</div><div class="pop-when">Permanent avoidance zone</div>`, { maxWidth: 240 })
+        .bindPopup(`<div class="pop-zone">${esc(z.zone)}</div><div class="pop-when">Permanent avoidance zone</div>`, { maxWidth: 240 })
         .addTo(pazLayer);
     });
   });
@@ -904,7 +943,7 @@ function loadVoyageData(raw) {
     const lr = document.createElement('div');
     lr.className = 'leg-row' + (isPast ? ' past' : '');
     lr.id = `leg-${ch.num}`;
-    lr.innerHTML = `<div class="leg-sw" style="background:${color}"></div><div class="leg-name">${ch.name}</div>`;
+    lr.innerHTML = `<div class="leg-sw" style="background:${color}"></div><div class="leg-name">${esc(ch.name)}</div>`;
     if (!isPast) lr.addEventListener('click', () => selectChapter(ch.num));
     legendBody.appendChild(lr);
 
@@ -916,10 +955,10 @@ function loadVoyageData(raw) {
       `<div class="dr-sw" style="background:${color}"></div>
        <div style="min-width:0;flex:1">
          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-           <span class="dr-when">${ch.when || ''}</span>${badge}
+           <span class="dr-when">${esc(ch.when)}</span>${badge}
          </div>
-         <div class="dr-name">${ch.name}</div>
-         <div class="dr-dest">${(ch.keyDestinations||[]).join(' · ')}</div>
+         <div class="dr-name">${esc(ch.name)}</div>
+         <div class="dr-dest">${esc((ch.keyDestinations||[]).join(' · '))}</div>
        </div>`;
     if (!isPast) dr.addEventListener('click', () => { selectChapter(ch.num); if (window.innerWidth <= 640) closeDrawer(); });
     drawerBody.appendChild(dr);
@@ -1114,8 +1153,9 @@ function selectChapter(num) {
   // Blog link — shown only when the chapter carries a blogUrl (#16).
   const blogBlock = document.getElementById('info-blog-block');
   const blogLink = document.getElementById('info-blog-link');
-  if (ch.blogUrl && ch.blogUrl.trim()) {
-    blogLink.href = ch.blogUrl.trim();
+  const blogHref = safeHttpUrl(ch.blogUrl);
+  if (blogHref) {
+    blogLink.href = blogHref;
     blogBlock.style.display = '';
   } else {
     blogBlock.style.display = 'none';
@@ -1160,16 +1200,42 @@ document.addEventListener('keydown', e => {
    the voyage is shown and the chooser's sample option becomes available; if it does not, the
    chooser opens with the sample option hidden. ?import=yes opens the chooser on arrival without
    auto-displaying. */
+// The data path for this visit: the ?data= override when present, else URL_VOYAGE_DATA. An override
+// is honored only when it stays on this site (isSameSitePath), and is returned as the full address
+// that was checked, so the fetch cannot resolve it differently; otherwise the result is null, which
+// the caller treats as a file that failed to load, opening the chooser with a note. The caller also
+// fetches in same-origin mode, so a same-site address that redirects to another site fails too, and
+// URL_VOYAGE_DATA is held to this site the same way. Shared between editor and viewer (identical
+// definitions in both).
 function resolveDataPath() {
   const override = (new URLSearchParams(location.search).get('data') || '').trim();
-  return override || URL_VOYAGE_DATA;
+  if (!override) return URL_VOYAGE_DATA;
+  return isSameSitePath(override) ? new URL(override, location.href).href : null;
+}
+
+// True when a path, resolved against the current page address, has the same protocol and host as
+// the page itself. This rejects an absolute address on another host, a protocol-relative //host
+// address (and the /\host form that browsers read the same way), and scheme addresses such as
+// data: or javascript:. Without the check, a crafted link could load a voyage from another site,
+// and that file's text would then run as script in this site's origin. Shared between editor and
+// viewer (identical definitions in both).
+function isSameSitePath(path) {
+  let url;
+  try { url = new URL(path, location.href); } catch (e) { return false; }
+  return url.protocol === location.protocol && url.host === location.host && !url.username && !url.password;
 }
 
 let sampleVoyage = null;      // parsed voyage from the resolved path, when it loaded cleanly
 let sampleAvailable = false;  // whether the chooser should offer "Explore the sample voyage"
+let dataPathRejected = false; // the ?data= address pointed off this site; the arrival chooser says so
 
 function openChooser() {
   document.getElementById('landing-sample').style.display = sampleAvailable ? '' : 'none';
+  // The data note shows on the arrival chooser only, when the ?data= address was rejected; any later
+  // opening of the chooser (the Load button or menu) leaves it hidden. Inline display overrides the
+  // small-screen rule that shows the other advisory, so the note never appears on its own.
+  document.getElementById('landing-data-note').style.display = dataPathRejected ? 'flex' : 'none';
+  dataPathRejected = false;
   // The close affordance (× and backdrop dismiss) is offered only when a voyage is already on
   // screen to return to. At a cold start the chooser is the only content, so it cannot be dismissed.
   document.getElementById('landing-close').style.display = DATA ? '' : 'none';
@@ -1201,7 +1267,10 @@ document.addEventListener('keydown', function(e) {
 
 (function initialLoad() {
   const forceChooser = (new URLSearchParams(location.search).get('import') || '').toLowerCase() === 'yes';
-  fetch(resolveDataPath()).then(r => {
+  // A rejected ?data= address (null) takes the same path as a file that failed to load.
+  const dataPath = resolveDataPath();
+  dataPathRejected = dataPath === null;
+  (dataPath === null ? Promise.reject(new Error('not on this site')) : fetch(dataPath, { mode: 'same-origin' })).then(r => {
     if (!r.ok) throw new Error('not found');
     return r.text();
   }).then(text => {

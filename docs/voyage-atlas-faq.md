@@ -179,7 +179,7 @@ Open a chapter's metadata panel (the 📋 toggle, or double-click the chapter he
 4. **Pad Multiplier** — the distance multiplier for this chapter (see distance calculation, Part 1).
 5. **Countries / Territories** — auto-derived from the chapter's waypoint countries, in first-appearance order. Leave it blank to keep that automatic; type a comma-separated list to override it with a curated set (the override *replaces* the derived list, it does not add to it). Each entry is then classified as a nation or a territory against the built-in reference list, exactly as the voyage totals are.
 6. **Key Destinations** — highlights for the viewer's chapter summary.
-7. **Blog URL** — an optional link to a post about this chapter, surfaced in the viewer.
+7. **Blog URL** — an optional link to a post about this chapter, surfaced in the viewer. Only an `http` or `https` address is shown as a link.
 8. **Notes** — free-form narrative (routing thoughts, bail-out options, anything).
 
 To open or close every chapter's panels in one go, use the compact controls above the chapter list: **📋 ⊞ ⊟** for the metadata panels and **📍 ⊞ ⊟** for the waypoint tables. In each pair the **⊞** opens every panel of that kind and the **⊟** closes them all.
@@ -281,7 +281,7 @@ The tools are generic; the voyage lives in `voyage-data.json`. Separating data f
 
 ## Can the voyage file be loaded from a web address?
 
-No — the voyage file is loaded by relative path only, whether through the `URL_VOYAGE_DATA` constant or the `?data=` parameter. A full `http(s)` address is not supported. This is a deliberate choice, not an oversight. A browser only permits a page to fetch a file from another origin when that remote server returns the headers that allow it (the cross-origin resource sharing, or CORS, rules), and a self-contained static file has no control over those headers on a server it does not own. Supporting arbitrary web addresses would therefore work for some hosts and fail silently for most, which is worse than not offering it. The relative-path model keeps loading predictable: the file travels with the tool. (The technical groundwork for opt-in remote loading from CORS-permissive hosts is noted in the enhancements backlog.)
+No — the voyage file is loaded by relative path only, whether through the `URL_VOYAGE_DATA` constant or the `?data=` parameter. A full `http(s)` address is not supported. This is a deliberate choice, not an oversight. A browser only permits a page to fetch a file from another origin when that remote server returns the headers that allow it (the cross-origin resource sharing, or CORS, rules), and a self-contained static file has no control over those headers on a server it does not own. Supporting arbitrary web addresses would therefore work for some hosts and fail silently for most, which is worse than not offering it. The relative-path model keeps loading predictable: the file travels with the tool. A `?data=` value that points to another site (an absolute address on another host, a `//host` address, or a scheme such as `data:`) is refused, and the chooser opens with a note that voyage files must be on this site; a voyage file from another site could otherwise carry script that would run in this site's pages. (The technical groundwork for opt-in remote loading from CORS-permissive hosts is noted in the enhancements backlog.)
 
 ## How do I change the basemap or use a different geocoder?
 

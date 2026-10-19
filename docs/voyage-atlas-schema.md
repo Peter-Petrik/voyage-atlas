@@ -98,7 +98,7 @@ unset.
 | `notes` | string | always | Free-form chapter notes (routing, bail-out, summary). Empty string when blank. |
 | `countriesOverride` | string[] | only when set and non-empty | Per-chapter country override that replaces the auto-derived list. **Omitted when empty**, in which case the chapter derives its countries from its waypoints. |
 | `keyDestinations` | string[] | always | Key destinations for the chapter. |
-| `blogUrl` | string \| null | always | URL to the chapter's blog collection; `null` when blank. |
+| `blogUrl` | string \| null | always | URL to the chapter's blog collection; `null` when blank. The viewer links it only when it is an `http` or `https` address. |
 | `padMultiplier` | number | always | Distance padding factor (e.g. 1.2). |
 | `waypoints` | object[] | always | Ordered waypoint list (below). |
 

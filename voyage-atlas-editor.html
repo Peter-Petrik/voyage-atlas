@@ -517,6 +517,7 @@ th .hi { margin-left: 2px; }
   display: none; font-size: 11.5px; line-height: 1.5; color: var(--advisory-ink);
   background: var(--advisory-soft); border: 1px solid var(--advisory); border-left: 3px solid var(--advisory);
   border-radius: 4px; padding: 10px 13px; margin-bottom: 16px; text-align: left;
+  gap: 9px; align-items: flex-start;
 }
 .landing-advisory .adv-icon {
   flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%;
@@ -656,7 +657,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.4</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.5</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -670,6 +671,7 @@ th .hi { margin-left: 2px; }
     <button id="landing-close" onclick="closeChooser()" title="Close">×</button>
     <h2>Welcome to Voyage Atlas</h2>
     <div class="landing-advisory"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> Voyage Atlas Editor is designed for a larger screen. Charting and editing waypoints on a phone is difficult — a tablet or desktop is strongly recommended.</span></div>
+    <div class="landing-advisory" id="landing-data-note" style="display:none;"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> Voyage files must be on this site.</span></div>
     <p class="landing-intro">Chart a multi-year voyage as a sequence of chapters — regions and seasons, not a list of waypoints. Pick a starting point:</p>
     <div class="landing-actions">
       <button id="landing-sample" class="landing-btn" onclick="loadSampleFromChooser()" style="display:none;">
@@ -909,6 +911,22 @@ function gatewayMarkerSVG(size, fill, stroke, strokeW, opacity) {
 /* ═══════════════════════════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════════════════════════ */
+// Voyage settings from a file, reduced to the values the tools understand: distanceUnit is one of the
+// NM_TO keys (else 'nm'), and each override is a positive finite number (else null, which reads as
+// unset). The settings are written into the header stats and every distance label, so a value of
+// any other kind must never reach that markup. Shared between editor and viewer (identical
+// definitions in both).
+function normalizeSettings(raw) {
+  const s = (raw && typeof raw === 'object') ? raw : {};
+  const count = v => { const n = typeof v === 'number' ? v : parseFloat(v); return Number.isFinite(n) && n > 0 ? n : null; };
+  return {
+    distanceOverride: count(s.distanceOverride),
+    nationsOverride: count(s.nationsOverride),
+    territoriesOverride: count(s.territoriesOverride),
+    distanceUnit: Object.prototype.hasOwnProperty.call(NM_TO, s.distanceUnit) ? s.distanceUnit : 'nm'
+  };
+}
+
 function defaultSettings() {
   return { distanceOverride: null, nationsOverride: null, territoriesOverride: null, distanceUnit: 'nm' };
 }
@@ -1111,7 +1129,7 @@ function updateMapChapter(chNum) {
       }
     }
 
-    const tip = hasName ? `${w.name}${w.major ? ' ●' : ''}${w.decision ? ' ◆' : ''}${w.gateway ? ' ★' : ''}${isActive ? '<br><em>right-click to delete</em>' : ''}`
+    const tip = hasName ? `${esc(w.name)}${w.major ? ' ●' : ''}${w.decision ? ' ◆' : ''}${w.gateway ? ' ★' : ''}${isActive ? '<br><em>right-click to delete</em>' : ''}`
       : `shaping vertex #${idx + 1}${isActive ? '<br><em>right-click to delete</em>' : ''}`;
 
     WORLD_COPIES.forEach(off => {
@@ -1954,7 +1972,7 @@ function computeHeroStats(chapters, settings) {
    [value, label] (with an optional third element: true to append the ⚙ manual-override marker). */
 function heroTilesHTML(items) {
   return items.map(([v, l, ov]) =>
-    `<div class="stat"><span class="stat-val">${v}${ov ? ' ⚙' : ''}</span><span class="stat-lbl">${l}</span></div>`
+    `<div class="stat"><span class="stat-val">${esc(v)}${ov ? ' ⚙' : ''}</span><span class="stat-lbl">${esc(l)}</span></div>`
   ).join('');
 }
 
@@ -2722,13 +2740,34 @@ function importJSON() {
    script; ?data=path overrides it per visit. On arrival the chooser opens; the path is fetched
    once and, if it resolves, the chooser offers "Explore the sample voyage" (and the Load menu's
    "Sample voyage" item appears). If it does not resolve, those sample affordances stay hidden. */
+// The data path for this visit: the ?data= override when present, else URL_VOYAGE_DATA. An override
+// is honored only when it stays on this site (isSameSitePath), and is returned as the full address
+// that was checked, so the fetch cannot resolve it differently; otherwise the result is null, which
+// the caller treats as a file that failed to load, opening the chooser with a note. The caller also
+// fetches in same-origin mode, so a same-site address that redirects to another site fails too, and
+// URL_VOYAGE_DATA is held to this site the same way. Shared between editor and viewer (identical
+// definitions in both).
 function resolveDataPath() {
   const override = (new URLSearchParams(location.search).get('data') || '').trim();
-  return override || URL_VOYAGE_DATA;
+  if (!override) return URL_VOYAGE_DATA;
+  return isSameSitePath(override) ? new URL(override, location.href).href : null;
+}
+
+// True when a path, resolved against the current page address, has the same protocol and host as
+// the page itself. This rejects an absolute address on another host, a protocol-relative //host
+// address (and the /\host form that browsers read the same way), and scheme addresses such as
+// data: or javascript:. Without the check, a crafted link could load a voyage from another site,
+// and that file's text would then run as script in this site's origin. Shared between editor and
+// viewer (identical definitions in both).
+function isSameSitePath(path) {
+  let url;
+  try { url = new URL(path, location.href); } catch (e) { return false; }
+  return url.protocol === location.protocol && url.host === location.host && !url.username && !url.password;
 }
 
 let sampleVoyage = null;      // parsed voyage from the resolved path, when it loaded cleanly
 let sampleAvailable = false;  // whether the sample affordances (chooser button, menu item) are offered
+let dataPathRejected = false; // the ?data= address pointed off this site; the arrival chooser says so
 
 function showLanding() {
   const el = document.getElementById('landing');
@@ -2741,6 +2780,11 @@ function hideLanding() {
 // The chooser opens on arrival; the sample button shows only when the configured file resolved.
 function openChooser() {
   document.getElementById('landing-sample').style.display = sampleAvailable ? '' : 'none';
+  // The data note shows on the arrival chooser only, when the ?data= address was rejected; any later
+  // opening of the chooser (the Load button or menu) leaves it hidden. Inline display overrides the
+  // small-screen rule that shows the other advisory, so the note never appears on its own.
+  document.getElementById('landing-data-note').style.display = dataPathRejected ? 'flex' : 'none';
+  dataPathRejected = false;
   showLanding();
 }
 // The × button and Escape both route here: load the sample when one is available, otherwise start a
@@ -2851,12 +2895,32 @@ function composeNotesFallback(raw) {
     raw.prose || ''
   ].filter(Boolean).join('\n\n') || '';
 }
+// A coordinate from a JSON file: a finite number, or text that reads as one, is kept as a number;
+// anything else becomes null. Coordinates are written into the waypoint table's inputs and the KML
+// export, so a value that is not a number must never reach that markup.
+function toCoord(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+}
+// A chapter number as an integer (0 when unreadable). Chapter numbers are written into the chapter
+// list's inline handlers and element ids, so only a number may reach that markup.
+function toChapterNum(v) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+// The chapter era as one of the three known values, matched case-insensitively; anything else reads
+// as 'future'. The era is written into the chapter list as a class name and a label.
+function toEra(v) {
+  const s = String(v == null ? '' : v).toLowerCase();
+  return (s === 'past' || s === 'current' || s === 'future') ? s : 'future';
+}
 function normalizeWaypoint(w, opts = {}) {
   const csv = !!opts.csv;
   return {
     name: w.name || '',
-    lat: csv ? (parseFloat(w.lat) || null) : (w.lat ?? null),
-    lon: csv ? (parseFloat(w.lon) || null) : (w.lon ?? null),
+    lat: csv ? (parseFloat(w.lat) || null) : toCoord(w.lat),
+    lon: csv ? (parseFloat(w.lon) || null) : toCoord(w.lon),
     major: parseBool(w.major),
     decision: parseBool(w.decision),
     gateway: parseBool(w.gateway),
@@ -2867,10 +2931,10 @@ function normalizeWaypoint(w, opts = {}) {
 function normalizeChapter(ch, opts = {}) {
   const csv = !!opts.csv;
   return {
-    num: ch.num,
+    num: toChapterNum(ch.num),
     name: ch.name || '',
     when: ch.when || '',
-    era: ch.era || 'future',
+    era: toEra(ch.era),
     notes: composeNotesFallback(ch),
     countriesOverride: csv ? csvList(ch.countries) : (ch.countriesOverride || null),
     keyDestinations: csv ? (csvList(ch.keyDestinations) || []) : (ch.keyDestinations || []),
@@ -2887,14 +2951,12 @@ function loadVoyage(data) {
   // current pixel size, so fitting before the container has settled (the editor's map shares width
   // with the chapter panel) picks too low a zoom. invalidateSize first, then fit, in the same tick.
   setTimeout(() => { map.invalidateSize(); fitAllChapters(STATE.chapters); }, 100); // #58: frame the whole voyage; no chapter auto-selected
-  // Reset to defaults first so a loaded voyage never inherits the previous session's settings
-  // (e.g. a file that omits distanceUnit gets 'nm', not whatever was loaded before).
-  STATE.settings = defaultSettings();
-  if (data.meta && data.meta.settings) {
-    STATE.settings = { ...STATE.settings, ...data.meta.settings };
-  }
+  // Settings are rebuilt from the file alone, so a loaded voyage never inherits the previous session's
+  // settings (a file that omits distanceUnit gets 'nm', not whatever was loaded before), and only
+  // values of the expected kind are kept (normalizeSettings).
+  STATE.settings = normalizeSettings(data.meta && data.meta.settings);
   // v3.0 model: the user voyage title lives at meta.title (STATE.metaTitle), edited in the
-  // settings field and written back verbatim. distanceOverride loads via the settings spread above.
+  // settings field and written back verbatim. distanceOverride loads with the settings above.
   STATE.metaTitle = (data.meta && data.meta.title) || '';
   loadSettings();
   updateHeroStats();
@@ -3126,6 +3188,9 @@ function exportKML() {
 /* ═══════════════════════════════════════════════════════════════
    UTILITIES
    ═══════════════════════════════════════════════════════════════ */
+// Escape text for insertion into HTML (element content or a double-quoted attribute), so names and
+// other text from a voyage file display as text and never run as markup. Shared between editor and
+// viewer (identical definitions in both).
 function esc(s) {
   if (s === null || s === undefined) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -3229,7 +3294,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // the sample affordances appear — a clean parse enables "Explore the sample voyage" (and the Load
   // menu's "Sample voyage" item); a missing or malformed file leaves them hidden. Nothing auto-loads
   // silently: the editor begins empty behind the chooser and the user picks sample, new, or file.
-  fetch(resolveDataPath()).then(r => {
+  // A rejected ?data= address (null) takes the same path as a file that failed to load.
+  const dataPath = resolveDataPath();
+  dataPathRejected = dataPath === null;
+  (dataPath === null ? Promise.reject(new Error('not on this site')) : fetch(dataPath, { mode: 'same-origin' })).then(r => {
     if (!r.ok) throw new Error('not found');
     return r.text();
   }).then(text => {
