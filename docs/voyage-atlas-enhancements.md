@@ -5,7 +5,7 @@ The forward-looking backlog for the **editor** (`voyage-atlas-editor.html`) and 
 version. (The ~21 previously-"queued" items that had already shipped were pruned from this doc; all
 were confirmed present in the CHANGELOG first. The v3.0 release then pruned #53, #56, and #62 — shipped, and
 confirmed in the CHANGELOG — and dropped #52 as moot, since the CSV carries no distance figures to
-label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG. The v3.2–v3.4 releases then pruned #16, #49, #51, #55, #57, #58, and #61 — all shipped, and confirmed in the CHANGELOG. The v3.7 release pruned #38 and #39 — shipped, and confirmed in the CHANGELOG — and retired #40 as superseded by the Cloudflare-served deployment at `sailingamazinggrace.com/resources/voyage-atlas`, which provides the one-click live demo #40 sought without GitHub Pages. The v3.7 release also delivered the Open Graph / Twitter Card half of #32 and the favicon/manifest groundwork of #31, both of which remain open for their unshipped scope. The v3.9 release added #69 (opt-in remote-source loading), the deferred remainder of the configurable-data-path work that shipped in that release.) Build decisions live in `voyage-atlas-runbook.md`.
+label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG. The v3.2–v3.4 releases then pruned #16, #49, #51, #55, #57, #58, and #61 — all shipped, and confirmed in the CHANGELOG. The v3.7 release pruned #38 and #39 — shipped, and confirmed in the CHANGELOG — and retired #40 as superseded by the Cloudflare-served deployment at `sailingamazinggrace.com/resources/voyage-atlas`, which provides the one-click live demo #40 sought without GitHub Pages. The v3.7 release also delivered the Open Graph / Twitter Card half of #32 and the favicon/manifest groundwork of #31, both of which remain open for their unshipped scope. The v3.9 release added #69 (opt-in remote-source loading), the deferred remainder of the configurable-data-path work that shipped in that release. The October 2026 review added #70 (play the voyage in the viewer) and #71 (vector basemap with globe view), both drawn from a look at Map Animator.) Build decisions live in `voyage-atlas-runbook.md`.
 
 Items keep their **original numbers** — cross-references and the runbook depend on them, so the numbers
 are stable IDs, not sequence. They're grouped into **phases** meant to be worked roughly in order, each
@@ -90,6 +90,8 @@ Import a GPX track to populate/replace a chapter's waypoints — chiefly to upda
 (Douglas–Peucker or similar) simplifies dense GPS tracks to a manageable waypoint count; the user then
 trims/adjusts.
 
+Reference UX from Map Animator (mapanimator.baldinger.se): a Simple ↔ Detailed simplify control that shows the resulting point count as it moves, and a choice at import time whether the file's waypoints come in as named waypoints or are dropped, leaving only route geometry.
+
 ### 18. GPX export
 `Effort S/M · Impact Med · editor export · pairs with #17`
 Export the route as GPX (waypoints + route, or track). Complement to the existing KML export.
@@ -161,6 +163,10 @@ A shareable URL that opens the viewer with one chapter already selected and fram
 `voyage-atlas.html#<chapter>`. The identifier scheme is the open question — a sequence number is
 brittle across edits, the chapter name is readable but mutable, a UUID (see #63) is stable but opaque.
 Resolving #63 (stable chapter identity) is the natural prerequisite.
+
+### 70. Play the voyage
+`Effort M · Impact Med · viewer animation (routes + chart framing) · relates to #28, #21`
+A Play control in the viewer that draws the voyage chapter by chapter in travel order, with the chart following the tip of the line and a boat glyph at the tip. Each chapter boundary pauses briefly on the chapter's name and When. Pause, stop, and a speed setting complete the controls. It builds on the existing dateline split and three world copies, and reuses the direction-of-travel framing from the on-load view. No video export: Map Animator (mapanimator.baldinger.se) already turns the editor's KML export into an MP4, reading one route per chapter and the named waypoints as signs, so video stays with a dedicated tool. **Open:** the whole voyage versus one chapter at a time; how past / current / future styling shows during playback (ties to the open era-delineation design); and whether playback pace follows distance, so a long ocean crossing does not dominate the run time.
 
 ---
 
@@ -274,6 +280,10 @@ zero-friction creator experience but adding discoverability. Inspired by TravelM
 subdomain vs path URLs; static hosting (GitHub / Cloudflare Pages with user-submitted data) vs a
 dynamic backend; whether edit capability lives in the hosted version or stays local-only.
 **Prerequisite:** a real demand signal from the AMEL group, OCC, or a similar community.
+
+### 71. Vector basemap with globe view (MapLibre GL + OpenFreeMap)
+`Effort L · Impact High · both tools: chart engine (Leaflet → MapLibre GL) + basemap · major-version candidate`
+Replace the Leaflet raster chart with MapLibre GL drawing OpenFreeMap vector tiles, which need no API key, carry no request limits, and allow commercial use. This removes the basemap's key dependency, which arrived with CARTO's key requirement in September 2026. A self-hosted custom style can carry the admiralty-chart palette with depth bands, closer to the intended chart look than any stock raster style. MapLibre's globe projection can show a circumnavigation whole, which the flat Web Mercator chart cannot (runbook Decision 49). **Costs:** a rewrite of every rendering path in both tools (markers, routes, world copies, dateline split, fit logic) and of the shared core built around them; a much larger library; and a WebGL requirement. The tile URL constants in the self-hosting configuration become a style URL, which changes that contract, so this is a major-version (4.0) candidate. The voyage data schema is unaffected. Inspired by Map Animator, which runs this stack in production. **Open:** whether the globe is the default view or a toggle; the style JSON must be hosted alongside the tools, since OpenFreeMap requires a modified style to be self-hosted. **Prerequisite:** a decision to start a 4.0 cycle.
 
 ---
 
