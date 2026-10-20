@@ -69,18 +69,72 @@ function loadTool(name) {
   return { name, html, js, defs: topLevelDefinitions(js) };
 }
 
-// Run the named definitions of a tool in a fresh function scope and return them. `globals` supplies
-// the browser objects the definitions read (location, fetch and the like) as parameters, so each
-// test controls them and nothing leaks between tests. A missing definition throws, which fails the
-// test that asked for it.
-function pick(tool, names, globals = {}) {
-  const sources = names.map(n => {
-    if (!(n in tool.defs)) throw new Error(`${tool.name}: no top-level definition named ${n}`);
-    return tool.defs[n];
+// The tool's module-level `let` declarations: each line that starts with `let `, which is how the
+// tools write them, one statement per line. `names` lists the variables a line declares.
+function moduleLets(tool) {
+  return [...tool.js.matchAll(/^let ([^;]*);/gm)].map(m => {
+    // Split the declaration list at commas outside brackets; each part starts with its name.
+    const parts = [];
+    let depth = 0, cur = '';
+    for (const c of m[1]) {
+      if ('([{'.includes(c)) depth++;
+      else if (')]}'.includes(c)) depth--;
+      if (c === ',' && depth === 0) { parts.push(cur); cur = ''; } else cur += c;
+    }
+    parts.push(cur);
+    return { line: m[0], names: parts.map(p => p.trim().match(/^\w+/)[0]) };
   });
+}
+
+// A definition's source with comments removed, for finding the names it refers to. Only used for
+// that scan, never run, so a `//` inside a string literal (an address) cutting the rest of its line
+// is harmless: at worst a dependency on that line is missed and the test fails on an unknown name.
+function withoutComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
+}
+
+// Run the named definitions of a tool in a fresh function scope and return them.
+//
+// The top-level definitions they refer to are included too, followed transitively, so a test names
+// only the function it exercises; a reference is a bare name, not a property such as `.map(`.
+// Consts run in file order, as in the page, so a const that reads another const finds it.
+// `globals` supplies everything else the code reads (location, fetch, STATE, DOM stubs) as
+// parameters, so each test controls them and nothing leaks between tests; a name given in `globals`
+// is never taken from the file, which is how a test replaces a definition with a stub or keeps out
+// a const that would build the live chart.
+//
+// `opts.lets` declares the tool's module-level `let` state (STATE, the selection, the lookup
+// queues) as the page does, apart from names given in `globals`. `opts.prelude` is code run after
+// the definitions and those declarations, typically to set that state up, and `opts.expose` adds
+// entries to the returned object (getters over that state, for example), so a test can read the
+// state back after a call.
+//
+// A requested name with no definition throws, which fails the test that asked for it.
+function pick(tool, names, globals = {}, opts = {}) {
+  names.forEach(n => {
+    if (!(n in tool.defs)) throw new Error(`${tool.name}: no top-level definition named ${n}`);
+  });
+  const all = Object.keys(tool.defs);
+  const lets = opts.lets ? moduleLets(tool).filter(l => !l.names.some(n => n in globals)).map(l => l.line) : [];
+  const wanted = new Set(names);
+  // The let initializers and the prelude may call definitions too (STATE starts from
+  // defaultSettings()), so they are scanned along with the requested names.
+  const queue = [...names, { src: [...lets, opts.prelude || ''].join('\n') }];
+  while (queue.length) {
+    const next = queue.shift();
+    const src = withoutComments(typeof next === 'string' ? tool.defs[next] : next.src);
+    for (const other of all) {
+      if (wanted.has(other) || other in globals) continue;
+      if (new RegExp(`(?<![.\\w$])${other}(?![\\w$])`).test(src)) { wanted.add(other); queue.push(other); }
+    }
+  }
+  const sources = all.filter(n => wanted.has(n)).map(n => tool.defs[n]);
   const params = Object.keys(globals);
-  const body = sources.join('\n') + `\nreturn { ${names.join(', ')} };`;
+  const exposed = [names.join(', '), opts.expose].filter(Boolean).join(', ');
+  // Function declarations are hoisted, so the order that matters is for consts: they run first, in
+  // file order, then the state, then the prelude that may read both.
+  const body = [...sources, ...lets, opts.prelude || '', `return { ${exposed} };`].join('\n');
   return new Function(...params, body)(...params.map(p => globals[p]));
 }
 
-module.exports = { ROOT, EDITOR, VIEWER, readRepoFile, inlineScripts, topLevelDefinitions, loadTool, pick };
+module.exports = { ROOT, EDITOR, VIEWER, readRepoFile, inlineScripts, topLevelDefinitions, moduleLets, loadTool, pick };

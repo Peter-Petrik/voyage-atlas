@@ -6,6 +6,17 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.7] - 2026-10-20
+
+### Changed
+- **Lists Separated by Semicolons**: The Countries / Territories and Key Destinations fields, and the matching `countries` and `keyDestinations` columns of the chapters CSV, now separate entries with semicolons, so an entry may contain a comma ("Horta, Faial"). Previously every comma started a new entry, so a key destination containing one became two, and the two territory names that contain commas ("Bonaire, Sint Eustatius and Saba"; "Saint Helena, Ascension and Tristan da Cunha") became two entries that each counted as a nation. A list with no semicolon is still split at commas, so older CSVs and hand-edited voyage files read as before, and those two territory names are recognized and kept whole, including in override lists that earlier versions saved with the name split in two. A single entry that contains a comma is written with a trailing semicolon, so it reads back as one entry; an entry cannot contain a semicolon. The editor also reads a list written as text in a hand-edited voyage file, which previously stopped the file from loading.
+
+### Fixed
+- **Coordinates of 0 Count**: A waypoint on the equator or the prime meridian is now charted, routed and counted in both tools. Previously a latitude or longitude of exactly 0 read as missing, so the point dropped out of the route, the distances, the shaping-vertex count, the chart framing and the KML export, and a 0 typed into the waypoint table, pasted or imported from a CSV was stored as empty. The viewer also reads coordinates written as text in a hand-edited voyage file as numbers.
+- **Clean Start When a Voyage Is Replaced**: Loading a voyage file, importing CSVs and starting a new voyage now start a clean session. Previously the last active chapter stayed active, so Rapid-click and search added into the new voyage's chapter of the same number; a CSV import kept the previous voyage's title and overrides, such as a Distance Override, because a CSV pair carries none of its own; and country or coordinate lookups still waiting or in flight could write a country into the new voyage's table and count toward its progress. Rapid-click is now switched off, chapter panels start collapsed, waiting lookups are dropped, and the answer to a lookup already under way is ignored. A file that fails to read still leaves the current voyage as it was.
+- **When Years Beyond 2024 to 2040**: The When year dropdowns now run from ten years before the current year to fifteen after it, widened to every year from 1900 to 2199 that the voyage's chapters already use. Previously they offered only 2024 to 2040, so an earlier chapter showed a blank year and lost it when another part of its When was edited, and plans past 2040 could not be entered.
+- **Unsaved Marker Cleared Only by a JSON Save**: A CSV or KML export no longer clears the `Save *` marker or disarms the leave-page prompt. Neither format carries the voyage title or settings, and KML also leaves out notes, era and When, so after such an export the voyage was not yet saved in a form that reloads as the same voyage. Save and the JSON exports still clear the marker.
+
 ## [v3.9.6] - 2026-10-20
 
 ### Fixed
@@ -655,6 +666,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.7]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.6...v3.9.7
 [v3.9.6]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.5...v3.9.6
 [v3.9.5]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.4...v3.9.5
 [v3.9.4]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.3...v3.9.4

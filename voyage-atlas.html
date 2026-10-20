@@ -443,7 +443,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.6</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.7</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -660,6 +660,64 @@ function classifyCountries(allCountries) {
   });
   return { nations, territories };
 }
+
+// True when a waypoint has both coordinates as finite numbers. A coordinate of exactly 0 (a point on
+// the equator or the prime meridian) is a real position, so every test for "has coordinates" goes
+// through here instead of reading the values as true or false, which would drop such a point from
+// the route, the distances and the chart. Shared between editor and viewer (identical definitions in
+// both).
+function hasCoord(w) {
+  return !!w && Number.isFinite(w.lat) && Number.isFinite(w.lon);
+}
+
+// A coordinate read from a file or a field: a finite number, or text that reads as one, is kept as a
+// number, 0 included; anything else becomes null. Coordinates are written into the waypoint table's
+// inputs and the KML export, so a value that is not a number must never reach that markup. Shared
+// between editor and viewer (identical definitions in both).
+function toCoord(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+// A list typed into a field or held as text in a file (countries, key destinations), split into its
+// entries. Entries are separated by semicolons, so an entry may contain commas ("Horta, Faial"), but
+// not a semicolon. Commas at either end of an entry are dropped, so a comma typed after a semicolon
+// list (", Pico") does not become part of a name. Text with no semicolon is split at commas instead,
+// which reads lists written with commas (older files and CSVs). Shared between editor and viewer
+// (identical definitions in both).
+function splitList(text) {
+  const s = String(text == null ? '' : text);
+  if (s.includes(';')) return s.split(';').map(x => x.replace(/^[\s,]+|[\s,]+$/g, '')).filter(Boolean);
+  return mergeTerritoryNames(s.split(',').map(x => x.trim()).filter(Boolean));
+}
+
+// A list's entries with any territory name that contains commas ("Bonaire, Sint Eustatius and Saba")
+// joined back up where it was split at those commas. A list split at every comma, as older files and
+// CSVs were, holds such a name as two entries, and each would then count as a nation. Shared between
+// editor and viewer (identical definitions in both).
+function mergeTerritoryNames(parts) {
+  const out = [];
+  for (let i = 0; i < parts.length; ) {
+    let end = i + 1;
+    for (let j = parts.length; j > i + 1; j--) {
+      if (TERRITORIES.has(parts.slice(i, j).join(', '))) { end = j; break; }
+    }
+    out.push(parts.slice(i, end).join(', '));
+    i = end;
+  }
+  return out;
+}
+
+// A list field (countriesOverride, keyDestinations) as read from a voyage file: an array as saved, or
+// text in a hand-edited file, split as typed text is. Entries are trimmed and empty ones dropped, and
+// a territory name that an earlier version saved split at its commas is joined back up. Anything else
+// reads as an empty list. Shared between editor and viewer (identical definitions in both).
+function fileList(v) {
+  if (typeof v === 'string') return splitList(v);
+  if (!Array.isArray(v)) return [];
+  return mergeTerritoryNames(v.map(x => String(x == null ? '' : x).trim()).filter(Boolean));
+}
 function haversineNm(lat1, lon1, lat2, lon2) {
   const R = 3440.065;
   const toRad = d => d * Math.PI / 180;
@@ -676,8 +734,8 @@ function getPredecessorChapter(ch) {
 function chapterApproachNm(ch) {
   const prev = getPredecessorChapter(ch);
   if (!prev) return 0;
-  const prevPts = (prev.waypoints || []).filter(w => w.lat && w.lon);
-  const thisPts = (ch.waypoints || []).filter(w => w.lat && w.lon);
+  const prevPts = (prev.waypoints || []).filter(hasCoord);
+  const thisPts = (ch.waypoints || []).filter(hasCoord);
   if (prevPts.length === 0 || thisPts.length === 0) return 0;
   const last = prevPts[prevPts.length - 1];
   const first = thisPts[0];
@@ -685,7 +743,7 @@ function chapterApproachNm(ch) {
 }
 function chapterNmBase(ch) {
   let total = 0;
-  const pts = (ch.waypoints || []).filter(w => w.lat && w.lon);
+  const pts = (ch.waypoints || []).filter(hasCoord);
   for (let i = 1; i < pts.length; i++) {
     total += haversineNm(pts[i-1].lat, pts[i-1].lon, pts[i].lat, pts[i].lon);
   }
@@ -707,7 +765,7 @@ function computeHeroStats(chapters, settings) {
     totalNm += chapterNm(ch);
     (ch.waypoints || []).forEach(w => {
       if (w.name && w.name.trim()) namedWaypoints++;
-      else if (w.lat && w.lon) shapingVertices++;
+      else if (hasCoord(w)) shapingVertices++;
     });
     chapterCountries(ch).forEach(c => { if (c) countries.add(c); });
   });
@@ -809,14 +867,17 @@ function normalizeData(data) {
   data.meta = (data.meta && typeof data.meta === 'object') ? data.meta : {};
   data.meta.settings = normalizeSettings(data.meta.settings);
   data.chapters.forEach(ch => {
+    // Coordinates are read as numbers (text that reads as one is converted, 0 is kept), so the route
+    // and every distance see the same values.
+    (ch.waypoints || []).forEach(w => { w.lat = toCoord(w.lat); w.lon = toCoord(w.lon); });
     // Build the render route from the unified waypoint list (named + shaping vertices, in order).
     const coords = (ch.waypoints || [])
-      .filter(w => w.lat && w.lon)
+      .filter(hasCoord)
       .map(w => [w.lat, w.lon]);
     ch.routes = coords.length >= 2 ? [coords] : [];
-    // Ensure arrays (defensive against hand-authored data)
-    if (typeof ch.countriesOverride === 'string') ch.countriesOverride = ch.countriesOverride.split(',').map(s => s.trim()).filter(Boolean);
-    if (typeof ch.keyDestinations === 'string') ch.keyDestinations = ch.keyDestinations.split(',').map(s => s.trim()).filter(Boolean);
+    // Lists as arrays of entries (hand-authored data may hold a list as text).
+    ch.countriesOverride = fileList(ch.countriesOverride);
+    ch.keyDestinations = fileList(ch.keyDestinations);
   });
   return data;
 }
@@ -880,7 +941,7 @@ function loadVoyageData(raw) {
   DATA.chapters.forEach(ch => {
     const color = chapterColor(ch.num);
     (ch.waypoints || []).forEach(w => {
-      if (!w.lat || !w.lon) return;
+      if (!hasCoord(w)) return;
       const hasName = w.name && w.name.trim();
       if (!hasName) return; // skip shaping vertices in viewer
       const major = !!w.major;
@@ -1021,7 +1082,7 @@ function fitToCoords(coords, easeOut) {
 function fitAllChapters(chapters) {
   const coords = [];
   (chapters || []).forEach(ch => {
-    (ch.waypoints || []).forEach(w => { if (w.lat && w.lon) coords.push([w.lat, w.lon]); });
+    (ch.waypoints || []).forEach(w => { if (hasCoord(w)) coords.push([w.lat, w.lon]); });
   });
   fitToCoords(coords); // no-op when empty — leaves the default world view
 }
@@ -1038,10 +1099,10 @@ function fitAllChapters(chapters) {
 //     the impossible whole loop. Zoom is the no-repeat minimum, so it never tiles.
 const LOAD_ANCHOR_INSET = 0.12; // place the trailing-extreme waypoint this fraction in from the usable edge
 function fitVoyageOnLoad(chapters) {
-  const list = (chapters || []).filter(ch => (ch.waypoints || []).some(w => w.lat && w.lon));
+  const list = (chapters || []).filter(ch => (ch.waypoints || []).some(hasCoord));
   if (!list.length) return;
   const allCoords = [];
-  list.forEach(ch => (ch.waypoints || []).forEach(w => { if (w.lat && w.lon) allCoords.push([w.lat, w.lon]); }));
+  list.forEach(ch => (ch.waypoints || []).forEach(w => { if (hasCoord(w)) allCoords.push([w.lat, w.lon]); }));
   if (allCoords.length < 2) { fitToCoords(allCoords); return; }
 
   // Does the whole voyage fit one non-tiling world? If the framing zoom isn't forced up by the
@@ -1063,7 +1124,7 @@ function fitVoyageOnLoad(chapters) {
   // focus. Compare the focus's mean unwrapped lon to the voyage's last point's unwrapped lon.
   // Build a per-waypoint unwrapped index so focus and tail share one continuous frame.
   const flat = [];
-  list.forEach((ch, ci) => (ch.waypoints || []).forEach(w => { if (w.lat && w.lon) flat.push({ ci, lat: w.lat, lon: w.lon }); }));
+  list.forEach((ch, ci) => (ch.waypoints || []).forEach(w => { if (hasCoord(w)) flat.push({ ci, lat: w.lat, lon: w.lon }); }));
   const uFlat = unwrap(flat.map(p => [p.lat, p.lon]));
   uFlat.forEach((p, k) => { flat[k].ulon = p[1]; });
   const focusPts = flat.filter(p => p.ci === focusIdx);

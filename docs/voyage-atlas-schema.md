@@ -157,10 +157,12 @@ included (they are recomputed on load). Import is two-step: `chapters.csv` then 
 | `when` | string | yes | Time window. |
 | `era` | enum | yes | `past`, `current`, or `future`. |
 | `notes` | string | no | Free-form chapter notes. |
-| `countries` | string | no | Per-chapter country **override** (comma-separated); blank = auto-derived from waypoints. Maps to JSON `countriesOverride`. |
-| `keyDestinations` | string | no | Comma-separated key destinations. |
+| `countries` | string | no | Per-chapter country **override**, entries separated by semicolons; blank = auto-derived from waypoints. Maps to JSON `countriesOverride`. |
+| `keyDestinations` | string | no | Key destinations, entries separated by semicolons. |
 | `blogUrl` | string | no | Blog collection URL. |
 | `padMultiplier` | number | yes | Distance padding factor (e.g. 1.2). |
+
+Both list columns are written with `; ` between entries, so an entry may contain a comma; a single entry that contains a comma is written with a trailing `;` so it reads back as one entry. On import, a value containing a semicolon is split at semicolons only; a value without one is split at commas, which reads CSVs written before the separator changed, and the territory names that contain commas ("Bonaire, Sint Eustatius and Saba", "Saint Helena, Ascension and Tristan da Cunha") are kept whole. An entry cannot contain a semicolon.
 
 ### `waypoints.csv`
 

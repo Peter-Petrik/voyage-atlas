@@ -657,7 +657,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.6</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.7</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1061,7 +1061,7 @@ function updateMapChapter(chNum) {
   const isActive = chNum === activeChapterNum;
   const color = chapterColor(chNum);
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#a32e38'; // #56 selected-marker color
-  const coords = ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, normLon(w.lon)]);
+  const coords = ch.waypoints.filter(hasCoord).map(w => [w.lat, normLon(w.lon)]);
   const markers = [];
 
   // Route line — split at the dateline and repeated across world copies so a crossing chapter stays
@@ -1094,7 +1094,7 @@ function updateMapChapter(chNum) {
   // of the antimeridian. Every copy carries the same handlers and commits through normLon, so
   // clicking, dragging, or deleting any copy edits the one underlying waypoint.
   ch.waypoints.forEach((w, idx) => {
-    if (!w.lat || !w.lon) return;
+    if (!hasCoord(w)) return;
     const hasName = w.name && w.name.trim() !== '';
     const isSelected = (chNum === selectedChapterNum && idx === selectedWptIdx); // #56
     // Inactive chapters: only show named waypoints as tiny dots
@@ -1194,7 +1194,7 @@ function updateMapChapter(chNum) {
   if (isActive) {
     const validPts = [];
     ch.waypoints.forEach((w, idx) => {
-      if (w.lat && w.lon) validPts.push({ lat: w.lat, lon: normLon(w.lon), idx });
+      if (hasCoord(w)) validPts.push({ lat: w.lat, lon: normLon(w.lon), idx });
     });
     for (let i = 0; i < validPts.length - 1; i++) {
       const a = validPts[i], b = validPts[i + 1];
@@ -1384,7 +1384,7 @@ function fitToCoords(coords, easeOut) {
 function focusMapOnChapter(chNum) {
   const ch = getChapter(chNum);
   if (!ch || ch.waypoints.length === 0) return;
-  fitToCoords(ch.waypoints.filter(w => w.lat && w.lon).map(w => [w.lat, w.lon]));
+  fitToCoords(ch.waypoints.filter(hasCoord).map(w => [w.lat, w.lon]));
 }
 
 // Fit the map to the combined extent of every chapter's waypoints (#58). Used on load instead of
@@ -1396,7 +1396,7 @@ function focusMapOnChapter(chNum) {
 function fitAllChapters(chapters) {
   const coords = [];
   (chapters || []).forEach(ch => {
-    (ch.waypoints || []).forEach(w => { if (w.lat && w.lon) coords.push([w.lat, w.lon]); });
+    (ch.waypoints || []).forEach(w => { if (hasCoord(w)) coords.push([w.lat, w.lon]); });
   });
   fitToCoords(coords); // no-op when empty — leaves the default world view
 }
@@ -1414,7 +1414,7 @@ function selectWaypoint(chNum, idx, opts = {}) {
   selectedWptIdx = idx;
   updateMapChapter(chNum); // redraw this chapter so the selected marker grows + turns crimson
   const w = ch.waypoints[idx];
-  if (opts.zoom && w.lat && w.lon) {
+  if (opts.zoom && hasCoord(w)) {
     const lon = normLon(w.lon); // normalize so a dateline-side waypoint centers correctly
     map.setView([w.lat, lon], 7); // B4: fixed zoom level 7
   }
@@ -1639,6 +1639,10 @@ function pumpGeoQueue() {
    ═══════════════════════════════════════════════════════════════ */
 let revGeoQueue = [];
 let revGeoRunning = false;
+// Counts voyage switches (resetSession). A lookup records the session it was queued in, and its answer
+// is ignored when the session has changed since, so a lookup still in flight when another voyage is
+// loaded writes nothing into it.
+let geoSession = 0;
 
 // Unified geocoding status — reflects pending work across BOTH queues (forward + reverse),
 // so paste/name-entry coordinate lookups show progress just like the country button does.
@@ -1675,15 +1679,19 @@ function processRevGeoQueue() {
   if (revGeoRunning || revGeoQueue.length === 0) return;
   revGeoRunning = true;
   const { lat, lon, callback } = revGeoQueue.shift();
+  const session = geoSession;
   noteGeocodeUse();
   geoRequest(`${URL_GEOCODE}/reverse?format=json&lat=${lat}&lon=${lon}&zoom=5&addressdetails=1`)
     .then(data => {
+      if (session !== geoSession) return;
       const country = (data.address && data.address.country) || '';
       if (country) geoResolved++;
       callback(country);
     })
-    .catch(() => callback(''))
+    .catch(() => { if (session === geoSession) callback(''); })
     .finally(() => {
+      // A lookup from a previous voyage: resetSession has already cleared its flag and counts.
+      if (session !== geoSession) return;
       revGeoRunning = false;
       geoDone++;
       renderGeoStatus();
@@ -1696,7 +1704,7 @@ function processRevGeoQueue() {
 function queueChapterCountryLookups(ch) {
   let n = 0;
   ch.waypoints.forEach(w => {
-    if (w.lat && w.lon && (!w.country || w.country.trim() === '')) {
+    if (hasCoord(w) && (!w.country || w.country.trim() === '')) {
       n++;
       const wptRef = w, chNum = ch.num; // capture by reference; index may shift during async
       reverseGeocode(w.lat, w.lon, function(country) {
@@ -1721,7 +1729,7 @@ const LOOKUP_CONFIRM_THRESHOLD = 30; // per-chapter rows; the all-chapters run a
 let pendingLookupAction = null;
 function etaMinutes(rows) { return Math.max(1, Math.ceil(rows * 1.1 / 60)); } // ~1.1s per Nominatim call
 function countChapterEligible(ch) {
-  return ch.waypoints.filter(w => w.lat && w.lon && (!w.country || w.country.trim() === '')).length;
+  return ch.waypoints.filter(w => hasCoord(w) && (!w.country || w.country.trim() === '')).length;
 }
 function showLookupConfirm(n, action) {
   pendingLookupAction = action;
@@ -1754,7 +1762,7 @@ function fillChapterCountries(chNum) {
   const n = countChapterEligible(ch);
   if (n === 0) {
     updateChapterCountries(chNum);
-    const noCoords = ch.waypoints.filter(w => !w.lat || !w.lon).length;
+    const noCoords = ch.waypoints.filter(w => !hasCoord(w)).length;
     const statusEl = document.getElementById('status-text');
     let msg = 'All waypoints with coordinates already have countries';
     if (noCoords > 0) msg += ` (${noCoords} ${noCoords === 1 ? 'row has' : 'rows have'} no coordinates)`;
@@ -1810,7 +1818,7 @@ function updateChapterCountries(chNum) {
   if (metaPanel) {
     const input = metaPanel.querySelector('input[onchange*="countriesOverride"]');
     if (input) {
-      const auto = deriveCountriesFromWaypoints(ch).join(', ');
+      const auto = deriveCountriesFromWaypoints(ch).join('; ');
       input.placeholder = auto ? `AUTO: ${auto}` : 'auto from waypoint countries';
     }
   }
@@ -1834,9 +1842,11 @@ function processFwdGeoQueue() {
   if (fwdGeoRunning || fwdGeoQueue.length === 0) return;
   fwdGeoRunning = true;
   const { chNum, wptRef, name } = fwdGeoQueue.shift();
+  const session = geoSession;
   noteGeocodeUse();
   geoRequest(`${URL_GEOCODE}/search?format=json&q=${encodeURIComponent(name)}&limit=1&addressdetails=1`)
     .then(results => {
+      if (session !== geoSession) return;
       if (!results || results.length === 0) return;
       const r = results[0];
       const ch = getChapter(chNum);
@@ -1845,7 +1855,7 @@ function processFwdGeoQueue() {
       const curIdx = ch.waypoints.indexOf(wptRef);
       if (curIdx === -1) return; // deleted during fetch
       const w = wptRef;
-      if (w.lat || w.lon) return; // coords set meanwhile
+      if (w.lat != null || w.lon != null) return; // coords set meanwhile
       w.lat = round5(parseFloat(r.lat));
       w.lon = round5(parseFloat(r.lon));
       geoResolved++; // coordinates successfully resolved
@@ -1867,6 +1877,8 @@ function processFwdGeoQueue() {
     })
     .catch(() => {})
     .finally(() => {
+      // A lookup from a previous voyage: resetSession has already cleared its flag and counts.
+      if (session !== geoSession) return;
       fwdGeoRunning = false;
       geoDone++;
       renderGeoStatus();
@@ -1920,6 +1932,64 @@ function classifyCountries(allCountries) {
   return { nations, territories };
 }
 
+// True when a waypoint has both coordinates as finite numbers. A coordinate of exactly 0 (a point on
+// the equator or the prime meridian) is a real position, so every test for "has coordinates" goes
+// through here instead of reading the values as true or false, which would drop such a point from
+// the route, the distances and the chart. Shared between editor and viewer (identical definitions in
+// both).
+function hasCoord(w) {
+  return !!w && Number.isFinite(w.lat) && Number.isFinite(w.lon);
+}
+
+// A coordinate read from a file or a field: a finite number, or text that reads as one, is kept as a
+// number, 0 included; anything else becomes null. Coordinates are written into the waypoint table's
+// inputs and the KML export, so a value that is not a number must never reach that markup. Shared
+// between editor and viewer (identical definitions in both).
+function toCoord(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+// A list typed into a field or held as text in a file (countries, key destinations), split into its
+// entries. Entries are separated by semicolons, so an entry may contain commas ("Horta, Faial"), but
+// not a semicolon. Commas at either end of an entry are dropped, so a comma typed after a semicolon
+// list (", Pico") does not become part of a name. Text with no semicolon is split at commas instead,
+// which reads lists written with commas (older files and CSVs). Shared between editor and viewer
+// (identical definitions in both).
+function splitList(text) {
+  const s = String(text == null ? '' : text);
+  if (s.includes(';')) return s.split(';').map(x => x.replace(/^[\s,]+|[\s,]+$/g, '')).filter(Boolean);
+  return mergeTerritoryNames(s.split(',').map(x => x.trim()).filter(Boolean));
+}
+
+// A list's entries with any territory name that contains commas ("Bonaire, Sint Eustatius and Saba")
+// joined back up where it was split at those commas. A list split at every comma, as older files and
+// CSVs were, holds such a name as two entries, and each would then count as a nation. Shared between
+// editor and viewer (identical definitions in both).
+function mergeTerritoryNames(parts) {
+  const out = [];
+  for (let i = 0; i < parts.length; ) {
+    let end = i + 1;
+    for (let j = parts.length; j > i + 1; j--) {
+      if (TERRITORIES.has(parts.slice(i, j).join(', '))) { end = j; break; }
+    }
+    out.push(parts.slice(i, end).join(', '));
+    i = end;
+  }
+  return out;
+}
+
+// A list field (countriesOverride, keyDestinations) as read from a voyage file: an array as saved, or
+// text in a hand-edited file, split as typed text is. Entries are trimmed and empty ones dropped, and
+// a territory name that an earlier version saved split at its commas is joined back up. Anything else
+// reads as an empty list. Shared between editor and viewer (identical definitions in both).
+function fileList(v) {
+  if (typeof v === 'string') return splitList(v);
+  if (!Array.isArray(v)) return [];
+  return mergeTerritoryNames(v.map(x => String(x == null ? '' : x).trim()).filter(Boolean));
+}
+
 /* ═══════════════════════════════════════════════════════════════
    DATA HELPERS
    ═══════════════════════════════════════════════════════════════ */
@@ -1970,8 +2040,8 @@ function getPredecessorChapter(ch) {
 function chapterApproachNm(ch) {
   const prev = getPredecessorChapter(ch);
   if (!prev) return 0;
-  const prevPts = (prev.waypoints || []).filter(w => w.lat && w.lon);
-  const thisPts = (ch.waypoints || []).filter(w => w.lat && w.lon);
+  const prevPts = (prev.waypoints || []).filter(hasCoord);
+  const thisPts = (ch.waypoints || []).filter(hasCoord);
   if (prevPts.length === 0 || thisPts.length === 0) return 0;
   const last = prevPts[prevPts.length - 1];
   const first = thisPts[0];
@@ -1980,7 +2050,7 @@ function chapterApproachNm(ch) {
 
 function chapterNmBase(ch) {
   let total = 0;
-  const pts = (ch.waypoints || []).filter(w => w.lat && w.lon);
+  const pts = (ch.waypoints || []).filter(hasCoord);
   for (let i = 1; i < pts.length; i++) {
     total += haversineNm(pts[i-1].lat, pts[i-1].lon, pts[i].lat, pts[i].lon);
   }
@@ -2003,7 +2073,7 @@ function computeHeroStats(chapters, settings) {
     totalNm += chapterNm(ch);
     (ch.waypoints || []).forEach(w => {
       if (w.name && w.name.trim()) namedWaypoints++;
-      else if (w.lat && w.lon) shapingVertices++;
+      else if (hasCoord(w)) shapingVertices++;
     });
     chapterCountries(ch).forEach(c => { if (c) countries.add(c); });
   });
@@ -2160,9 +2230,27 @@ function monthOptions(selected) {
   ).join('');
 }
 
+// The years the When dropdowns offer: from ten years before the current year to fifteen after it,
+// widened to every year the voyage's When fields already use (1900 to 2199), so a chapter sailed in
+// 2008 or planned for 2052 shows its year, and editing another part of its When keeps the year
+// instead of erasing it.
+function whenYearSpan() {
+  const now = new Date().getFullYear();
+  let from = now - 10, to = now + 15;
+  STATE.chapters.forEach(ch => {
+    const { sy, ey } = parseWhen(ch.when);
+    [sy, ey].forEach(y => {
+      const n = /^\d{4}$/.test(y) ? parseInt(y, 10) : NaN;
+      if (n >= 1900 && n <= 2199) { from = Math.min(from, n); to = Math.max(to, n); }
+    });
+  });
+  return [from, to];
+}
+
 function yearOptions(selected) {
+  const [from, to] = whenYearSpan();
   let html = `<option value="">—</option>`;
-  for (let y = 2024; y <= 2040; y++) {
+  for (let y = from; y <= to; y++) {
     html += `<option value="${y}"${String(y) === String(selected) ? ' selected' : ''}>${y}</option>`;
   }
   return html;
@@ -2284,9 +2372,9 @@ function createChapterElement(ch) {
 }
 
 function renderMetaForm(ch) {
-  const countriesOverride = (ch.countriesOverride && ch.countriesOverride.length) ? ch.countriesOverride.join(', ') : '';
-  const countriesAuto = deriveCountriesFromWaypoints(ch).join(', ');
-  const keyDest = Array.isArray(ch.keyDestinations) ? ch.keyDestinations.join(', ') : (ch.keyDestinations || '');
+  const countriesOverride = joinList(ch.countriesOverride);
+  const countriesAuto = deriveCountriesFromWaypoints(ch).join('; ');
+  const keyDest = Array.isArray(ch.keyDestinations) ? joinList(ch.keyDestinations) : (ch.keyDestinations || '');
   return `
     <div class="meta-grid">
       <div class="meta-field">
@@ -2324,11 +2412,11 @@ function renderMetaForm(ch) {
         <textarea style="min-height:80px;" onchange="updateMeta(${ch.num},'notes',this.value)">${esc(ch.notes || '')}</textarea>
       </div>
       <div class="meta-field full">
-        <label>Countries / Territories <span class="hi" data-tip="Auto-derived from this chapter's waypoint countries (first-appearance order). Leave blank to keep it automatic; type a comma-separated list to override.">i</span></label>
+        <label>Countries / Territories <span class="hi" data-tip="Auto-derived from this chapter's waypoint countries (first-appearance order). Leave blank to keep it automatic; type a list, entries separated by semicolons, to override.">i</span></label>
         <input type="text" value="${esc(countriesOverride)}" placeholder="${esc(countriesAuto ? 'AUTO: ' + countriesAuto : 'auto from waypoint countries')}" onchange="updateMeta(${ch.num},'countriesOverride',this.value)">
       </div>
       <div class="meta-field full">
-        <label>Key Destinations <span class="hi" data-tip="Highlight destinations for this chapter (comma-separated). Shown in the viewer drawer and summary displays.">i</span></label>
+        <label>Key Destinations <span class="hi" data-tip="Highlight destinations for this chapter, entries separated by semicolons. Shown in the viewer drawer and summary displays.">i</span></label>
         <input type="text" value="${esc(keyDest)}" onchange="updateMeta(${ch.num},'keyDestinations',this.value)">
       </div>
     </div>
@@ -2339,10 +2427,10 @@ function updateMeta(chNum, field, value) {
   const ch = getChapter(chNum);
   if (!ch) return;
   if (field === 'countriesOverride') {
-    const list = typeof value === 'string' ? value.split(',').map(s => s.trim()).filter(Boolean) : value;
+    const list = typeof value === 'string' ? splitList(value) : value;
     ch.countriesOverride = (list && list.length) ? list : null;
   } else if (field === 'keyDestinations') {
-    ch[field] = typeof value === 'string' ? value.split(',').map(s => s.trim()).filter(Boolean) : value;
+    ch[field] = typeof value === 'string' ? splitList(value) : value;
   } else {
     ch[field] = value;
   }
@@ -2400,8 +2488,8 @@ function renderWaypointRow(chNum, w, idx) {
       <td class="wpt-row-drag">≡</td>
       <td class="wpt-row-num" title="Zoom to and select this waypoint" onclick="selectWaypoint(${chNum},${idx},{zoom:true})">${idx + 1}</td>
       <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" value="${esc(w.name)}" placeholder="(shaping vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
-      <td class="col-lat"><input type="number" step="any" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="updateWpt(${chNum},${idx},'lat',parseFloat(this.value)||null)"></td>
-      <td class="col-lon"><input type="number" step="any" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="updateWpt(${chNum},${idx},'lon',parseFloat(this.value)||null)"></td>
+      <td class="col-lat"><input type="number" step="any" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="updateWpt(${chNum},${idx},'lat',toCoord(this.value))"></td>
+      <td class="col-lon"><input type="number" step="any" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="updateWpt(${chNum},${idx},'lon',toCoord(this.value))"></td>
       <td class="col-cb"><input type="checkbox" ${w.major?'checked':''} onchange="updateWpt(${chNum},${idx},'major',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.gateway?'checked':''} onchange="updateWpt(${chNum},${idx},'gateway',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.decision?'checked':''} onchange="updateWpt(${chNum},${idx},'decision',this.checked)"></td>
@@ -2446,7 +2534,7 @@ function updateWpt(chNum, idx, field, value) {
     updateMapChapter(chNum);
     // Forward geocode if name entered but no coordinates
     const w = ch.waypoints[idx];
-    if (value && value.trim() && !w.lat && !w.lon) {
+    if (value && value.trim() && w.lat == null && w.lon == null) {
       forwardGeocodeWaypoint(chNum, idx, value.trim());
     }
   }
@@ -2602,11 +2690,11 @@ function pullFromPrevious(chNum) {
   const ch = getChapter(chNum);
   const prev = getPredecessorChapter(ch);
   if (!ch || !prev) return;
-  const prevPts = prev.waypoints.filter(w => w.lat && w.lon);
+  const prevPts = prev.waypoints.filter(hasCoord);
   if (prevPts.length === 0) return;
   const last = prevPts[prevPts.length - 1];
   // Guard: if already synced (first coord waypoint matches the endpoint), do nothing
-  const firstPt = ch.waypoints.find(w => w.lat && w.lon);
+  const firstPt = ch.waypoints.find(hasCoord);
   if (firstPt && haversineNm(firstPt.lat, firstPt.lon, last.lat, last.lon) < 1) return;
   // Insert a full copy of the predecessor's last waypoint as a NEW first row.
   // Never overwrites the existing waypoint 1 — this matches the shared-handoff data model
@@ -2750,8 +2838,8 @@ function doPaste() {
     const wpt = makeWaypoint();
     // Minimum: name, lat, lon
     if (row.length >= 1) wpt.name = (row[0] || '').trim();
-    if (row.length >= 2) wpt.lat = parseFloat(row[1]) || null;
-    if (row.length >= 3) wpt.lon = parseFloat(row[2]) || null;
+    if (row.length >= 2) wpt.lat = toCoord(row[1]);
+    if (row.length >= 3) wpt.lon = toCoord(row[2]);
     if (row.length >= 4) wpt.major = parseBool(row[3]);
     if (row.length >= 5) wpt.decision = parseBool(row[4]);
     if (row.length >= 6) wpt.gateway = parseBool(row[5]);
@@ -2775,7 +2863,7 @@ function doPaste() {
   // rows pasted WITH coordinates make no call, so their country still comes from the button.
   for (let idx = startIdx; idx < ch.waypoints.length; idx++) {
     const w = ch.waypoints[idx];
-    if (w.name && w.name.trim() && !w.lat && !w.lon) {
+    if (w.name && w.name.trim() && w.lat == null && w.lon == null) {
       forwardGeocodeWaypoint(pasteTargetChNum, idx, w.name.trim());
     }
   }
@@ -2894,15 +2982,41 @@ function guardDirty(action) {
   }
 }
 
+// Return the editor to a clean session before another voyage replaces the current one: a loaded file,
+// a CSV import or a new voyage. Without it the previous voyage's active chapter stays active, so
+// Rapid-click and search add into the new voyage's chapter of the same number; its title and
+// overrides carry into a CSV import, which has none of its own; and its pending lookups write into
+// the new voyage's rows. Callers then install the new chapters (and, for a file, its own title and
+// settings) and redraw.
+function resetSession() {
+  STATE.settings = defaultSettings();
+  STATE.metaTitle = '';
+  activeChapterNum = null;
+  selectedChapterNum = null;
+  selectedWptIdx = null;
+  if (rapidClickMode) toggleRapidClick();
+  // Lookups still waiting in the two lookup queues are dropped. One already handed to the request
+  // queue, or in flight, belongs to the old session: its request may still go out, at the usual
+  // pace, but its answer is ignored when it returns (geoSession), so the running flags and the
+  // progress counts start afresh.
+  revGeoQueue = [];
+  fwdGeoQueue = [];
+  revGeoRunning = false;
+  fwdGeoRunning = false;
+  geoSession++;
+  geoTotal = 0; geoDone = 0; geoResolved = 0;
+  renderGeoStatus();
+  document.getElementById('status-text').textContent = 'No chapter selected — click a chapter to begin';
+  // renderAllChapters keeps the panels that are open in the list it replaces; emptying the list
+  // first means the new voyage's chapters open collapsed rather than taking the old ones' state.
+  document.getElementById('chapter-list').innerHTML = '';
+}
+
 function startNewVoyage() {
   guardDirty(function() {
     hideLanding();
+    resetSession();
     STATE.chapters = [];
-    STATE.settings = defaultSettings();
-    STATE.metaTitle = '';
-    activeChapterNum = null;
-    selectedChapterNum = null;
-    selectedWptIdx = null;
     renderAllChapters();
     loadSettings();
     updateHeroStats();
@@ -2937,12 +3051,22 @@ function loadFromJSON(data) {
 }
 
 /* Shared importer normalization (#T2-2). Both the JSON loader and the CSV merge build the same chapter
-   and waypoint shape; these are the single source for that shape. The `csv` option controls the two
-   genuine format differences: CSV delivers countries/keyDestinations as comma strings (split here) and
-   coordinates as strings (parsed here), whereas JSON delivers arrays and native numbers. The legacy
-   routing/bailout/prose -> notes fallback is applied identically for both. */
+   and waypoint shape; these are the single source for that shape. The `csv` option controls the
+   genuine format difference: CSV delivers countries/keyDestinations as text lists (split here by
+   splitList), whereas JSON delivers arrays (read by fileList, which also accepts text). Coordinates go through toCoord in both, so text and
+   numbers alike are read, 0 included. The legacy routing/bailout/prose -> notes fallback is applied
+   identically for both. */
 function csvList(v) {
-  return v ? String(v).split(',').map(s => s.trim()).filter(Boolean) : null;
+  const list = splitList(v);
+  return list.length ? list : null;
+}
+// A list written for display or export, the counterpart of splitList: entries separated by "; ". A
+// single entry that contains a comma gets a trailing semicolon, so it reads back as one entry instead
+// of being split at the comma.
+function joinList(list) {
+  const items = (Array.isArray(list) ? list : []).map(s => String(s).trim()).filter(Boolean);
+  const text = items.join('; ');
+  return (items.length === 1 && items[0].includes(',')) ? text + ';' : text;
 }
 function composeNotesFallback(raw) {
   return raw.notes || [
@@ -2950,14 +3074,6 @@ function composeNotesFallback(raw) {
     raw.bailout ? `Bail-out: ${raw.bailout}` : '',
     raw.prose || ''
   ].filter(Boolean).join('\n\n') || '';
-}
-// A coordinate from a JSON file: a finite number, or text that reads as one, is kept as a number;
-// anything else becomes null. Coordinates are written into the waypoint table's inputs and the KML
-// export, so a value that is not a number must never reach that markup.
-function toCoord(v) {
-  if (v === null || v === undefined || v === '') return null;
-  const n = typeof v === 'number' ? v : parseFloat(v);
-  return Number.isFinite(n) ? n : null;
 }
 // A chapter number as an integer (0 when unreadable). Chapter numbers are written into the chapter
 // list's inline handlers and element ids, so only a number may reach that markup.
@@ -2975,8 +3091,8 @@ function normalizeWaypoint(w, opts = {}) {
   const csv = !!opts.csv;
   return {
     name: w.name || '',
-    lat: csv ? (parseFloat(w.lat) || null) : toCoord(w.lat),
-    lon: csv ? (parseFloat(w.lon) || null) : toCoord(w.lon),
+    lat: toCoord(w.lat),
+    lon: toCoord(w.lon),
     major: parseBool(w.major),
     decision: parseBool(w.decision),
     gateway: parseBool(w.gateway),
@@ -2992,8 +3108,8 @@ function normalizeChapter(ch, opts = {}) {
     when: ch.when || '',
     era: toEra(ch.era),
     notes: composeNotesFallback(ch),
-    countriesOverride: csv ? csvList(ch.countries) : (ch.countriesOverride || null),
-    keyDestinations: csv ? (csvList(ch.keyDestinations) || []) : (ch.keyDestinations || []),
+    countriesOverride: csv ? csvList(ch.countries) : (fileList(ch.countriesOverride).length ? fileList(ch.countriesOverride) : null),
+    keyDestinations: csv ? (csvList(ch.keyDestinations) || []) : fileList(ch.keyDestinations),
     blogUrl: ch.blogUrl || null,
     padMultiplier: parseFloat(ch.padMultiplier) || 1.2,
     waypoints: (ch.waypoints || []).map(w => normalizeWaypoint(w, opts))
@@ -3001,7 +3117,11 @@ function normalizeChapter(ch, opts = {}) {
 }
 
 function loadVoyage(data) {
-  STATE.chapters = data.chapters.map(ch => normalizeChapter(ch));
+  // The file is read before anything is reset, so a file that fails to read leaves the current
+  // voyage, its title and its settings untouched.
+  const chapters = data.chapters.map(ch => normalizeChapter(ch));
+  resetSession();
+  STATE.chapters = chapters;
   renderAllChapters();
   // P1: size the map to its final layout BEFORE fitting. getBoundsZoom measures against the map's
   // current pixel size, so fitting before the container has settled (the editor's map shares width
@@ -3059,14 +3179,16 @@ function handleCSVWaypointsFile(e) {
 }
 
 function mergeCSVImport(chapRows, wptRows) {
-  STATE.chapters = [];
+  // The rows are read before anything is reset, so a pair that fails to read leaves the current
+  // voyage untouched.
+  const chapters = [];
   const chMap = {};
 
   (chapRows || []).forEach(r => {
     const num = parseInt(r.num);
     if (isNaN(num)) return;
     const ch = normalizeChapter({ ...r, num }, { csv: true });
-    STATE.chapters.push(ch);
+    chapters.push(ch);
     chMap[num] = ch;
   });
 
@@ -3079,10 +3201,15 @@ function mergeCSVImport(chapRows, wptRows) {
   // Waypoints take CSV row order. (The exported `order` column is positional metadata only; it is not
   // read back on import, so rows must be in the intended sequence in the file.)
 
-  STATE.chapters.sort((a, b) => a.num - b.num);
+  chapters.sort((a, b) => a.num - b.num);
+  // A CSV pair carries no title or settings, so the voyage starts from the defaults.
+  resetSession();
+  STATE.chapters = chapters;
   renderAllChapters();
   // P1: size the map before fitting (this path previously fit with no invalidateSize at all).
   setTimeout(() => { map.invalidateSize(); fitAllChapters(STATE.chapters); }, 100); // #58: frame the whole voyage; no chapter auto-selected
+  loadSettings();
+  updateHeroStats();
   setDirty(false);
   announce('import', 'csv');
 }
@@ -3156,14 +3283,13 @@ function exportChaptersCSV() {
     when: ch.when,
     era: ch.era,
     notes: ch.notes || '',
-    countries: (ch.countriesOverride && ch.countriesOverride.length) ? ch.countriesOverride.join(', ') : '',
-    keyDestinations: Array.isArray(ch.keyDestinations) ? ch.keyDestinations.join(', ') : ch.keyDestinations,
+    countries: joinList(ch.countriesOverride),
+    keyDestinations: Array.isArray(ch.keyDestinations) ? joinList(ch.keyDestinations) : ch.keyDestinations,
     blogUrl: ch.blogUrl || '',
     padMultiplier: ch.padMultiplier
   }));
   const csv = Papa.unparse(rows);
   downloadFile('chapters.csv', csv, 'text/csv');
-  setDirty(false);
 }
 
 function exportWaypointsCSV() {
@@ -3187,7 +3313,6 @@ function exportWaypointsCSV() {
   });
   const csv = Papa.unparse(rows);
   downloadFile('waypoints.csv', csv, 'text/csv');
-  setDirty(false);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -3214,7 +3339,7 @@ function exportKML() {
     kml += `<Folder><name>Ch ${ch.num} — ${escXml(ch.name)}</name>\n`;
 
     // Route line
-    const pts = ch.waypoints.filter(w => w.lat && w.lon);
+    const pts = ch.waypoints.filter(hasCoord);
     if (pts.length >= 2) {
       const coords = pts.map(w => `${w.lon},${w.lat},0`).join('\n');
       kml += `<Placemark><name>${escXml(ch.name)} route</name>
@@ -3224,7 +3349,7 @@ function exportKML() {
 
     // Waypoint placemarks (named only)
     ch.waypoints.forEach(w => {
-      if (!w.name || !w.name.trim() || !w.lat || !w.lon) return;
+      if (!w.name || !w.name.trim() || !hasCoord(w)) return;
       let styleId = 'waypoint';
       if (w.major) styleId = 'major';
       if (w.gateway) styleId = 'gateway';
@@ -3238,7 +3363,6 @@ function exportKML() {
 
   kml += `</Document>\n</kml>`;
   downloadFile('voyage-route.kml', kml, 'application/vnd.google-earth.kml+xml');
-  setDirty(false);
 }
 
 /* ═══════════════════════════════════════════════════════════════
