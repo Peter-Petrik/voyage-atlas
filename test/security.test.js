@@ -79,7 +79,7 @@ test(`${VIEWER}: a chapter's blog link is kept only when it is http(s)`, () => {
   const { safeHttpUrl } = pick(loadTool(VIEWER), ['safeHttpUrl'], { location: at('') });
   assert.equal(safeHttpUrl('https://example.com/ch2'), 'https://example.com/ch2');
   assert.equal(safeHttpUrl('http://example.com/ch2'), 'http://example.com/ch2');
-  assert.equal(safeHttpUrl('/blog/ch2'), 'https://example.org/blog/ch2');
+  assert.equal(safeHttpUrl('/blog/ch2'), '', 'a relative address is not linked');
   for (const value of ['javascript:alert(1)', ' JavaScript:alert(1)', 'data:text/html,<b>x</b>', 'vbscript:x', '', null, undefined]) {
     assert.equal(safeHttpUrl(value), '', String(value));
   }
@@ -93,7 +93,7 @@ test(`${EDITOR}: coordinates, chapter numbers and eras from a file are read as n
   for (const value of ['<img src=x>', '', null, undefined, Infinity, NaN, {}]) assert.equal(toCoord(value), null, String(value));
   assert.equal(toChapterNum('3'), 3);
   assert.equal(toChapterNum(7), 7);
-  assert.equal(toChapterNum('1);alert(1)//'), 1);
+  assert.equal(toChapterNum('1);alert(1)//'), 0);
   assert.equal(toChapterNum('<img>'), 0);
   assert.equal(toEra('PAST'), 'past');
   assert.equal(toEra('current'), 'current');

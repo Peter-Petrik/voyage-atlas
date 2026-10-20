@@ -33,9 +33,11 @@ test('the shared style blocks are identical in both tools', () => {
 test('the header, footer and chooser are styled only by their shared blocks', () => {
   for (const tool of tools) {
     // Outside the shared blocks, no rule may restyle the shared header classes or the chooser.
-    const rest = styleOf(tool).replace(/\/\* shared:(\w+)[\s\S]*?\/\* end shared:\1 \*\//g, '');
+    // Each rule outside the blocks, from the start of its line, so a viewer-only rule that hides a
+    // shared element inside a longer selector (#header .head-actions .head-btn) is not counted.
+    const rest = '\n' + styleOf(tool).replace(/\/\* shared:(\w+)[\s\S]*?\/\* end shared:\1 \*\//g, '').split('\n').map(l => l.trim()).join('\n');
     for (const sel of ['#header {', '#header h1 {', '.head-sub', '.head-stats', '.head-btn', '.theme-btn', '#footer {', '.landing-advisory', '.landing-btn', '.leaflet-control-zoom']) {
-      assert.ok(!rest.includes(sel), `${tool.name}: ${sel} outside the shared blocks`);
+      assert.ok(!rest.includes('\n' + sel), `${tool.name}: ${sel} outside the shared blocks`);
     }
     assert.ok(!/hdr-/.test(tool.html), `${tool.name}: the old hdr- classes`);
   }
@@ -240,7 +242,8 @@ for (const tool of tools) {
     assert.ok(Math.abs(offset - (100 - 300) / 2) < 1, String(offset));
     views.length = 0;
     fitToCoords([[36, 26], [38, 28]], false);
-    assert.ok(Math.abs(views[0][0] - 37) < 1e-6, 'no insets, centered on the points');
+    const mid = map.unproject([0, (map.project([36, 0], 7).y + map.project([38, 0], 7).y) / 2], 7).lat;
+    assert.ok(Math.abs(views[0][0] - mid) < 1e-6, 'no insets, centered on the points');
   });
 }
 
@@ -280,7 +283,7 @@ test('one header-tile builder serves both tools: the viewer\'s plain tiles, the 
 // ---------------------------------------------------------------------------------------------
 
 test(`${VIEWER}: Chart & Layers starts collapsed at 640 px and below`, () => {
-  assert.match(viewer.js, /if \(window\.matchMedia\('\(max-width: 640px\)'\)\.matches\) document\.getElementById\('filter'\)\.classList\.add\('collapsed'\);/);
+  assert.match(viewer.js, /if \(window\.matchMedia\('\(max-width: 640px\), \(max-height: 560px\)'\)\.matches\) document\.getElementById\('filter'\)\.classList\.add\('collapsed'\);/);
 });
 
 test(`${VIEWER}: on a phone a chapter is framed clear of the panels over the chart`, () => {
@@ -330,7 +333,7 @@ test(`${EDITOR}: a chapter name keeps the header's width on a narrow panel, with
 test(`${EDITOR}: Rapid click, the Load menu and the title field fit without wrapping or clipping`, () => {
   assert.match(styleOf(editor), /#rapid-click-toggle \{[^}]*white-space: nowrap; flex-shrink: 0;/);
   assert.match(styleOf(editor), /\.dropdown-menu button \{[^}]*white-space: nowrap;/);
-  assert.match(editor.html, /<div class="meta-field full">\s*<label>Voyage Title/);
+  assert.match(editor.html, /<div class="meta-field full">\s*<label for="set-title">Voyage Title/);
 });
 
 test(`${EDITOR}: a season that starts and ends on the same date is written once`, () => {
@@ -350,7 +353,7 @@ test(`${EDITOR}: a season that starts and ends on the same date is written once`
 });
 
 test(`${EDITOR}: dialog titles are in sentence case, and Delete chapter's button says Delete`, () => {
-  const titles = [...editor.html.matchAll(/<h2(?: id="[^"]*")?>([^<]+)<\/h2>/g)].map(m => m[1]).filter(t => t !== 'Welcome to Voyage Atlas');
+  const titles = [...editor.html.matchAll(/<h2(?: id="[^"]*")?>([^<]+)<\/h2>/g)].map(m => m[1]).filter(t => t !== 'Voyage Atlas');
   assert.ok(titles.length >= 6, titles.join(', '));
   for (const t of titles) assert.ok(!/ [A-Z][a-z]/.test(t.replace(/\bCSV\b/, '')), t);
   assert.match(editor.defs.deleteChapter, /confirmModal\('Delete chapter', [\s\S]*\}, 'Delete'\);\s*\}$/);
@@ -360,7 +363,7 @@ test('status and dialog text use an em dash, not a spaced hyphen; the notes and 
   assert.match(editor.defs.renderGeoStatus, /` — \$\{unresolved\} couldn't be resolved`/);
   assert.match(editor.defs.showLookupConfirm, /at about one per second — roughly/);
   assert.ok(!/<span class="adv-lead">Note:<\/span> [a-z]/.test(viewer.html), 'a note starts with a capital');
-  assert.match(editor.html, /Adds a “Read the posts →” link to the viewer's info panel\./);
+  assert.match(editor.html, /Adds a “Read the posts →” link to the viewer's detail panel\./);
   assert.match(viewer.html, />Read the posts →<\/a>/);
 });
 

@@ -220,7 +220,7 @@ test(`${EDITOR}: a CSV import reports repeated chapter numbers and unreadable nu
   fns.mergeCSVImport([{ num: '1', name: 'A' }, { num: '1', name: 'B' }], [{ chapter: '1', name: 'P', lat: '1', lon: '2' }], { unreadable: 2 });
   assert.deepEqual(fns.state().chapters.map(c => [c.num, c.name, c.waypoints.length]), [[1, 'A', 1], [2, 'B', 0]]);
   assert.equal(stubs.document.getElementById('status-text').textContent,
-    'Loaded with corrections: chapters renumbered 1–2; 1 repeated chapter number (waypoints joined the first); 2 numbers that could not be read left empty — click a chapter to begin');
+    'Loaded with corrections: chapters renumbered 1–2; 1 repeated chapter number (waypoints joined the first); 2 numbers that could not be read left unset — click a chapter to begin');
 });
 
 test(`${EDITOR}: a CSV pair whose drawing fails is reported and the voyage stays`, () => {
@@ -254,8 +254,8 @@ test(`${EDITOR}: readCSV reads decimal commas in a semicolon CSV and takes off t
   assert.equal(csv2.unreadable, 1);
 });
 
-test(`${EDITOR}: decodeCSV reads UTF-8, UTF-16 and Windows-1252 files`, () => {
-  const { decodeCSV } = pick(editor, ['decodeCSV']);
+test(`${EDITOR}: decodeText reads UTF-8, UTF-16 and Windows-1252 files`, () => {
+  const { decodeText: decodeCSV } = pick(editor, ['decodeText']);
   const utf8 = new Uint8Array([0xEF, 0xBB, 0xBF, ...new TextEncoder().encode('Réunion')]);
   assert.deepEqual(decodeCSV(utf8.buffer), { text: 'Réunion', legacy: false });
   assert.deepEqual(decodeCSV(new Uint8Array([0x52, 0xE9, 0x75, 0x6E, 0x69, 0x6F, 0x6E]).buffer), { text: 'Réunion', legacy: true });
@@ -275,7 +275,7 @@ function exportRun(name, chapters, metaTitle = 'T') {
   const STATE = { metaTitle, settings: { distanceUnit: 'nm' }, chapters };
   const fns = pick(editor, [name], {
     STATE, setDirty() {}, downloadFile: (n, body) => files.push({ n, body }),
-    closeDropdowns() {}, announce() {}, setTimeout: fn => fn(), Papa: { unparse: rows => rows },
+    closeDropdowns() {}, announce() {}, setTimeout: fn => fn(), Papa: { unparse: o => o.data },
   });
   fns[name]();
   return files;
@@ -449,7 +449,7 @@ test(`${EDITOR}: a pasted coordinate that cannot be read is left empty, noted, a
   doPaste();
   assert.deepEqual(STATE.chapters[0].waypoints.map(w => [w.name, w.lat, w.lon]), [['A', 38.5, -9], ['B', null, null], ['C', null, null]]);
   assert.deepEqual(looked, ['C']);
-  assert.equal(doc.getElementById('status-text').textContent, 'Pasted with corrections: 2 numbers that could not be read left empty');
+  assert.equal(doc.getElementById('status-text').textContent, 'Pasted with corrections: 2 numbers that could not be read left unset');
 });
 
 // ---------------------------------------------------------------------------------------------

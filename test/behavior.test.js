@@ -90,7 +90,7 @@ for (const tool of tools) {
 test(`${VIEWER}: a selected chapter's dots and shapes are raised above its route and the other chapters`, () => {
   assert.match(viewer.defs.selectChapter, /raiseChapterRoute\(num\);/);
   assert.match(viewer.defs.raiseChapterRoute, /\(polylines\[num\]\|\|\[\]\)\.forEach\(p => p\.bringToFront\(\)\);\s*raiseChapterMarkers\(num\);/);
-  assert.match(viewer.js, /routesLayer\.on\('add', \(\) => \{ if \(activeNum !== null\) raiseChapterRoute\(activeNum\); \}\);/);
+  assert.match(viewer.js, /routesLayer\.on\('add', \(\) => \{[\s\S]*?if \(activeNum !== null\) raiseChapterRoute\(activeNum\);\s*\}\);/);
   assert.match(viewer.defs.closeInfo, /raiseChapterMarkers\(null\)/);
   const raised = [], z = [];
   const dot = n => ({ bringToFront: () => raised.push(n) });
@@ -216,10 +216,10 @@ test(`${EDITOR}: the status line follows the active chapter and stays out of a l
   assert.equal(el.innerHTML, 'No chapter selected — click a chapter to begin');
   fns.set(2, []);
   fns.renderStatus();
-  assert.equal(el.innerHTML, '<span class="status-active">Ch 2: Two</span> · 2 waypoints · 60 nm');
+  assert.equal(el.innerHTML, '<span class="status-active">Chapter 2: Two</span> · 2 waypoints · 60 nm');
   fns.set(null, [{}]);
   fns.renderStatus();
-  assert.match(el.innerHTML, /Ch 2: Two/);
+  assert.match(el.innerHTML, /Chapter 2: Two/);
   assert.match(editor.defs.updateHeroStats, /renderStatus\(\);/);
 });
 
@@ -255,7 +255,7 @@ function settingsRun(values, unit = 'nm') {
   const fns = pick(editor, ['updateSettings'], { document: doc, updateHeroStats() {}, setDirty() {} }, { lets: true,
     prelude: `STATE = { chapters: [], settings: { distanceOverride: null, nationsOverride: null, territoriesOverride: null, distanceUnit: '${unit}' }, metaTitle: '' };`,
     expose: 'state: () => STATE' });
-  fns.updateSettings();
+  fns.updateSettings('distance');
   return { s: fns.state().settings, doc };
 }
 

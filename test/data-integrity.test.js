@@ -237,7 +237,7 @@ function exportRun(name) {
   };
   const fns = pick(editor, [name], {
     STATE, setDirty: v => marks.push(v), downloadFile: (n, body) => files.push({ n, body }),
-    closeDropdowns() {}, announce() {}, setTimeout: fn => fn(), Papa: { unparse: rows => rows },
+    closeDropdowns() {}, announce() {}, setTimeout: fn => fn(), Papa: { unparse: o => o.data },
   });
   fns[name]();
   return { marks, files };
@@ -282,7 +282,7 @@ for (const tool of [editor, viewer]) {
 }
 
 test(`${EDITOR}: the list fields' help says entries are separated by semicolons`, () => {
-  const tips = [...editor.html.matchAll(/<label>(Countries \/ Territories|Key Destinations) <span class="hi" data-tip="([^"]*)"/g)];
+  const tips = [...editor.html.matchAll(/<label for="[^"]*">(Countries \/ Territories|Key Destinations) <span class="hi" data-tip="([^"]*)"/g)];
   assert.equal(tips.length, 2);
   tips.forEach(t => {
     assert.ok(/semicolon/.test(t[2]), `${t[1]}: ${t[2]}`);

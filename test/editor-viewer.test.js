@@ -328,7 +328,7 @@ test(`${VIEWER}: the theme switch rebuilds Decision and Gateway icons with the n
   const marker = (kind) => ({ _vaShape: { kind, size: 16, color: '#332288' }, setIcon: i => icons.push(i) });
   const layer = items => ({ eachLayer: cb => items.forEach(cb) });
   const { refreshMarkerStrokes } = pick(viewer, ['refreshMarkerStrokes'], {
-    document: { body: { classList: { contains: () => true } } },
+    document: { body: { classList: { contains: () => true } } }, getComputedStyle: () => ({ getPropertyValue: () => '#eaf0f7' }),
     wptsLayer: layer([]), decisionLayer: layer([marker('decision')]), gatewayLayer: layer([marker('gateway')]),
     L: { divIcon: o => o },
   });
@@ -390,7 +390,7 @@ test(`${EDITOR}: the Paste dialog splits at tabs when the text holds one, otherw
 
 test(`${EDITOR}: the Nations help gives the territory list's real size`, () => {
   const { TERRITORIES } = pick(editor, ['TERRITORIES']);
-  const tip = (editor.html.match(/<label>Nations <span class="hi" data-tip="([^"]*)"/) || [])[1] || '';
+  const tip = (editor.html.match(/<label for="set-nations">Nations <span class="hi" data-tip="([^"]*)"/) || [])[1] || '';
   const n = (tip.match(/\((\d+) names\)/) || [])[1];
   assert.equal(Number(n), TERRITORIES.size, tip);
 });

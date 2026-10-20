@@ -91,7 +91,7 @@
     color: var(--ink);
     display: flex; flex-direction: column;
     overflow: hidden;
-    transition: background 0.4s ease, color 0.4s ease;
+    transition: background 0.3s, color 0.3s;
   }
 
   /* ---- Header ---- */
@@ -179,7 +179,8 @@
   .caret { font-size: 9px; color: var(--muted); transition: transform 0.2s; }
   .collapsed .caret { transform: rotate(-90deg); }
 
-  #filter { top: 12px; right: 12px; padding: 11px 13px; width: 196px; }
+  /* Chart & Layers sits above the detail panel, so opening it on a short screen shows it whole. */
+  #filter { top: 12px; right: 12px; padding: 11px 13px; width: 196px; z-index: 1001; }
   #filter .panel-h { margin-bottom: 9px; padding-bottom: 7px; border-bottom: 1px solid var(--border); }
   #filter.collapsed .panel-body { display: none; }
   #filter.collapsed .panel-h { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
@@ -195,13 +196,21 @@
   .leg-row { display: flex; align-items: center; gap: 8px; padding: 3px 3px; border-radius: 3px; cursor: pointer; transition: background 0.12s; }
   .leg-row:hover { background: var(--accent-soft); }
   .leg-row.active { background: var(--accent-soft); }
-  .leg-row.past, .leg-row.no-geo { opacity: 0.55; }
+  /* A past or routeless row is dimmed by color, so its text still meets 4.5:1: the name takes the
+     muted color and the swatch fades. */
+  .leg-row.past .leg-name, .leg-row.no-geo .leg-name { color: var(--muted); }
+  .leg-row.past .leg-sw, .leg-row.no-geo .leg-sw { opacity: 0.55; }
   .leg-row.no-geo { cursor: default; }
   .leg-row.no-geo:hover { background: none; }
   .leg-sw { width: 22px; height: 4px; border-radius: 2px; flex-shrink: 0; box-shadow: 0 0 0 1px var(--muted); }
   .leg-name { font-size: 10px; color: var(--ink); line-height: 1.3; }
 
-  #info { bottom: 30px; right: 12px; width: 290px; padding: 16px 18px 15px; display: none; max-height: 60vh; overflow-y: auto; }
+  /* The detail panel stays below Chart & Layers, open (about 180 px tall) on a taller screen and
+     collapsed (about 50 px) on a short one, where it starts collapsed. */
+  #info { bottom: 30px; right: 12px; width: 290px; padding: 16px 18px 15px; display: none; max-height: min(60vh, calc(100% - 220px)); overflow-y: auto; }
+  @media (min-width: 641px) and (max-height: 560px) {
+    #info { max-height: calc(100% - 100px); }
+  }
   #info.show { display: block; }
   #info-close { position: absolute; top: 9px; right: 12px; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; }
   #info-close:hover { color: var(--accent); }
@@ -243,7 +252,7 @@
     border: 1px solid var(--border-strong); border-radius: 4px; cursor: pointer;
   }
   #drawer-overflow .dr-of-load:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
-  #drawer-overflow .dr-of-stats { padding: 4px 16px 12px; border-bottom: 1px solid var(--border); }
+  #drawer-overflow .dr-of-stats { padding: 4px 16px 12px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; }
   #drawer-overflow .dr-of-stats .stat { display: flex; align-items: baseline; gap: 8px; padding: 4px 0; text-align: left; }
   #drawer-overflow .dr-of-stats .stat-val { font-family: 'Fraunces', serif; font-size: 17px; color: var(--accent); line-height: 1.1; }
   #drawer-overflow .dr-of-stats .stat-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
@@ -251,14 +260,15 @@
   .dr-row { display: flex; gap: 11px; padding: 11px 16px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.12s; }
   .dr-row:hover { background: var(--accent-soft); }
   .dr-row.active { background: var(--accent-soft); border-left: 3px solid var(--accent); padding-left: 13px; }
-  .dr-row.past, .dr-row.no-geo { opacity: 0.62; }
+  .dr-row.past .dr-name, .dr-row.no-geo .dr-name { color: var(--muted); }
+  .dr-row.past .dr-sw, .dr-row.no-geo .dr-sw { opacity: 0.55; }
   .dr-row.no-geo { cursor: default; }
   .dr-row.no-geo:hover { background: none; }
   .dr-sw { width: 5px; border-radius: 3px; flex-shrink: 0; align-self: stretch; box-shadow: 0 0 0 1px var(--muted); }
   .dr-when { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; margin-bottom: 2px; }
   .dr-name { font-family: 'Fraunces', serif; font-size: 14px; color: var(--ink); margin-bottom: 3px; line-height: 1.2; }
   .dr-dest { font-size: 9.5px; color: var(--muted); line-height: 1.45; }
-  .dr-badge { font-size: 7.5px; color: var(--accent); border: 1px solid var(--border-strong); border-radius: 2px; padding: 1px 5px; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+  .dr-badge { font-size: 9px; color: var(--accent); border: 1px solid var(--border-strong); border-radius: 2px; padding: 1px 5px; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
   #drawer-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.28); z-index: 1400; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   #drawer-overlay.show { opacity: 1; pointer-events: auto; }
 
@@ -291,6 +301,8 @@
   .leaflet-tooltip-bottom:before { border-bottom-color: var(--panel-solid); }
   .leaflet-tooltip-left:before { border-left-color: var(--panel-solid); }
   .leaflet-tooltip-right:before { border-right-color: var(--panel-solid); }
+  .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+  .leaflet-container a.leaflet-popup-close-button:hover, .leaflet-container a.leaflet-popup-close-button:focus { color: var(--accent-ink); }
   .leaflet-control-zoom a { background: var(--panel-solid) !important; color: var(--accent) !important; border-color: var(--border) !important; }
   .leaflet-control-zoom a:hover { background: var(--accent-soft) !important; color: var(--accent-ink) !important; }
   .leaflet-control-attribution { background: var(--panel) !important; color: var(--muted) !important; font-size: 9px !important; }
@@ -338,7 +350,7 @@
   }
   .landing-advisory .adv-icon {
     flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%;
-    background: var(--advisory); color: var(--panel-solid); font-weight: 700; font-size: 11px;
+    background: var(--advisory-ink); color: var(--panel-solid); font-weight: 700; font-size: 11px;
     display: flex; align-items: center; justify-content: center; margin-top: 1px;
   }
   .landing-advisory .adv-body { flex: 1; }
@@ -370,18 +382,24 @@
      640px phone breakpoint to clear the intermediate tablet/landscape-phone dead zone where the row
      would otherwise crush. */
   @media (max-width: 900px) {
-    #head-cta, #header .head-actions { display: none; }
+    #head-cta, #header .head-actions .head-btn { display: none; }
     #drawer-overflow { display: block; }
   }
   @media (max-width: 640px) {
     #filter { top: 74px; left: 8px; right: 8px; width: auto; }
     #legend { display: none; }
     #info {
-      top: auto; bottom: 0; left: 0; right: 0; width: auto;
+      /* 18 px up, so the basemap attribution below it stays readable. */
+      top: auto; bottom: 18px; left: 0; right: 0; width: auto;
       border-radius: 12px 12px 0 0; border-bottom: none;
       max-height: 56vh; overflow-y: auto;
     }
     #drawer { width: 100%; max-width: 100%; }
+  }
+  /* A phone held sideways: the sheet stops below the collapsed Chart & Layers bar (74 px down and about
+     40 px tall) with a small gap, over the 18 px left for the attribution. */
+  @media (max-width: 640px) and (max-height: 560px) {
+    #info { max-height: calc(100% - 136px); }
   }
 </style>
 </head>
@@ -393,12 +411,12 @@
     <h1 id="page-title">Voyage Atlas</h1>
     <div class="head-sub">Load a voyage atlas to explore</div>
   </div>
-  <div class="head-stats" id="hero"></div>
+  <div id="hero-stats" class="head-stats"></div>
   <div class="head-actions">
     <button class="head-btn" onclick="openChooser()">Load…</button>
+    <a id="head-cta" href="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">Chart your own voyage →</a>
+    <button id="theme-btn" class="theme-btn" onclick="toggleTheme()" title="Toggle light/dark theme">◐</button>
   </div>
-  <a id="head-cta" href="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">Chart your own voyage →</a>
-  <button id="theme-btn" class="theme-btn" onclick="toggleTheme()" title="Toggle light/dark theme">◐</button>
 </div>
 
 <div id="stage">
@@ -419,7 +437,7 @@
       </button>
       <button class="landing-btn landing-btn-ghost" onclick="document.getElementById('file-input').click()">
         <span class="lb-title">Load a voyage file…</span>
-        <span class="lb-desc">Open a saved voyage atlas file, or one shared from someone else.</span>
+        <span class="lb-desc">Open a saved voyage, or one shared by someone else.</span>
       </button>
     </div>
   </div>
@@ -478,7 +496,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.13</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.14</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -613,11 +631,14 @@ bindToggle('t-dec',    decisionLayer);
 bindToggle('t-gate',   gatewayLayer);
 // On a phone the Chart & Layers panel starts collapsed: open, it covers a quarter of the chart. Its
 // header opens it.
-if (window.matchMedia('(max-width: 640px)').matches) document.getElementById('filter').classList.add('collapsed');
+// A short screen (560 px or less, a phone held sideways) has no room for it beside the detail panel
+// either.
+if (window.matchMedia('(max-width: 640px), (max-height: 560px)').matches) document.getElementById('filter').classList.add('collapsed');
 
 function refreshMarkerStrokes() {
   const stroke = document.body.classList.contains('dark') ? '#0b1622' : '#fbf8f1';
-  wptsLayer.eachLayer(l => l.setStyle && l.setStyle({ color: stroke }));
+  const ink = inkColor();
+  wptsLayer.eachLayer(l => l.setStyle && l.setStyle({ color: ink }));
   // Decision and Gateway markers carry their stroke inside the icon, so each is rebuilt from the
   // shape it was drawn with.
   [decisionLayer, gatewayLayer].forEach(g => g.eachLayer(l => {
@@ -651,7 +672,12 @@ const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlng
 // returned as it is: the wrapping arithmetic adds floating-point noise (16.64429 came back as
 // 16.644289999999955), so a wrapped value is rounded to nine decimals. Shared between editor and
 // viewer (identical definitions in both).
-const normLon = lon => (lon >= -180 && lon < 180) ? lon : Math.round((((lon + 180) % 360 + 360) % 360 - 180) * 1e9) / 1e9;
+const normLon = lon => {
+  if (lon >= -180 && lon < 180) return lon;
+  // Rounding after the wrap can land a value just below -180 on 180 itself, the same meridian.
+  const r = Math.round((((lon + 180) % 360 + 360) % 360 - 180) * 1e9) / 1e9;
+  return r === 180 ? -180 : r;
+};
 
 /* Marker shape SVG builders — shared between editor and viewer (identical definitions in both).
    Geometry is fixed; appearance (fill/stroke/strokeW/opacity) is passed by the caller so each tool's
@@ -836,8 +862,8 @@ function parseBool(v) {
 // A chapter number as an integer (0 when unreadable). Chapter numbers are written into the chapter
 // list's inline handlers and element ids, so only a number may reach that markup.
 function toChapterNum(v) {
-  const n = parseInt(v, 10);
-  return Number.isFinite(n) ? n : 0;
+  const n = toCoord(v);
+  return Number.isInteger(n) ? n : 0;
 }
 
 // The chapter era as one of the three known values, matched case-insensitively; anything else reads
@@ -928,7 +954,8 @@ function orderChapters(chapters) {
 }
 
 // A voyage file read into what both tools work with: its title, settings and chapters, and what was
-// corrected on the way in (chapters renumbered, latitudes left empty). A file that is not shaped as
+// corrected on the way in (chapters renumbered, latitudes left empty, numbers that could not be read:
+// a coordinate or pad multiplier present but not a number, which reads as empty or as 1.2). A file that is not shaped as
 // a voyage (no chapters list, or a chapter or waypoint that is not an object) throws, with a message
 // naming what is wrong, before anything is read. The file itself is never changed.
 function readVoyage(data) {
@@ -944,8 +971,11 @@ function readVoyage(data) {
   const meta = isObject(data.meta) ? data.meta : {};
   const chapters = data.chapters.map(ch => normalizeChapter(ch));
   const latitudesDropped = data.chapters.reduce((n, ch) => n + (ch.waypoints || []).filter(latOutOfRange).length, 0);
+  const unreadable = v => v != null && String(v).trim() !== '' && toCoord(v) === null;
+  const unreadableNumbers = data.chapters.reduce((n, ch) => n + (unreadable(ch.padMultiplier) ? 1 : 0) +
+    (ch.waypoints || []).reduce((m, w) => m + (unreadable(w.lat) ? 1 : 0) + (unreadable(w.lon) ? 1 : 0), 0), 0);
   const renumbered = orderChapters(chapters);
-  return { title: toText(meta.title), settings: normalizeSettings(meta.settings), chapters, renumbered, latitudesDropped };
+  return { title: toText(meta.title), settings: normalizeSettings(meta.settings), chapters, renumbered, latitudesDropped, unreadableNumbers };
 }
 
 // The notes the arrival chooser shows when the voyage file named for this visit could not be used.
@@ -1071,19 +1101,36 @@ let shapeMarkers = {}; // per-chapter Decision and Gateway markers, dimmed with 
 let activeNum = null;
 
 /* ======================== File loader ======================== */
+// A text file's text, as both tools read a voyage file and the editor a CSV file. Files are saved
+// as UTF-8 (with or without a byte-order mark), as UTF-16 with a mark, or, by older Windows programs,
+// in the Windows-1252 code page. A file that is not valid UTF-8 is read as Windows-1252, so accented
+// names arrive intact instead of as replacement characters, which would stop a territory name
+// matching and count it as a nation. Shared between editor and viewer (identical definitions in both).
+function decodeText(buffer) {
+  const b = new Uint8Array(buffer);
+  if (b[0] === 0xFF && b[1] === 0xFE) return { text: new TextDecoder('utf-16le').decode(b), legacy: false };
+  if (b[0] === 0xFE && b[1] === 0xFF) return { text: new TextDecoder('utf-16be').decode(b), legacy: false };
+  // A UTF-8 byte-order mark settles the encoding: a bad byte later in such a file becomes a
+  // replacement character rather than turning the whole file into Windows-1252 text.
+  if (b[0] === 0xEF && b[1] === 0xBB && b[2] === 0xBF) return { text: new TextDecoder('utf-8').decode(b), legacy: false };
+  try {
+    return { text: new TextDecoder('utf-8', { fatal: true }).decode(b), legacy: false };
+  } catch (err) {
+    return { text: new TextDecoder('windows-1252').decode(b), legacy: true };
+  }
+}
 function handleFile(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function(ev) {
     try {
-      const data = JSON.parse(ev.target.result);
-      loadVoyageData(data);
+      loadVoyageData(JSON.parse(decodeText(ev.target.result).text));
     } catch (err) {
-      alert("Couldn't read this file — it may be malformed or not a Voyage Atlas JSON.\n\n(Details: " + err.message + ")");
+      alert("Couldn't read this file — it may be malformed or not a Voyage Atlas file.\n\n(Details: " + err.message + ")");
     }
   };
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
   e.target.value = '';
 }
 
@@ -1095,14 +1142,15 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// The chapter's blog link as an absolute http(s) address, or '' when it is missing or uses any other
-// scheme. A javascript: or data: address in a voyage file would otherwise run when the reader clicks
-// "Read the posts". A relative address resolves against this page, so it stays on this site.
+// The chapter's blog link as an absolute http(s) address, or '' when it is missing, not a full
+// address, or uses any other scheme. A javascript: or data: address in a voyage file would otherwise
+// run when the reader clicks "Read the posts", and an address written without a scheme
+// ("www.example.com/blog") would resolve against this page and link back to the tool's own site.
 function safeHttpUrl(value) {
   const s = String(value == null ? '' : value).trim();
   if (!s) return '';
   let url;
-  try { url = new URL(s, location.href); } catch (e) { return ''; }
+  try { url = new URL(s); } catch (e) { return ''; }
   return (url.protocol === 'http:' || url.protocol === 'https:') ? url.href : '';
 }
 
@@ -1113,14 +1161,16 @@ function safeHttpUrl(value) {
 // definitions in both).
 function normalizeSettings(raw) {
   const s = (raw && typeof raw === 'object') ? raw : {};
-  const num = v => (typeof v === 'number' ? v : parseFloat(v));
-  const distance = v => { const n = num(v); return Number.isFinite(n) && n > 0 ? n : null; };
-  const count = v => { const n = num(v); return Number.isInteger(n) && n >= 0 ? n : null; };
+  // Numbers are read as coordinates are (toCoord), so text such as "12abc" is not read as 12; the
+  // unit is matched case-insensitively, as the era is.
+  const distance = v => { const n = toCoord(v); return n !== null && n > 0 ? n : null; };
+  const count = v => { const n = toCoord(v); return Number.isInteger(n) && n >= 0 ? n : null; };
+  const unit = String(s.distanceUnit == null ? '' : s.distanceUnit).toLowerCase();
   return {
     distanceOverride: distance(s.distanceOverride),
     nationsOverride: count(s.nationsOverride),
     territoriesOverride: count(s.territoriesOverride),
-    distanceUnit: Object.prototype.hasOwnProperty.call(NM_TO, s.distanceUnit) ? s.distanceUnit : 'nm'
+    distanceUnit: Object.prototype.hasOwnProperty.call(NM_TO, unit) ? unit : 'nm'
   };
 }
 
@@ -1172,7 +1222,7 @@ function loadVoyageData(raw) {
 
   // Hero stats — recomputed live from chapters/waypoints; meta.hero is a snapshot, never trusted.
   const tiles = heroItems(computeHeroStats(DATA.chapters, settings), viewerUnit(), false);
-  document.getElementById('hero').innerHTML = heroTilesHTML(tiles);
+  document.getElementById('hero-stats').innerHTML = heroTilesHTML(tiles);
   document.getElementById('drawer-hero').innerHTML = heroTilesHTML(tiles);
 
   const stroke = document.body.classList.contains('dark') ? '#0b1622' : '#fbf8f1';
@@ -1212,10 +1262,13 @@ function loadVoyageData(raw) {
       const popup = `<div class="pop-name">${esc(w.name)}</div><div class="pop-when">${esc(ch.when)}</div>` +
                     (major ? '<div class="pop-major">Major port</div>' : '');
       WORLD_COPIES.forEach(off => {
+        // The dot's outline is drawn in the theme's ink, as the route casing is, so a dot in a palette
+        // color close to the tiles keeps a visible edge.
         const m = L.circleMarker([w.lat, w.lon + off], {
           radius: major ? 7 : 4,
           weight: major ? 2 : 1.2,
-          color: stroke,
+          color: ink,
+          opacity: CASING_OPACITY,
           fillColor: color,
           fillOpacity: major ? 1 : 0.8,
         });
@@ -1250,7 +1303,8 @@ function loadVoyageData(raw) {
 
   // PAZ
   (DATA.paz || []).forEach(z => {
-    const [s, w, n, e] = z.bounds;
+    const [s, w, n, e0] = z.bounds;
+    const e = e0 < w ? e0 + 360 : e0; // a zone across the dateline: its west edge is east of its east edge
     WORLD_COPIES.forEach(off => {
       L.rectangle([[s, w + off],[n, e + off]], { color: '#9b2d20', weight: 1, fillColor: '#b13327', fillOpacity: 0.22, stroke: true, dashArray: '4 3' })
         .bindPopup(`<div class="pop-zone">${esc(z.zone)}</div><div class="pop-when">Permanent avoidance zone</div>`, { maxWidth: 240 })
@@ -1379,12 +1433,14 @@ function fitToCoords(coords, easeOut, insets) {
   // chart's height. When the clamp engages (a span too wide for one world), the ends clip — but
   // symmetrically, because the view is centered on the unwrapped midpoint. easeOut backs off one zoom
   // step (used by chapter selection) so the chapter isn't framed edge-to-edge and clears the corner
-  // panels; still floored at the same minimum.
+  // panels; still floored at the same minimum. The view is centered on the middle of the points as
+  // the chart draws them: Mercator stretches latitudes toward the poles, so their mean latitude would
+  // sit south of that middle and cut off the northern end of a tall voyage.
   const padY = Math.max(0, Math.min(80 + top + bottom, map.getSize().y - 40));
   const fit = map.getBoundsZoom(b, false, [80, padY]);
   const z = Math.max(easeOut ? fit - 1 : fit, noRepeatMinZoom(), fillMinZoom());
-  const c = b.getCenter();
-  frame(c.lat, c.lng, z);
+  const midY = (map.project([b.getNorth(), 0], z).y + map.project([b.getSouth(), 0], z).y) / 2;
+  frame(map.unproject([0, midY], z).lat, b.getCenter().lng, z);
 }
 
 // Fit the map to the combined extent of every chapter's waypoints (#58). Used on load instead of
@@ -1427,7 +1483,9 @@ function fitVoyageOnLoad(chapters) {
   const bAll = L.latLngBounds(uAll);
   const natural = map.getBoundsZoom(bAll, false, [80, 80]);
   const nrMin = noRepeatMinZoom();
-  if (natural >= nrMin) { fitToCoords(allCoords); return; }
+  // The fit cannot open wider than the zoom that fills the chart's height, so on a phone held upright
+  // a voyage too wide for that zoom takes the anchored view below, on its current chapter.
+  if (natural >= Math.max(nrMin, fillMinZoom())) { fitToCoords(allCoords); return; }
 
   // --- Circumnav / globe-spanning case: focus the current chapter, shift toward the route ahead. ---
   // Focus chapter: current → first future → last (past) → first.
@@ -1494,7 +1552,7 @@ function setChapterStyle(num, style) {
 // Dim or restore a chapter's waypoint dots and its Decision and Gateway shapes. dim=true fades them;
 // dim=false restores the dots' base fillOpacity and the shapes' full opacity.
 function setChapterWptDim(num, dim) {
-  (wptMarkers[num]||[]).forEach(m => m.setStyle({ opacity: dim ? 0.25 : 1, fillOpacity: dim ? 0.18 : m._baseFill }));
+  (wptMarkers[num]||[]).forEach(m => m.setStyle({ opacity: dim ? 0.15 : CASING_OPACITY, fillOpacity: dim ? 0.18 : m._baseFill }));
   (shapeMarkers[num]||[]).forEach(m => m.setOpacity(dim ? 0.3 : 1));
 }
 
@@ -1607,7 +1665,10 @@ function raiseChapterRoute(num) {
 }
 // Turning the Routes layer back on draws the routes over every dot, in the order they were made, so
 // the selected chapter is raised again.
-routesLayer.on('add', () => { if (activeNum !== null) raiseChapterRoute(activeNum); });
+routesLayer.on('add', () => {
+  wptsLayer.eachLayer(m => m.bringToFront && m.bringToFront());
+  if (activeNum !== null) raiseChapterRoute(activeNum);
+});
 
 function closeInfo() {
   activeNum = null;
@@ -1726,8 +1787,9 @@ document.addEventListener('keydown', function(e) {
   const named = !!(new URLSearchParams(location.search).get('data') || '').trim();
   (dataPath === null ? Promise.reject(new Error('not on this site')) : fetch(dataPath, { mode: 'same-origin' })).then(r => {
     if (!r.ok) throw new Error('not found');
-    return r.text();
-  }).then(text => {
+    return r.arrayBuffer();
+  }).then(buffer => {
+    const text = decodeText(buffer).text;
     // The file is present: it is shown, or offered as the sample, only when it reads as a voyage.
     // A file that is there but malformed or not a Voyage Atlas file opens the chooser with a note
     // saying so, rather than being treated as absent.

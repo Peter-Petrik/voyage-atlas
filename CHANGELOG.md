@@ -6,6 +6,31 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.14] - 2026-10-20
+
+### Changed
+- **Waypoint Dots Outlined**: Waypoint dots in both tools now have an outline in the theme's ink color, as the routes have a casing, so a dot in a palette color close to the tiles keeps an edge of more than 3:1; before, the outline was the tiles' own color and the palest dots measured 1.2:1 to 1.5:1. An inactive chapter's dots in the editor and a dimmed chapter's in the viewer stay faint.
+- **Short Screens in the Viewer**: On a screen 560 px tall or less, such as a phone held sideways, Chart & Layers starts collapsed and the detail panel stays below it; opened, Chart & Layers shows above the detail panel. On a taller screen the detail panel stops short of Chart & Layers. Before, with a chapter selected, the detail panel covered the layer toggles at 844×390 and some of them at 768×500 and 1024×600, and they could not be clicked. On a phone held sideways the detail sheet stops below the collapsed Chart & Layers bar.
+- **Selection Kept on Its Own Chapter**: A click on the header of the selected waypoint's own chapter, or a chapter reorder, now keeps the waypoint selected; it clears on a switch to another chapter, as the FAQ says.
+- **A Click Is a Click**: A press on a marker that moves less than 3 px now selects the waypoint instead of moving it, and a drag keeps the marker where it was grabbed. Before, any movement started a drag, so a slightly shaky click moved the point to the pointer (14 nm at zoom 5), marked the voyage unsaved and selected nothing.
+- **CSV Import Keeps and Reports More**: A chapter row whose number cannot be read is now kept, placed after the chapter before it, as a voyage file keeps one, and counted; before, the row was dropped with its name and notes. A waypoint row with more cells than the header, usually an unquoted decimal comma in a comma-separated file, is skipped and counted, where before its values landed in the wrong columns (a point near Lisbon read as latitude 38, longitude 53). A chapter row with more cells than the header keeps only its number and name, and is counted, so its waypoints still load. Chapter numbers in both files must be whole numbers.
+- **Load Notes for Unreadable Numbers**: A coordinate or pad multiplier in a voyage file that is present but not a number now appears in the editor's load note, as it already did for CSV import. A voyage file saved in Windows-1252 is read as such in both tools, as CSV files are, so accented territory names still match. An override is read only when its whole value is a number (`"12abc"` is unset), and the distance unit is read in any case.
+- **Blog Links**: The viewer now links a Blog URL only when it is a full http(s) address. Before, "www.example.com/blog" became a link back to the tool's own site. The editor adds `https://` to an address typed without a scheme.
+- **Wording**: The chooser reads the same in both tools ("Voyage Atlas"; "Open a saved voyage, or one shared by someone else"). Names in messages take curly quotes, chapters are "chapter N" or "Chapter N" throughout, and load errors say "Voyage Atlas file". The paste dialog names its column order, the empty editor asks for a first chapter, and the When and Key Destinations help tips describe only what the viewer does. The FAQ now calls the export button by what it shows, puts the status bar below the chart, gives the KML file's real name, and says a double-click on a chapter header also selects it.
+
+### Fixed
+- **Active Chapter on Top**: An edit to another chapter (a row deleted, reordered or pasted, a name lookup answered) no longer draws that chapter above the active one, where a click on a shared point selected the wrong chapter. Every visible marker now sits above its neighbors' wider click areas, so a click on a marker selects that marker and not a shaping vertex beside it.
+- **Lookup Answers That Arrive Late**: A country lookup no longer overwrites a country typed while it waited, or fills in a waypoint that has moved since; a name lookup no longer fills in coordinates for a name that has since been changed.
+- **Framing**: A tall voyage or chapter is centered on its middle as the chart draws it, so its poleward end is no longer cut off (at 1440×1300 a voyage from 36°N to 78°N lost its northern end in both tools). On a phone held upright, a voyage too wide for the zoom that fills the chart opens on its current chapter instead of mid-ocean.
+- **Viewer Chart**: An avoidance zone across the dateline is drawn across it instead of 340° the long way round. After Routes is turned off and on, the waypoint dots are back above the routes, so they open their popups.
+- **Contrast**: Dimmed past and routeless rows in the viewer's lists are dimmed by color instead of transparency, so their text meets 4.5:1, and the "No route" badge is 9 px. The popup's × and the advisory's "!" meet the contrast minimum, and the editor's chapter form fields have a border that stands out from the panel.
+- **Layout**: The editor's chapter form fits at 320 and 360 px, where Era, Blog URL and the list fields ran past the panel. On a phone the viewer's drawer shows its figures in two columns, leaving room for the chapters, and the detail panel leaves the basemap attribution visible. The waypoint table's Country field is wider.
+- **Header Markup**: The viewer's header now has the editor's structure, with the ◐ button at the end of the header's buttons and one id for the stats, and the theme fades at the same speed in both tools.
+- **When Field**: A year outside the year lists is kept as written instead of being erased by the next edit, the same month at both ends ("Jun – Jun 2025") reads as a full year, and an end month chosen with no end year takes a year.
+- **Editor Odds and Ends**: A right or middle click on a ghost midpoint no longer inserts a vertex. Editing the title or a count no longer rewrites a stored Distance Override with its rounded display figure. A chapter with no points shows no 🔗. A typed longitude out of range, such as 370.3 for 37.03, is still wrapped, and now noted in the status line. A paste's note about unreadable numbers is shown with the lookup summary instead of being overwritten at once.
+- **Exports**: A voyage whose chapters have no waypoints exports a waypoints.csv with its header row, which the import accepts; before, the file was empty and refused. KML coordinates are written in plain decimals, never in exponent form. No longitude is read as exactly 180, so saving a file twice gives the same file.
+- **Labels**: Every label in the editor is tied to its field, so a click on a label focuses the field and a screen reader names it.
+
 ## [v3.9.13] - 2026-10-20
 
 ### Changed
@@ -760,6 +785,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.14]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.13...v3.9.14
 [v3.9.13]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.12...v3.9.13
 [v3.9.12]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.11...v3.9.12
 [v3.9.11]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.10...v3.9.11

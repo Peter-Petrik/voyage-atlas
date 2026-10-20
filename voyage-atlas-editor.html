@@ -258,6 +258,8 @@ html, body {
 .leaflet-tooltip-bottom:before { border-bottom-color: var(--panel-solid); }
 .leaflet-tooltip-left:before { border-left-color: var(--panel-solid); }
 .leaflet-tooltip-right:before { border-right-color: var(--panel-solid); }
+.leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+.leaflet-container a.leaflet-popup-close-button:hover, .leaflet-container a.leaflet-popup-close-button:focus { color: var(--accent-ink); }
 .leaflet-control-zoom a { background: var(--panel-solid) !important; color: var(--accent) !important; border-color: var(--border) !important; }
 .leaflet-control-zoom a:hover { background: var(--accent-soft) !important; color: var(--accent-ink) !important; }
 .leaflet-control-attribution { background: var(--panel) !important; color: var(--muted) !important; font-size: 9px !important; }
@@ -365,7 +367,7 @@ body.dark .ch-era.current { background: linear-gradient(rgba(76,175,106,0.15), r
 }
 .ch-meta.open { display: block; }
 .meta-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 6px 10px;
 }
 .meta-field { display: flex; flex-direction: column; gap: 2px; }
@@ -375,8 +377,8 @@ body.dark .ch-era.current { background: linear-gradient(rgba(76,175,106,0.15), r
   letter-spacing: 0.08em; color: var(--muted);
 }
 .meta-field input, .meta-field select, .meta-field textarea {
-  font-family: inherit; font-size: 11px;
-  padding: 4px 7px; border: 1px solid var(--border);
+  font-family: inherit; font-size: 11px; min-width: 0;
+  padding: 4px 7px; border: 1px solid var(--faint);
   border-radius: 3px; background: var(--bg); color: var(--ink);
   outline: none; resize: vertical;
 }
@@ -444,6 +446,7 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 }
 .wpt-table .col-name { min-width: 120px; }
 .wpt-table td.col-name input { min-width: 124px; }
+.wpt-table td.col-country input { min-width: 110px; }
 .wpt-table .col-lat, .wpt-table .col-lon { width: 85px; }
 .wpt-table .col-cb { width: 28px; text-align: center; }
 .wpt-table .col-country { min-width: 80px; }
@@ -596,7 +599,7 @@ th .hi { margin-left: 2px; }
 }
 .landing-advisory .adv-icon {
   flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--advisory); color: var(--panel-solid); font-weight: 700; font-size: 11px;
+  background: var(--advisory-ink); color: var(--panel-solid); font-weight: 700; font-size: 11px;
   display: flex; align-items: center; justify-content: center; margin-top: 1px;
 }
 .landing-advisory .adv-body { flex: 1; }
@@ -668,11 +671,11 @@ th .hi { margin-left: 2px; }
       <div id="settings-body">
         <div class="settings-grid">
           <div class="meta-field full">
-            <label>Voyage Title <span class="hi" data-tip="The title for this voyage — a vessel, a vehicle, or anything else. Shown in page titles, the viewer header, and exports. If blank, defaults to 'Voyage Atlas'.">i</span></label>
-            <input type="text" id="set-title" value="" placeholder="(defaults to 'Voyage Atlas')" onchange="updateSettings()">
+            <label for="set-title">Voyage Title <span class="hi" data-tip="The title for this voyage — a vessel, a vehicle, or anything else. Shown in page titles, the viewer header, and exports. If blank, defaults to “Voyage Atlas”.">i</span></label>
+            <input type="text" id="set-title" value="" placeholder="(defaults to “Voyage Atlas”)" onchange="updateSettings()">
           </div>
           <div class="meta-field">
-            <label>Distance Units <span class="hi" data-tip="Display unit for all distances. The data, CSV, and KML always store nautical miles — this only changes what is shown on screen and in the Distance Override field.">i</span></label>
+            <label for="set-unit">Distance Units <span class="hi" data-tip="Display unit for all distances. The data, CSV and KML always store nautical miles — this only changes what is shown on screen and in the Distance Override field.">i</span></label>
             <select id="set-unit" onchange="changeDistanceUnit()">
               <option value="nm">Nautical miles (nm)</option>
               <option value="km">Kilometers (km)</option>
@@ -680,15 +683,15 @@ th .hi { margin-left: 2px; }
             </select>
           </div>
           <div class="meta-field">
-            <label>Distance Override <span class="hi" data-tip="Override the auto-calculated total distance. Entered in the selected display unit but stored and exported as nautical miles. Leave blank to use the sum of all chapter distances (base × pad multiplier).">i</span></label>
-            <input type="number" id="set-nm" value="" placeholder="AUTO:" onchange="updateSettings()">
+            <label for="set-nm">Distance Override <span class="hi" data-tip="Override the auto-calculated total distance. Entered in the selected display unit but stored and exported as nautical miles. Leave blank to use the sum of all chapter distances (base × pad multiplier).">i</span></label>
+            <input type="number" id="set-nm" value="" placeholder="AUTO:" onchange="updateSettings('distance')">
           </div>
           <div class="meta-field">
-            <label>Nations <span class="hi" data-tip="Sovereign nations in the voyage. Auto-calculated by classifying waypoint countries against a built-in territory reference list (54 names). Override here if the auto-count is wrong.">i</span></label>
+            <label for="set-nations">Nations <span class="hi" data-tip="Sovereign nations in the voyage. Auto-calculated by classifying waypoint countries against a built-in territory reference list (54 names). Override here if the auto-count is wrong.">i</span></label>
             <input type="number" id="set-nations" value="" placeholder="AUTO:" onchange="updateSettings()">
           </div>
           <div class="meta-field">
-            <label>Territories <span class="hi" data-tip="Overseas territories, dependencies, and autonomous regions. Auto-calculated from the same reference list (e.g., French Polynesia, Bermuda, Svalbard). Override here if needed. See FAQ for the full territory reference list.">i</span></label>
+            <label for="set-territories">Territories <span class="hi" data-tip="Overseas territories, dependencies, and autonomous regions. Auto-calculated from the same reference list (e.g., French Polynesia, Bermuda, Svalbard). Override here if needed. See FAQ for the full territory reference list.">i</span></label>
             <input type="number" id="set-territories" value="" placeholder="AUTO:" onchange="updateSettings()">
           </div>
         </div>
@@ -732,7 +735,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.13</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.14</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -744,7 +747,7 @@ th .hi { margin-left: 2px; }
 <div id="landing" class="hidden">
   <div class="landing-box">
     <button id="landing-close" onclick="closeChooser()" title="Close">×</button>
-    <h2>Welcome to Voyage Atlas</h2>
+    <h2>Voyage Atlas</h2>
     <div class="landing-advisory"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> Voyage Atlas Editor is designed for a larger screen. Charting and editing waypoints on a phone is difficult — a tablet or desktop is strongly recommended.</span></div>
     <div class="landing-advisory" id="landing-data-note" style="display:none;"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> <span id="landing-data-note-text">Voyage files must be on this site.</span></span></div>
     <p class="landing-intro">Chart a multi-year voyage as a sequence of chapters — regions and seasons, not a list of waypoints. Pick a starting point:</p>
@@ -755,11 +758,11 @@ th .hi { margin-left: 2px; }
       </button>
       <button class="landing-btn landing-btn-ghost" onclick="newVoyageFromChooser()">
         <span class="lb-title">Start a new voyage</span>
-        <span class="lb-desc">Begin with a blank chart, starting from the first waypoint.</span>
+        <span class="lb-desc">Begin with a blank chart, starting from the first chapter.</span>
       </button>
       <button class="landing-btn landing-btn-ghost" onclick="importJSON()">
         <span class="lb-title">Load a voyage file…</span>
-        <span class="lb-desc">Open a previously saved voyage, or one shared from someone else.</span>
+        <span class="lb-desc">Open a saved voyage, or one shared by someone else.</span>
       </button>
     </div>
   </div>
@@ -770,7 +773,7 @@ th .hi { margin-left: 2px; }
   <div class="modal">
     <h2>Paste waypoints</h2>
     <p>Paste tab-separated or comma-separated rows. Columns: name, lat, lon (minimum).
-       Optional extra columns: major, decision, gateway, country, notes.</p>
+       Optional extra columns, in this order: major, decision, gateway, country, notes (the table shows Gateway before Decision).</p>
     <textarea id="paste-area" onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();doPaste();}" style="width:100%;min-height:120px;font-family:inherit;font-size:11px;
       padding:8px;border:1px solid var(--border-strong);border-radius:3px;
       background:var(--bg);color:var(--ink);resize:vertical;"></textarea>
@@ -787,7 +790,7 @@ th .hi { margin-left: 2px; }
     <h2>Add multiple rows</h2>
     <p>Add empty rows to the active chapter's waypoint table.</p>
     <div style="display:flex;align-items:center;gap:8px;">
-      <label style="font-size:11px;">Number of rows:</label>
+      <label for="bulk-count" style="font-size:11px;">Number of rows:</label>
       <input type="number" id="bulk-count" value="10" min="1" max="500"
              style="width:80px;font-family:inherit;font-size:11px;padding:4px 7px;
              border:1px solid var(--border-strong);border-radius:3px;
@@ -964,7 +967,12 @@ const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlng
 // returned as it is: the wrapping arithmetic adds floating-point noise (16.64429 came back as
 // 16.644289999999955), so a wrapped value is rounded to nine decimals. Shared between editor and
 // viewer (identical definitions in both).
-const normLon = lon => (lon >= -180 && lon < 180) ? lon : Math.round((((lon + 180) % 360 + 360) % 360 - 180) * 1e9) / 1e9;
+const normLon = lon => {
+  if (lon >= -180 && lon < 180) return lon;
+  // Rounding after the wrap can land a value just below -180 on 180 itself, the same meridian.
+  const r = Math.round((((lon + 180) % 360 + 360) % 360 - 180) * 1e9) / 1e9;
+  return r === 180 ? -180 : r;
+};
 // Round a coordinate to 5 decimal places (~1.1 m). Single source for the precision policy used by
 // every map-derived coordinate (click, drag, ghost insert, search pick, geocode).
 const round5 = n => Math.round(n * 100000) / 100000;
@@ -1005,14 +1013,16 @@ function gatewayMarkerSVG(size, fill, stroke, strokeW, opacity) {
 // definitions in both).
 function normalizeSettings(raw) {
   const s = (raw && typeof raw === 'object') ? raw : {};
-  const num = v => (typeof v === 'number' ? v : parseFloat(v));
-  const distance = v => { const n = num(v); return Number.isFinite(n) && n > 0 ? n : null; };
-  const count = v => { const n = num(v); return Number.isInteger(n) && n >= 0 ? n : null; };
+  // Numbers are read as coordinates are (toCoord), so text such as "12abc" is not read as 12; the
+  // unit is matched case-insensitively, as the era is.
+  const distance = v => { const n = toCoord(v); return n !== null && n > 0 ? n : null; };
+  const count = v => { const n = toCoord(v); return Number.isInteger(n) && n >= 0 ? n : null; };
+  const unit = String(s.distanceUnit == null ? '' : s.distanceUnit).toLowerCase();
   return {
     distanceOverride: distance(s.distanceOverride),
     nationsOverride: count(s.nationsOverride),
     territoriesOverride: count(s.territoriesOverride),
-    distanceUnit: Object.prototype.hasOwnProperty.call(NM_TO, s.distanceUnit) ? s.distanceUnit : 'nm'
+    distanceUnit: Object.prototype.hasOwnProperty.call(NM_TO, unit) ? unit : 'nm'
   };
 }
 
@@ -1207,8 +1217,10 @@ function updateMapChapter(chNum) {
       // Circle marker (regular, major, shaping, or inactive)
       let radius = hasName ? (w.major ? 7 : 4) : 2;
       let fillColor = hasName ? color : '#888';
-      let strokeColor = isActive ? '#fff' : color;
-      let cOpacity = opacity, cFillOpacity = isActive ? 0.85 : 0.3;
+      // The active chapter's dots are outlined in the theme's ink, as its route is cased, so a dot in a
+      // palette color close to the tiles keeps a visible edge; an inactive chapter's stay faint.
+      let strokeColor = isActive ? ink : color;
+      let cOpacity = isActive ? CASING_OPACITY : opacity, cFillOpacity = isActive ? 0.85 : 0.3;
       if (isSelected) { radius += 3; fillColor = accent; strokeColor = accent; cOpacity = 1; cFillOpacity = 0.9; } // #56 selected
       circleOpts = { radius: radius, fillColor: fillColor, color: strokeColor, weight: w.major ? 2 : 1, opacity: cOpacity, fillOpacity: cFillOpacity };
     } else {
@@ -1241,6 +1253,7 @@ function updateMapChapter(chNum) {
           radius: hitRadius, fillColor: '#000', color: '#000',
           weight: 0, opacity: 0, fillOpacity: 0, interactive: true
         }).addTo(map);
+        hitMarker._hit = true;
         marker = L.circleMarker([w.lat, lon0 + off], circleOpts).addTo(map);
       } else {
         const icon = L.divIcon({ html: shapeSvg, className: '', iconSize: [shapeSize, shapeSize], iconAnchor: [shapeHalf, shapeHalf] });
@@ -1263,7 +1276,10 @@ function updateMapChapter(chNum) {
         if (isActive) {
           m.on('mousedown', function(e) {
             if (e.originalEvent && e.originalEvent.button > 0) return; // ignore right/middle buttons; right-click is delete (touch reports button 0/undefined and still drags)
-            dragMarkerLink = { chNum: chNum, wptIdx: idx };
+            // Where the press was, and how far it was from the marker's center, so the drag starts
+            // only past DRAG_TOLERANCE and the point keeps that offset from the pointer.
+            const press = pointerPoint(e);
+            dragMarkerLink = { chNum: chNum, wptIdx: idx, press: press, grab: press.subtract(map.latLngToContainerPoint(m.getLatLng())) };
             markerDidMove = false;
             map.dragging.disable();
             map.on('mousemove', onMarkerDrag);
@@ -1337,6 +1353,7 @@ function updateMapChapter(chNum) {
         // preview lines stay aligned with the grabbed handle across the dateline.
         ghost.on('mousedown', function(e) {
           L.DomEvent.stopPropagation(e);
+          if (e.originalEvent && e.originalEvent.button > 0) return; // a right or middle click inserts nothing, as on a marker
           // Defensive: clear any leftover drag lines from a prior interrupted drag
           ghostDragLines.forEach(l => map.removeLayer(l));
           ghostDragLines = [];
@@ -1360,10 +1377,24 @@ function updateMapChapter(chNum) {
     }
   }
 
-  // Ensure waypoint markers render above ghost midpoints
-  markers.forEach(m => { if (m.bringToFront) m.bringToFront(); });
-
   mapLayers[chNum] = { line, markers, ghosts };
+  raiseChapterLayers(chNum);
+  // The chapter just drawn sits above every chapter drawn before it. When it is not the active
+  // chapter (a row deleted, reordered or pasted, or a name lookup answered), the active chapter is
+  // raised again, so it still wins at a point the two share (Decision 40).
+  if (chNum !== activeChapterNum && activeChapterNum !== null) raiseChapterLayers(activeChapterNum);
+}
+
+// A chapter's layers brought to the front in their stacking order: the route, the ghost midpoints,
+// the invisible click areas, then the visible markers. Every visible marker sits above every click
+// area, so a click on a marker never lands on a neighbor's wider click area drawn after it.
+function raiseChapterLayers(chNum) {
+  const ml = mapLayers[chNum];
+  if (!ml) return;
+  if (ml.line) ml.line.eachLayer(l => l.bringToFront());
+  ml.ghosts.forEach(g => g.bringToFront());
+  ml.markers.filter(m => m._hit).forEach(m => m.bringToFront());
+  ml.markers.filter(m => !m._hit && m.bringToFront).forEach(m => m.bringToFront());
 }
 
 // A marker or ghost drag ends when the mouse button is released anywhere on the page. The chart's
@@ -1377,8 +1408,19 @@ function endDragOnRelease() {
   if (ghostDragTarget) onGhostDragEnd();
 }
 
+// A press that moves less than this many pixels is a click, not a drag (Leaflet's own click
+// tolerance), so a hand's jitter selects the waypoint instead of moving it.
+const DRAG_TOLERANCE = 3;
+// Where the pointer is on the chart. Leaflet gives a dot of radius 10 or less its own center as the
+// event's containerPoint, so the pointer is read from the mouse event itself when it carries one.
+function pointerPoint(e) {
+  const o = e.originalEvent;
+  return o && typeof o.clientX === 'number' ? map.mouseEventToContainerPoint(o) : e.containerPoint;
+}
 function onMarkerDrag(e) {
   if (!dragMarkerLink) return;
+  const pt = pointerPoint(e);
+  if (!markerDidMove && dragMarkerLink.press && pt.distanceTo(dragMarkerLink.press) < DRAG_TOLERANCE) return;
   // The first move marks the voyage unsaved, so the leave-page prompt covers a drag in progress.
   if (!markerDidMove) setDirty(true);
   markerDidMove = true;
@@ -1386,8 +1428,10 @@ function onMarkerDrag(e) {
   const ch = getChapter(chNum);
   if (!ch) return;
   const w = ch.waypoints[wptIdx];
-  w.lat = round5(e.latlng.lat);
-  w.lon = normLon(round5(e.latlng.lng));
+  // The point moves with the pointer, keeping the offset at which it was grabbed.
+  const at = map.containerPointToLatLng(pt.subtract(dragMarkerLink.grab));
+  w.lat = round5(at.lat);
+  w.lon = normLon(round5(at.lng));
   updateMapChapter(chNum);
   // Update table inputs if visible
   const latInput = document.querySelector(`#wpt-lat-${chNum}-${wptIdx}`);
@@ -1533,12 +1577,14 @@ function fitToCoords(coords, easeOut, insets) {
   // chart's height. When the clamp engages (a span too wide for one world), the ends clip — but
   // symmetrically, because the view is centered on the unwrapped midpoint. easeOut backs off one zoom
   // step (used by chapter selection) so the chapter isn't framed edge-to-edge and clears the corner
-  // panels; still floored at the same minimum.
+  // panels; still floored at the same minimum. The view is centered on the middle of the points as
+  // the chart draws them: Mercator stretches latitudes toward the poles, so their mean latitude would
+  // sit south of that middle and cut off the northern end of a tall voyage.
   const padY = Math.max(0, Math.min(80 + top + bottom, map.getSize().y - 40));
   const fit = map.getBoundsZoom(b, false, [80, padY]);
   const z = Math.max(easeOut ? fit - 1 : fit, noRepeatMinZoom(), fillMinZoom());
-  const c = b.getCenter();
-  frame(c.lat, c.lng, z);
+  const midY = (map.project([b.getNorth(), 0], z).y + map.project([b.getSouth(), 0], z).y) / 2;
+  frame(map.unproject([0, midY], z).lat, b.getCenter().lng, z);
 }
 
 function focusMapOnChapter(chNum) {
@@ -1829,6 +1875,7 @@ let geoSession = 0;
 // Unified geocoding status — reflects pending work across BOTH queues (forward + reverse),
 // so paste/name-entry coordinate lookups show progress just like the country button does.
 let geoTotal = 0, geoDone = 0, geoResolved = 0;
+let geoNote = ''; // a note from the action that queued the run (a paste's corrections), shown with its summary
 // Count of forward/reverse geocodes queued or in flight. Guards the country-lookup buttons so a
 // second click can't re-queue the same waypoints mid-run (#60).
 function geoPending() {
@@ -1845,7 +1892,8 @@ function renderGeoStatus() {
   } else if (geoTotal > 0) {
     const unresolved = geoTotal - geoResolved;
     const tail = unresolved > 0 ? ` — ${unresolved} couldn't be resolved` : '';
-    statusEl.innerHTML = `<span class="status-active">Geocoded ${geoResolved}/${geoTotal}${tail}</span>`;
+    statusEl.innerHTML = `<span class="status-active">Geocoded ${geoResolved}/${geoTotal}${tail}</span>${geoNote ? ' · ' + esc(geoNote) : ''}`;
+    geoNote = '';
     geoTotal = 0; geoDone = 0; geoResolved = 0; // reset for the next batch
   }
 }
@@ -1897,9 +1945,13 @@ function queueChapterCountryLookups(ch) {
     if (hasCoord(w) && (!w.country || w.country.trim() === '')) {
       n++;
       const wptRef = w; // captured by reference; its chapter and row are found when the answer arrives
+      const lat = w.lat, lon = w.lon;
       reverseGeocode(w.lat, w.lon, function(country) {
         const owner = chapterOf(wptRef);
         if (!country || !owner) return; // no answer, or the waypoint was deleted meanwhile
+        // A country typed while the lookup waited is kept, and an answer for a position the waypoint
+        // has since left is dropped.
+        if ((wptRef.country && wptRef.country.trim()) || wptRef.lat !== lat || wptRef.lon !== lon) return;
         wptRef.country = country;
         setDirty(true);
         const input = document.querySelector(`#wpt-country-${owner.num}-${owner.waypoints.indexOf(wptRef)}`);
@@ -2047,6 +2099,7 @@ function processFwdGeoQueue() {
       const chNum = ch.num, curIdx = ch.waypoints.indexOf(wptRef);
       const w = wptRef;
       if (w.lat != null || w.lon != null) return; // coords set meanwhile
+      if ((w.name || '').trim() !== name.trim()) return; // renamed meanwhile; the new name has its own lookup
       w.lat = round5(parseFloat(r.lat));
       w.lon = round5(parseFloat(r.lon));
       setDirty(true);
@@ -2218,8 +2271,8 @@ function parseBool(v) {
 // A chapter number as an integer (0 when unreadable). Chapter numbers are written into the chapter
 // list's inline handlers and element ids, so only a number may reach that markup.
 function toChapterNum(v) {
-  const n = parseInt(v, 10);
-  return Number.isFinite(n) ? n : 0;
+  const n = toCoord(v);
+  return Number.isInteger(n) ? n : 0;
 }
 
 // The chapter era as one of the three known values, matched case-insensitively; anything else reads
@@ -2310,7 +2363,8 @@ function orderChapters(chapters) {
 }
 
 // A voyage file read into what both tools work with: its title, settings and chapters, and what was
-// corrected on the way in (chapters renumbered, latitudes left empty). A file that is not shaped as
+// corrected on the way in (chapters renumbered, latitudes left empty, numbers that could not be read:
+// a coordinate or pad multiplier present but not a number, which reads as empty or as 1.2). A file that is not shaped as
 // a voyage (no chapters list, or a chapter or waypoint that is not an object) throws, with a message
 // naming what is wrong, before anything is read. The file itself is never changed.
 function readVoyage(data) {
@@ -2326,8 +2380,11 @@ function readVoyage(data) {
   const meta = isObject(data.meta) ? data.meta : {};
   const chapters = data.chapters.map(ch => normalizeChapter(ch));
   const latitudesDropped = data.chapters.reduce((n, ch) => n + (ch.waypoints || []).filter(latOutOfRange).length, 0);
+  const unreadable = v => v != null && String(v).trim() !== '' && toCoord(v) === null;
+  const unreadableNumbers = data.chapters.reduce((n, ch) => n + (unreadable(ch.padMultiplier) ? 1 : 0) +
+    (ch.waypoints || []).reduce((m, w) => m + (unreadable(w.lat) ? 1 : 0) + (unreadable(w.lon) ? 1 : 0), 0), 0);
   const renumbered = orderChapters(chapters);
-  return { title: toText(meta.title), settings: normalizeSettings(meta.settings), chapters, renumbered, latitudesDropped };
+  return { title: toText(meta.title), settings: normalizeSettings(meta.settings), chapters, renumbered, latitudesDropped, unreadableNumbers };
 }
 
 // The notes the arrival chooser shows when the voyage file named for this visit could not be used.
@@ -2478,15 +2535,18 @@ function computeEditorTitle() {
   return `${base} — Editor`;
 }
 
-function updateSettings() {
+function updateSettings(field) {
   const s = STATE.settings;
   STATE.metaTitle = document.getElementById('set-title').value.trim();
   // The Distance Override is a positive distance in the display unit, stored in nautical miles to a
-  // thousandth, so the tile shows the figure as typed; anything else clears it. The Nations and
-  // Territories overrides are whole numbers, 0 included; anything else clears them. Each field then
-  // shows the value in use (loadSettings).
-  const ov = toCoord(document.getElementById('set-nm').value);
-  s.distanceOverride = ov !== null && ov > 0 ? Math.round(ov / NM_TO[distUnit()] * 1000) / 1000 : null;
+  // thousandth, so the tile shows the figure as typed; anything else clears it. It is read only when
+  // its own field changed: the field shows it rounded, so reading it on another field's change would
+  // store the rounded figure. The Nations and Territories overrides are whole numbers, 0 included;
+  // anything else clears them. Each field then shows the value in use (loadSettings).
+  if (field === 'distance') {
+    const ov = toCoord(document.getElementById('set-nm').value);
+    s.distanceOverride = ov !== null && ov > 0 ? Math.round(ov / NM_TO[distUnit()] * 1000) / 1000 : null;
+  }
   const whole = id => { const n = toCoord(document.getElementById(id).value); return Number.isInteger(n) && n >= 0 ? n : null; };
   s.nationsOverride = whole('set-nations');
   s.territoriesOverride = whole('set-territories');
@@ -2571,7 +2631,7 @@ function parseWhen(when) {
     s.split(/\s+/).filter(Boolean).forEach(tok => {
       const mon = whenMonth(tok);
       if (mon && !m) m = mon;
-      else if (/^\d{4}$/.test(tok) && !y) y = tok;
+      else if (/^\d{4}$/.test(tok) && !y) { y = tok; if (+tok < 1900 || +tok > 2199) out.readable = false; } // beyond the year lists
       else if (/^\d{2}$/.test(tok) && !y) y = '20' + tok;
       else out.readable = false;
     });
@@ -2582,7 +2642,8 @@ function parseWhen(when) {
   // One part is a season that starts and ends on the same date, as composeWhen writes it.
   else if (out.readable) [out.em, out.ey] = [out.sm, out.sy];
   if (out.sm && !out.sy && out.ey) {
-    out.sy = (out.em && MONTHS.indexOf(out.sm) > MONTHS.indexOf(out.em)) ? String(Number(out.ey) - 1) : out.ey;
+    // A start month after the end month, or the same month (a season of a full year), began the year before.
+    out.sy = (out.em && MONTHS.indexOf(out.sm) >= MONTHS.indexOf(out.em)) ? String(Number(out.ey) - 1) : out.ey;
   }
   return out;
 }
@@ -2632,7 +2693,15 @@ function onWhenChange(chNum) {
   const sm = document.getElementById(`when-sm-${chNum}`).value;
   const sy = document.getElementById(`when-sy-${chNum}`).value;
   const em = document.getElementById(`when-em-${chNum}`).value;
-  const ey = document.getElementById(`when-ey-${chNum}`).value;
+  let ey = document.getElementById(`when-ey-${chNum}`).value;
+  // An end month with no end year takes the start's year, or the next one when it comes before the
+  // start month, so the season never ends without a year.
+  if (em && !ey && sy) {
+    ey = (sm && MONTHS.indexOf(em) < MONTHS.indexOf(sm)) ? String(Number(sy) + 1) : sy;
+    const eySel = document.getElementById(`when-ey-${chNum}`);
+    eySel.value = ey;
+    if (eySel.value !== ey) ey = '';
+  }
   const when = composeWhen(sm, sy, em, ey);
   updateMeta(chNum, 'when', when);
   // The text saved before, which the lists could not show, has now been replaced.
@@ -2708,12 +2777,12 @@ function renderAllChapters() {
 // first chapter. Built here only, so the full list render and the light refresh draw it identically.
 function chapterSyncHTML(ch) {
   const prev = getPredecessorChapter(ch);
-  if (!prev) return '';
+  if (!prev || !ch.waypoints.some(hasCoord)) return ''; // nothing to connect before the chapter has a point
   const approach = chapterApproachNm(ch);
   if (approach < 1) {
-    return `<span class="ch-sync linked" title="Start point matches Ch ${prev.num}'s endpoint">🔗</span>`;
+    return `<span class="ch-sync linked" title="Start point matches chapter ${prev.num}'s endpoint">🔗</span>`;
   }
-  return `<button class="ch-sync pull" title="Pull start from Ch ${prev.num}'s endpoint (${fmtDist(approach)} gap)" onclick="event.stopPropagation();pullFromPrevious(${ch.num})">⇄</button>`;
+  return `<button class="ch-sync pull" title="Pull start from chapter ${prev.num}'s endpoint (${fmtDist(approach)} gap)" onclick="event.stopPropagation();pullFromPrevious(${ch.num})">⇄</button>`;
 }
 
 // Bring every chapter header's connection indicator and distance up to date in place, and the
@@ -2780,47 +2849,47 @@ function renderMetaForm(ch) {
   return `
     <div class="meta-grid">
       <div class="meta-field">
-        <label>Name <span class="hi" data-tip="Display name for this chapter. Appears in the viewer drawer, legend, and info panel.">i</span></label>
-        <input type="text" value="${esc(ch.name)}" onchange="updateMeta(${ch.num},'name',this.value)">
+        <label for="meta-name-${ch.num}">Name <span class="hi" data-tip="Display name for this chapter. Appears in the viewer's drawer, legend and detail panel.">i</span></label>
+        <input type="text" id="meta-name-${ch.num}" value="${esc(ch.name)}" onchange="updateMeta(${ch.num},'name',this.value)">
       </div>
       <div class="meta-field">
-        <label>Era <span class="hi" data-tip="Past = sailed. Current = in progress. Future = planned. Controls visual styling in the viewer.">i</span></label>
-        <select onchange="updateMeta(${ch.num},'era',this.value)">
+        <label for="meta-era-${ch.num}">Era <span class="hi" data-tip="Past = sailed. Current = in progress. Future = planned. Controls visual styling in the viewer.">i</span></label>
+        <select id="meta-era-${ch.num}" onchange="updateMeta(${ch.num},'era',this.value)">
           <option value="past"${ch.era==='past'?' selected':''}>Past</option>
           <option value="current"${ch.era==='current'?' selected':''}>Current</option>
           <option value="future"${ch.era==='future'?' selected':''}>Future</option>
         </select>
       </div>
       <div class="meta-field full">
-        <label>When <span class="hi" data-tip="Seasonal window for this chapter. Select start and end month/year. Drives timeline ordering and seasonal context in the viewer.">i</span></label>
+        <label for="when-sm-${ch.num}">When <span class="hi" data-tip="Seasonal window for this chapter. Select start and end month/year. Shown with the chapter in the viewer's drawer, detail panel and waypoint popups.">i</span></label>
         <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
-          <select id="when-sm-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${monthOptions(parseWhen(ch.when).sm)}</select>
-          <select id="when-sy-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${yearOptions(parseWhen(ch.when).sy)}</select>
+          <select id="when-sm-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--faint);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${monthOptions(parseWhen(ch.when).sm)}</select>
+          <select id="when-sy-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--faint);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${yearOptions(parseWhen(ch.when).sy)}</select>
           <span style="color:var(--muted);font-size:10px;">to</span>
-          <select id="when-em-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${monthOptions(parseWhen(ch.when).em)}</select>
-          <select id="when-ey-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${yearOptions(parseWhen(ch.when).ey)}</select>
+          <select id="when-em-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--faint);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${monthOptions(parseWhen(ch.when).em)}</select>
+          <select id="when-ey-${ch.num}" style="font-family:inherit;font-size:11px;padding:4px;border:1px solid var(--faint);border-radius:3px;background:var(--bg);color:var(--ink);" onchange="onWhenChange(${ch.num})">${yearOptions(parseWhen(ch.when).ey)}</select>
         </div>
         ${parseWhen(ch.when).readable ? '' : `<div id="when-note-${ch.num}" style="font-size:10px;color:var(--muted);margin-top:4px;">Saved as “${esc(ch.when)}”. Choosing from the lists replaces it.</div>`}
       </div>
       <div class="meta-field">
-        <label>Pad Multiplier <span class="hi" data-tip="Distance adjustment factor. Multiplied against the great-circle base nm to account for cruising-ground exploration. Default 1.20 (20%). Range: 1.05 (ocean crossing) to 3.00 (dense cruising ground like Scottish lochs).">i</span></label>
-        <input type="number" step="0.05" min="1" value="${ch.padMultiplier}" onchange="onPadInput(this,${ch.num})">
+        <label for="meta-pad-${ch.num}">Pad Multiplier <span class="hi" data-tip="Distance adjustment factor. Multiplied against the great-circle base nm to account for cruising-ground exploration. Default 1.20 (20%). Range: 1.05 (ocean crossing) to 3.00 (dense cruising ground like Scottish lochs).">i</span></label>
+        <input type="number" id="meta-pad-${ch.num}" step="0.05" min="1" value="${ch.padMultiplier}" onchange="onPadInput(this,${ch.num})">
       </div>
       <div class="meta-field">
-        <label>Blog URL <span class="hi" data-tip="Link to blog posts covering this chapter. Adds a “Read the posts →” link to the viewer's info panel. Can point to a year archive, tag page, or custom URL.">i</span></label>
-        <input type="text" value="${esc(ch.blogUrl || '')}" onchange="updateMeta(${ch.num},'blogUrl',this.value||null)">
+        <label for="meta-blog-${ch.num}">Blog URL <span class="hi" data-tip="Link to blog posts covering this chapter. Adds a “Read the posts →” link to the viewer's detail panel. Can point to a year archive, tag page, or custom URL.">i</span></label>
+        <input type="text" id="meta-blog-${ch.num}" value="${esc(ch.blogUrl || '')}" onchange="this.value=blogAddress(this.value);updateMeta(${ch.num},'blogUrl',this.value||null)">
       </div>
       <div class="meta-field full">
-        <label>Notes <span class="hi" data-tip="Free-form chapter notes. Use for routing strategy, bail-out alternatives, seasonal considerations, or any planning context.">i</span></label>
-        <textarea style="min-height:80px;" onchange="updateMeta(${ch.num},'notes',this.value)">${esc(ch.notes || '')}</textarea>
+        <label for="meta-notes-${ch.num}">Notes <span class="hi" data-tip="Free-form chapter notes. Use for routing strategy, bail-out alternatives, seasonal considerations, or any planning context.">i</span></label>
+        <textarea id="meta-notes-${ch.num}" style="min-height:80px;" onchange="updateMeta(${ch.num},'notes',this.value)">${esc(ch.notes || '')}</textarea>
       </div>
       <div class="meta-field full">
-        <label>Countries / Territories <span class="hi" data-tip="Auto-derived from this chapter's waypoint countries (first-appearance order). Leave blank to keep it automatic; type a list, entries separated by semicolons, to override.">i</span></label>
-        <input type="text" value="${esc(countriesOverride)}" placeholder="${esc(countriesAuto ? 'AUTO: ' + countriesAuto : 'auto from waypoint countries')}" onchange="updateMeta(${ch.num},'countriesOverride',this.value)">
+        <label for="meta-countries-${ch.num}">Countries / Territories <span class="hi" data-tip="Auto-derived from this chapter's waypoint countries (first-appearance order). Leave blank to keep it automatic; type a list, entries separated by semicolons, to override.">i</span></label>
+        <input type="text" id="meta-countries-${ch.num}" value="${esc(countriesOverride)}" placeholder="${esc(countriesAuto ? 'AUTO: ' + countriesAuto : 'auto from waypoint countries')}" onchange="updateMeta(${ch.num},'countriesOverride',this.value)">
       </div>
       <div class="meta-field full">
-        <label>Key Destinations <span class="hi" data-tip="Highlight destinations for this chapter, entries separated by semicolons. Shown in the viewer drawer and summary displays.">i</span></label>
-        <input type="text" value="${esc(keyDest)}" onchange="updateMeta(${ch.num},'keyDestinations',this.value)">
+        <label for="meta-keydest-${ch.num}">Key Destinations <span class="hi" data-tip="Highlight destinations for this chapter, entries separated by semicolons. Shown under the chapter's name in the viewer's drawer.">i</span></label>
+        <input type="text" id="meta-keydest-${ch.num}" value="${esc(keyDest)}" onchange="updateMeta(${ch.num},'keyDestinations',this.value)">
       </div>
     </div>
   `;
@@ -2843,6 +2912,16 @@ function onPadInput(input, chNum) {
   }
   input.value = v;
   updateMeta(chNum, 'padMultiplier', v);
+}
+
+// A Blog URL as the viewer will link it: an address typed without a scheme ("www.example.com/blog")
+// gets https:// in front, since the viewer links only a full http(s) address. Anything else is kept
+// as typed.
+function blogAddress(value) {
+  const s = String(value == null ? '' : value).trim();
+  // A scheme is letters then a colon (https:, mailto:); a colon followed by a digit is a port.
+  if (!s || /^[a-z][a-z0-9+.-]*:(?!\d)/i.test(s)) return s;
+  return /^[^\s/]+\.[^\s]+$/.test(s) ? 'https://' + s : s;
 }
 
 function updateMeta(chNum, field, value) {
@@ -2955,9 +3034,12 @@ function onCoordInput(input, chNum, idx, field) {
   }
   // A valid entry puts back what the status line said before the note.
   if (status.textContent === LAT_RANGE_NOTE) status.textContent = status.dataset.before || '';
-  if (field === 'lon' && v !== null && normLon(v) !== v) { v = normLon(v); input.value = v; }
+  let wrapped = '';
+  if (field === 'lon' && v !== null && normLon(v) !== v) { wrapped = `Longitude ${v} read as ${normLon(v)}: longitudes run from -180 to 180.`; v = normLon(v); input.value = v; }
   input.defaultValue = input.value;
   updateWpt(chNum, idx, field, v);
+  // A typo such as 370.3 for 37.03 moves the point a long way, so the status line says what it was read as.
+  if (wrapped) status.textContent = wrapped;
 }
 
 function updateWpt(chNum, idx, field, value) {
@@ -3039,7 +3121,7 @@ function confirmDeleteWaypoint(chNum, idx) {
   if (!ch || !ch.waypoints[idx]) return;
   const w = ch.waypoints[idx];
   const name = w.name && w.name.trim() ? w.name : `shaping vertex #${idx + 1}`;
-  document.getElementById('delete-wpt-msg').textContent = `Delete "${name}" from Ch ${chNum}?`;
+  document.getElementById('delete-wpt-msg').textContent = `Delete “${name}” from chapter ${chNum}?`;
   pendingDeleteWpt = { chNum, idx };
   document.getElementById('delete-wpt-modal').classList.add('open');
   // Focus moves into the dialog, onto Delete, so Enter deletes as it always has and Tab reaches
@@ -3098,10 +3180,13 @@ function proceedConfirmModal() {
    ═══════════════════════════════════════════════════════════════ */
 function selectChapter(chNum, skipFit) {
   activeChapterNum = chNum;
-  // #56: a chapter switch clears the waypoint selection (highlight + row).
-  selectedChapterNum = null;
-  selectedWpt = null;
-  document.querySelectorAll('.wpt-row-selected').forEach(r => r.classList.remove('wpt-row-selected'));
+  // #56: a switch to another chapter clears the waypoint selection (highlight + row); a click on the
+  // selected waypoint's own chapter keeps it.
+  if (selectedChapterNum !== chNum) {
+    selectedChapterNum = null;
+    selectedWpt = null;
+    document.querySelectorAll('.wpt-row-selected').forEach(r => r.classList.remove('wpt-row-selected'));
+  }
   // Update active styling
   document.querySelectorAll('.ch-item').forEach(el => {
     el.classList.toggle('active', parseInt(el.dataset.chNum) === chNum);
@@ -3122,8 +3207,13 @@ function renderStatus() {
   if (!el) return;
   const ch = activeChapterNum !== null ? getChapter(activeChapterNum) : null;
   el.innerHTML = ch
-    ? `<span class="status-active">Ch ${ch.num}: ${esc(ch.name)}</span> · ${ch.waypoints.length} ${ch.waypoints.length === 1 ? 'waypoint' : 'waypoints'} · ${fmtDist(chapterNm(ch))}`
-    : 'No chapter selected — click a chapter to begin';
+    ? `<span class="status-active">Chapter ${ch.num}: ${esc(ch.name)}</span> · ${ch.waypoints.length} ${ch.waypoints.length === 1 ? 'waypoint' : 'waypoints'} · ${fmtDist(chapterNm(ch))}`
+    : idleStatus();
+}
+
+// The status line with no chapter selected: a prompt to pick one, or to add the first.
+function idleStatus() {
+  return STATE.chapters.length ? 'No chapter selected — click a chapter to begin' : 'No chapters yet — add a chapter to begin';
 }
 
 function toggleMeta(chNum, btn) {
@@ -3217,12 +3307,14 @@ function initChapterSortable() {
     ghostClass: 'sortable-ghost',
     chosenClass: 'sortable-chosen',
     onEnd: function(evt) {
-      // Track the active chapter object before renumbering
+      // Track the active chapter and the selected waypoint's chapter by object before renumbering
       const activeCh = activeChapterNum !== null ? getChapter(activeChapterNum) : null;
+      const selCh = selectedChapterNum !== null ? getChapter(selectedChapterNum) : null;
       // Reorder state array
       const moved = STATE.chapters.splice(evt.oldIndex, 1)[0];
       STATE.chapters.splice(evt.newIndex, 0, moved);
       renumberChapters();
+      if (selCh) selectedChapterNum = selCh.num;
       if (evt.oldIndex !== evt.newIndex) setDirty(true);
       renderAllChapters();
       if (activeCh) selectChapter(activeCh.num, true); // the object's new num; the chart stays where it is
@@ -3361,7 +3453,12 @@ function doPaste() {
       forwardGeocodeWaypoint(pasteTargetChNum, idx, w.name.trim());
     }
   }
-  if (unreadable) document.getElementById('status-text').textContent = `Pasted with corrections: ${unreadableNote(unreadable)}`;
+  // With lookups under way the note joins their summary, which would otherwise replace it at once.
+  if (unreadable) {
+    const note = `Pasted with corrections: ${unreadableNote(unreadable)}`;
+    if (geoPending() > 0) geoNote = note;
+    else document.getElementById('status-text').textContent = note;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -3405,6 +3502,7 @@ function isSameSitePath(path) {
 }
 
 let sampleVoyage = null;      // parsed voyage from the resolved path, when it loaded cleanly
+let sampleLegacy = false;     // whether that file was read as Windows-1252, for the load note
 let sampleAvailable = false;  // whether the sample affordances (chooser button, menu item) are offered
 let dataNote = '';            // why the voyage file named for this visit could not be used (DATA_NOTES); the arrival chooser says so
 
@@ -3442,10 +3540,10 @@ function loadSampleFromChooser() {
   guardDirty(function() {
     if (!sampleVoyage) return;
     try {
-      loadVoyage(sampleVoyage);
+      loadVoyage(sampleVoyage, { legacy: sampleLegacy });
       hideLanding();
     } catch (err) {
-      alert("Couldn't read the sample voyage — it may be malformed or not a Voyage Atlas JSON.\n\n(Details: " + err.message + ")");
+      alert("Couldn't read the sample voyage — it may be malformed or not a Voyage Atlas file.\n\n(Details: " + err.message + ")");
     }
   });
 }
@@ -3511,8 +3609,9 @@ function resetSession() {
   fwdGeoRunning = false;
   geoSession++;
   geoTotal = 0; geoDone = 0; geoResolved = 0;
+  geoNote = '';
   renderGeoStatus();
-  document.getElementById('status-text').textContent = 'No chapter selected — click a chapter to begin';
+  document.getElementById('status-text').textContent = idleStatus();
   // renderAllChapters keeps the panels that are open in the list it replaces; emptying the list
   // first means the new voyage's chapters open collapsed rather than taking the old ones' state.
   document.getElementById('chapter-list').innerHTML = '';
@@ -3536,21 +3635,21 @@ function handleJSONFile(e) {
   const reader = new FileReader();
   reader.onload = function(ev) {
     try {
-      const data = JSON.parse(ev.target.result);
-      loadFromJSON(data);
+      const { text, legacy } = decodeText(ev.target.result);
+      loadFromJSON(JSON.parse(text), { legacy });
       announce('import', 'json');
     } catch (err) {
-      alert("Couldn't read this file — it may be malformed or not a Voyage Atlas JSON.\n\n(Details: " + err.message + ")");
+      alert("Couldn't read this file — it may be malformed or not a Voyage Atlas file.\n\n(Details: " + err.message + ")");
     }
   };
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
   e.target.value = '';
 }
 
 // A file that is not a voyage throws in loadVoyage, before the chooser is dismissed, so the chooser
 // stays open behind the message.
-function loadFromJSON(data) {
-  loadVoyage(data);
+function loadFromJSON(data, opts) {
+  loadVoyage(data, opts);
   hideLanding();
 }
 
@@ -3567,13 +3666,13 @@ function joinList(list) {
 function loadNoteText(notes) {
   return notes.length
     ? 'Loaded with corrections: ' + notes.join('; ') + ' — click a chapter to begin'
-    : 'No chapter selected — click a chapter to begin';
+    : idleStatus();
 }
 function latitudesNote(n) {
   return `${n} ${n === 1 ? 'latitude' : 'latitudes'} beyond ±90 left without coordinates`;
 }
 function unreadableNote(n) {
-  return `${n} ${n === 1 ? 'number' : 'numbers'} that could not be read left empty`;
+  return `${n} ${n === 1 ? 'number' : 'numbers'} that could not be read left unset`;
 }
 
 // Install a voyage read from a file or a CSV pair, and draw it. The new voyage is drawn inside a
@@ -3611,11 +3710,13 @@ function installVoyage(voyage, notes) {
 // there), and installVoyage puts the previous voyage back if drawing the new one fails, so a file
 // that fails to load leaves the current voyage, its title and its settings untouched. Settings are
 // rebuilt from the file alone, so a loaded voyage never inherits the previous session's settings.
-function loadVoyage(data) {
+function loadVoyage(data, opts = {}) {
   const v = readVoyage(data);
   const notes = [];
   if (v.renumbered) notes.push(`chapters renumbered 1–${v.chapters.length}`);
   if (v.latitudesDropped) notes.push(latitudesNote(v.latitudesDropped));
+  if (v.unreadableNumbers) notes.push(unreadableNote(v.unreadableNumbers));
+  if (opts.legacy) notes.push('text read as Windows-1252');
   installVoyage({ chapters: v.chapters, settings: v.settings, metaTitle: v.title }, notes);
 }
 
@@ -3627,17 +3728,17 @@ function importCSV() {
   guardDirty(function() { document.getElementById('file-csv-chapters').click(); });
 }
 
-// A CSV file's text. Spreadsheets save CSV as UTF-8 (with or without a byte-order mark), as UTF-16
-// with a mark, or, in older versions, in the Windows-1252 code page. A file that is not valid UTF-8
-// is read as Windows-1252, so accented names arrive intact instead of as replacement characters,
-// which would stop a territory name matching and count it as a nation.
-function decodeCSV(buffer) {
+// A text file's text, as both tools read a voyage file and the editor a CSV file. Files are saved
+// as UTF-8 (with or without a byte-order mark), as UTF-16 with a mark, or, by older Windows programs,
+// in the Windows-1252 code page. A file that is not valid UTF-8 is read as Windows-1252, so accented
+// names arrive intact instead of as replacement characters, which would stop a territory name
+// matching and count it as a nation. Shared between editor and viewer (identical definitions in both).
+function decodeText(buffer) {
   const b = new Uint8Array(buffer);
   if (b[0] === 0xFF && b[1] === 0xFE) return { text: new TextDecoder('utf-16le').decode(b), legacy: false };
   if (b[0] === 0xFE && b[1] === 0xFF) return { text: new TextDecoder('utf-16be').decode(b), legacy: false };
   // A UTF-8 byte-order mark settles the encoding: a bad byte later in such a file becomes a
-  // replacement character rather than turning the whole file into Windows-1252 text, which would
-  // also keep the mark in the first column's name.
+  // replacement character rather than turning the whole file into Windows-1252 text.
   if (b[0] === 0xEF && b[1] === 0xBB && b[2] === 0xBF) return { text: new TextDecoder('utf-8').decode(b), legacy: false };
   try {
     return { text: new TextDecoder('utf-8', { fatal: true }).decode(b), legacy: false };
@@ -3651,11 +3752,24 @@ function decodeCSV(buffer) {
 // column never holds a list, so a decimal comma there ("38,53", as spreadsheets in much of Europe
 // write it, in a semicolon- or tab-separated file or a quoted cell) is read as a point, whatever the
 // delimiter. Every cell has the formula guard that the export adds taken off again (csvUncell).
-function readCSV(buffer, numberColumns) {
-  const { text, legacy } = decodeCSV(buffer);
+// A row with more cells than the header (an unquoted comma inside a value, often a decimal comma in a
+// comma-separated file) would be read with its values shifted into the wrong columns, so it is
+// skipped and counted (extra). With keepColumns, such a row keeps only those columns instead and is
+// counted as trimmed: a chapter keeps its number and name, so the chapter and its waypoints still load.
+function readCSV(buffer, numberColumns, keepColumns) {
+  const { text, legacy } = decodeText(buffer);
   const parsed = Papa.parse(text, { header: true, skipEmptyLines: true, transformHeader: h => h.trim() });
-  let decimalCommas = false, unreadable = 0;
-  const rows = parsed.data.map(r => {
+  let decimalCommas = false, unreadable = 0, extra = 0, trimmed = 0;
+  const kept = [];
+  parsed.data.forEach(r => {
+    if (!r.__parsed_extra) { kept.push(r); return; }
+    if (!keepColumns) { extra++; return; }
+    trimmed++;
+    const t = {};
+    keepColumns.forEach(k => { if (k in r) t[k] = r[k]; });
+    kept.push(t);
+  });
+  const rows = kept.map(r => {
     const out = {};
     Object.keys(r).forEach(k => {
       let v = csvUncell(r[k]);
@@ -3667,7 +3781,7 @@ function readCSV(buffer, numberColumns) {
     });
     return out;
   });
-  return { rows, fields: parsed.meta.fields || [], legacy, decimalCommas, unreadable };
+  return { rows, fields: parsed.meta.fields || [], legacy, decimalCommas, unreadable, extra, trimmed };
 }
 
 // The names of the required columns a CSV file lacks, quoted, for the message that refuses it.
@@ -3682,9 +3796,9 @@ function handleCSVChaptersFile(e) {
   reader.onload = function(ev) {
     // A file without the chapter columns, or with no numbered chapter (often waypoints.csv picked
     // first), is refused here, before the second file is asked for.
-    const csv = readCSV(ev.target.result, ['num', 'padMultiplier']);
+    const csv = readCSV(ev.target.result, ['padMultiplier'], ['num', 'name']);
     const missing = missingColumns(csv, ['num', 'name']);
-    if (missing.length || !csv.rows.some(r => Number.isFinite(parseInt(r.num, 10)))) {
+    if (missing.length || !csv.rows.some(r => toChapterNum(r.num) > 0)) {
       alert("This file doesn't look like chapters.csv: " +
         (missing.length ? `it has no ${missing.join(' or ')} column.` : 'no row has a chapter number.') +
         '\n\nImport CSVs reads chapters.csv first, then waypoints.csv. Nothing was changed.');
@@ -3720,7 +3834,8 @@ function handleCSVWaypointsFile(e) {
     closeCSVStep2();
     try {
       mergeCSVImport(chapters.rows, csv.rows, { legacy: chapters.legacy || csv.legacy,
-        decimalCommas: chapters.decimalCommas || csv.decimalCommas, unreadable: chapters.unreadable + csv.unreadable });
+        decimalCommas: chapters.decimalCommas || csv.decimalCommas, unreadable: chapters.unreadable + csv.unreadable,
+        extra: csv.extra, trimmed: chapters.trimmed });
     } catch (err) {
       alert("Couldn't import these CSVs — the current voyage is unchanged.\n\n(Details: " + err.message + ")");
     }
@@ -3738,17 +3853,18 @@ function mergeCSVImport(chapRows, wptRows, info = {}) {
   const chMap = {};
 
   // A chapter number repeated in the file takes the waypoints of that number into its first chapter;
-  // the repeat is counted for the status line.
-  let repeated = 0;
+  // the repeat is counted for the status line. A chapter with no number that can be read is kept, as
+  // in a voyage file: it stays after the chapter before it (orderChapters), and is counted, since no
+  // waypoint row can name it.
+  let repeated = 0, unnumbered = 0;
   (chapRows || []).forEach(r => {
-    const num = parseInt(r.num, 10);
-    if (isNaN(num)) return;
-    const ch = normalizeChapter({ ...r, num }, { csv: true });
+    const ch = normalizeChapter(r, { csv: true });
     chapters.push(ch);
-    if (chMap[num]) repeated++;
-    else chMap[num] = ch;
+    if (ch.num <= 0) unnumbered++;
+    else if (chMap[ch.num]) repeated++;
+    else chMap[ch.num] = ch;
   });
-  if (!chapters.length) {
+  if (!chapters.some(ch => ch.num > 0)) {
     alert('No chapters were found in the chapters file, so nothing was imported.\n\nImport CSVs reads chapters.csv first, then waypoints.csv.');
     return false;
   }
@@ -3757,7 +3873,7 @@ function mergeCSVImport(chapRows, wptRows, info = {}) {
   // read back on import, so rows must be in the intended sequence in the file.)
   let skipped = 0, latitudes = 0;
   (wptRows || []).forEach(r => {
-    const ch = chMap[parseInt(r.chapter, 10)];
+    const ch = chMap[toChapterNum(r.chapter)];
     if (!ch) { skipped++; return; }
     if (latOutOfRange(r)) latitudes++;
     ch.waypoints.push(normalizeWaypoint(r, { csv: true }));
@@ -3766,6 +3882,9 @@ function mergeCSVImport(chapRows, wptRows, info = {}) {
   const notes = [];
   if (orderChapters(chapters)) notes.push(`chapters renumbered 1–${chapters.length}`);
   if (repeated) notes.push(`${repeated} repeated chapter ${repeated === 1 ? 'number' : 'numbers'} (waypoints joined the first)`);
+  if (unnumbered) notes.push(`${unnumbered} ${unnumbered === 1 ? 'chapter' : 'chapters'} without a number placed after the one before`);
+  if (info.trimmed) notes.push(`${info.trimmed} chapter ${info.trimmed === 1 ? 'row' : 'rows'} with more cells than the header: only the number and name read`);
+  if (info.extra) notes.push(`${info.extra} waypoint ${info.extra === 1 ? 'row' : 'rows'} with more cells than the header skipped`);
   if (latitudes) notes.push(latitudesNote(latitudes));
   if (skipped) notes.push(`${skipped} waypoint ${skipped === 1 ? 'row' : 'rows'} for chapters not in chapters.csv skipped`);
   if (info.decimalCommas) notes.push('decimal commas read as points');
@@ -3838,6 +3957,10 @@ function exportCSVs() {
   setTimeout(() => exportWaypointsCSV(), 500); // slight delay so browser doesn't block second download
 }
 
+// The CSV columns, written as the header row even when there are no rows, so a voyage whose chapters
+// have no waypoints yet exports a waypoints.csv the import accepts.
+const CHAPTER_CSV_FIELDS = ['num', 'name', 'when', 'era', 'notes', 'countries', 'keyDestinations', 'blogUrl', 'padMultiplier'];
+const WAYPOINT_CSV_FIELDS = ['chapter', 'order', 'name', 'lat', 'lon', 'major', 'decision', 'gateway', 'country', 'notes'];
 function exportChaptersCSV() {
   closeDropdowns();
   const rows = STATE.chapters.map(ch => ({
@@ -3851,7 +3974,7 @@ function exportChaptersCSV() {
     blogUrl: ch.blogUrl || '',
     padMultiplier: ch.padMultiplier
   }));
-  const csv = Papa.unparse(rows.map(csvRow));
+  const csv = Papa.unparse({ fields: CHAPTER_CSV_FIELDS, data: rows.map(csvRow) });
   downloadFile('chapters.csv', csv, 'text/csv');
 }
 
@@ -3874,7 +3997,7 @@ function exportWaypointsCSV() {
       });
     });
   });
-  const csv = Papa.unparse(rows.map(csvRow));
+  const csv = Papa.unparse({ fields: WAYPOINT_CSV_FIELDS, data: rows.map(csvRow) });
   downloadFile('waypoints.csv', csv, 'text/csv');
 }
 
@@ -3897,6 +4020,12 @@ function csvRow(row) {
 /* ═══════════════════════════════════════════════════════════════
    EXPORT — KML
    ═══════════════════════════════════════════════════════════════ */
+// A coordinate written in plain decimals, up to nine places, since a KML reader may not take the
+// exponent form JavaScript writes for a very small number (1e-7).
+function kmlNum(n) {
+  const s = Number(n).toFixed(9).replace(/\.?0+$/, '');
+  return s === '-0' ? '0' : s;
+}
 // A palette color (#RRGGBB) as a KML color, which is written aabbggrr: full opacity, then the blue,
 // green and red bytes.
 function kmlColor(hex) {
@@ -3927,7 +4056,7 @@ function exportKML() {
     // Route line
     const pts = ch.waypoints.filter(hasCoord);
     if (pts.length >= 2) {
-      const coords = pts.map(w => `${w.lon},${w.lat},0`).join('\n');
+      const coords = pts.map(w => `${kmlNum(w.lon)},${kmlNum(w.lat)},0`).join('\n');
       kml += `<Placemark><name>${escXml(ch.name)} route</name>
 <Style><LineStyle><color>${kmlColor(chapterColor(ch.num))}</color><width>2</width></LineStyle></Style>
 <LineString><tessellate>1</tessellate><coordinates>\n${coords}\n</coordinates></LineString></Placemark>\n`;
@@ -3941,7 +4070,7 @@ function exportKML() {
       if (w.gateway) styleId = 'gateway';
       if (w.decision) styleId = 'decision';
       kml += `<Placemark><name>${escXml(w.name)}</name><styleUrl>#${styleId}</styleUrl>
-<Point><coordinates>${w.lon},${w.lat},0</coordinates></Point></Placemark>\n`;
+<Point><coordinates>${kmlNum(w.lon)},${kmlNum(w.lat)},0</coordinates></Point></Placemark>\n`;
     });
 
     kml += `</Folder>\n`;
@@ -4075,12 +4204,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const named = !!(new URLSearchParams(location.search).get('data') || '').trim();
   (dataPath === null ? Promise.reject(new Error('not on this site')) : fetch(dataPath, { mode: 'same-origin' })).then(r => {
     if (!r.ok) throw new Error('not found');
-    return r.text();
-  }).then(text => {
-    let parsed;
-    try { parsed = JSON.parse(text); readVoyage(parsed); }
+    return r.arrayBuffer();
+  }).then(buffer => {
+    let parsed, decoded;
+    try { decoded = decodeText(buffer); parsed = JSON.parse(decoded.text); readVoyage(parsed); }
     catch (err) { dataNote = DATA_NOTES.unreadable; return; }
     sampleVoyage = parsed;
+    sampleLegacy = decoded.legacy;
     sampleAvailable = true;
     document.getElementById('menu-sample').style.display = '';
   }).catch(() => {
