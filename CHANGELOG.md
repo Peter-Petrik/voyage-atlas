@@ -6,6 +6,25 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.8] - 2026-10-20
+
+### Changed
+- **One Shadow for Both Tools**: The editor's menus, search results, help tips and dialogs now use the viewer's shadow (`0 6px 28px`, at 0.18 opacity in the light theme and 0.55 in the dark), so the two tools share one value where they had drifted apart.
+
+### Removed
+- **Unused Viewer Styles**: The viewer's stylesheet no longer carries the rules for the light/dark segmented control that the ◐ button replaced, or a second copy of the footer credit rule.
+
+### Fixed
+- **Tab Keeps Its Place in the Waypoint Table**: Editing a latitude or longitude and pressing Tab now moves on to the next field. Previously the edit rebuilt the whole chapter list to refresh the 🔗 / ⇄ connection indicators, which destroyed the field being tabbed into and left focus nowhere, breaking row-by-row coordinate entry. The indicators, chapter distances and header stats now refresh in place.
+- **Connection Indicators After Every Endpoint Change**: A Rapid-click append, a waypoint added from a search result, and a name lookup that fills a chapter's first or last row now refresh the next chapter's 🔗 / ⇄ indicator and its approach distance. Previously these three paths left the indicator showing linked across a gap. Every path that changes a chapter's start or end now uses the same in-place refresh.
+- **Selection Follows Its Waypoint**: The selected waypoint stays selected when another row is deleted, when a shaping vertex is dragged in from a ghost midpoint, when rows are pasted or bulk-added, and when the rows are reordered, and a new row goes in after it wherever it now sits. Deleting a chapter keeps the active chapter and the selection on their own chapters as the later chapters are renumbered. Previously the selection was a row number, and the active chapter a chapter number that deleting an earlier chapter left pointing at the wrong one, so after such a change either could point at something else. Deleting the selected waypoint clears the selection, and editing a waypoint's name no longer drops its row highlight.
+- **Past Chapters Open in the Viewer**: A past chapter with a route can now be selected from the drawer and the legend, like any other. Previously the viewer treated every past chapter as having no geometry, so it showed a "No geometry" badge and did not open. Past chapters stay dimmed in both lists, and only a chapter with fewer than two points keeps the badge.
+- **Look Up Countries Confirm Answers the Keyboard**: Escape now cancels the Look Up Countries confirmation and Enter starts the lookup. Previously neither key did anything there, and Escape also cleared the waypoint selection underneath the dialog.
+- **Theme Switch Reaches Every Marker**: In the viewer, Decision and Gateway markers now take the new theme's outline color when the theme is switched; previously only the circle markers did. In the editor, the switch now also updates the browser's theme color, as the viewer's does, and the selected marker takes the dark theme's accent, which it never did because the color was read from the page root rather than the body that carries the dark theme.
+- **Lat/Lon Steppers Nudge Finely**: The steppers on the waypoint table's latitude and longitude fields now move 0.01 of a degree, about 0.6 nm of latitude, instead of a whole degree, about 60 nm. A nudge moves a precise value by exactly 0.01 and keeps its other digits.
+- **KML Route Colors by Byte Order**: The KML export now writes each route color by explicit byte order (opacity, blue, green, red). Previously it reversed the color's text, which gave the right answer only because every palette color has doubled hex digits.
+- **First Edit and Bulk Add**: Adding a waypoint from a search result or by dragging a ghost midpoint now counts as the session's first edit, like every other way of adding one. Bulk add now creates between 1 and 500 rows, the field's own range; previously a larger typed number was taken as is, and 0 gave 10 rows. The Look Up Countries confirmation also gives Proceed the focus when it opens, so Enter and the highlighted button agree, and Enter on a focused Cancel cancels.
+
 ## [v3.9.7] - 2026-10-20
 
 ### Changed
@@ -666,6 +685,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.8]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.7...v3.9.8
 [v3.9.7]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.6...v3.9.7
 [v3.9.6]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.5...v3.9.6
 [v3.9.5]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.4...v3.9.5

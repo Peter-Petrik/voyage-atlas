@@ -57,7 +57,7 @@
   --advisory-soft: #faeeda;
   --advisory-ink: #854f0b;
   --success: #2d7a3a;
-  --shadow:  0 4px 16px rgba(29,43,58,0.12);
+  --shadow:  0 6px 28px rgba(29,43,58,0.18);
   --tile-bg: #e9e3d4;
   --row-alt: rgba(29,43,58,0.03);
   --row-hover: rgba(163,46,56,0.08);
@@ -79,7 +79,7 @@ body.dark {
   --advisory-soft: rgba(224,162,58,0.14);
   --advisory-ink: #f0c775;
   --success: #4caf6a;
-  --shadow:  0 4px 16px rgba(0,0,0,0.45);
+  --shadow:  0 6px 28px rgba(0,0,0,0.55);
   --tile-bg: #061018;
   --row-alt: rgba(212,98,108,0.04);
   --row-hover: rgba(212,98,108,0.10);
@@ -657,7 +657,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.7</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.8</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -767,8 +767,8 @@ th .hi { margin-left: 2px; }
     <h2>Look Up Countries</h2>
     <p id="lookup-confirm-msg">This will look up countries for several waypoints.</p>
     <div class="modal-actions">
-      <button class="btn" onclick="closeLookupConfirm()">Cancel</button>
-      <button class="btn btn-accent" onclick="proceedLookupConfirm()">Proceed</button>
+      <button class="btn" id="lookup-confirm-cancel" onclick="closeLookupConfirm()">Cancel</button>
+      <button class="btn btn-accent" id="lookup-confirm-ok" onclick="proceedLookupConfirm()">Proceed</button>
     </div>
   </div>
 </div>
@@ -942,7 +942,7 @@ function fmtDist(nm) {
   return Math.round((nm || 0) * NM_TO[u]).toLocaleString() + ' ' + u;
 }
 let activeChapterNum = null;  // which chapter is "selected" on the map
-let selectedChapterNum = null, selectedWptIdx = null;  // #56: the one selected waypoint (highlighted on map + in list)
+let selectedChapterNum = null, selectedWpt = null;  // #56: the one selected waypoint (highlighted on map + in list), held as the waypoint object so it follows its row through deletes, inserts and reorders
 let rapidClickMode = false;
 let pendingCSVChapters = null; // temp storage during 2-step CSV import
 let isDirty = false; // unsaved changes flag
@@ -1021,12 +1021,12 @@ function onMapClick(e) {
     ch.waypoints.push(wpt);
     renderChapterWaypoints(activeChapterNum);
     updateMapChapter(activeChapterNum);
-    updateHeroStats();
+    refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
     return;
   }
   // Outside Rapid mode: a click on empty chart space (markers stop propagation, so this is genuinely
   // empty) clears any active waypoint selection — the deselect counterpart to clicking a marker.
-  if (selectedWptIdx != null) deselectWaypoint();
+  if (selectedWpt != null) deselectWaypoint();
 }
 
 function updateMapAll() {
@@ -1060,7 +1060,7 @@ function updateMapChapter(chNum) {
 
   const isActive = chNum === activeChapterNum;
   const color = chapterColor(chNum);
-  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#a32e38'; // #56 selected-marker color
+  const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#a32e38'; // #56 selected-marker color; the dark theme sets its tokens on body.dark
   const coords = ch.waypoints.filter(hasCoord).map(w => [w.lat, normLon(w.lon)]);
   const markers = [];
 
@@ -1096,7 +1096,7 @@ function updateMapChapter(chNum) {
   ch.waypoints.forEach((w, idx) => {
     if (!hasCoord(w)) return;
     const hasName = w.name && w.name.trim() !== '';
-    const isSelected = (chNum === selectedChapterNum && idx === selectedWptIdx); // #56
+    const isSelected = (chNum === selectedChapterNum && w === selectedWpt); // #56
     // Inactive chapters: only show named waypoints as tiny dots
     if (!isActive && !hasName) return;
 
@@ -1280,8 +1280,10 @@ function onMarkerDrag(e) {
   // Update table inputs if visible
   const latInput = document.querySelector(`#wpt-lat-${chNum}-${wptIdx}`);
   const lonInput = document.querySelector(`#wpt-lon-${chNum}-${wptIdx}`);
-  if (latInput) latInput.value = w.lat;
-  if (lonInput) lonInput.value = w.lon;
+  // The value attribute (defaultValue) moves with the value: a number field's stepper steps from
+  // it, so a stale one would snap a precise coordinate onto the 0.01 grid on the next nudge.
+  if (latInput) latInput.value = latInput.defaultValue = w.lat;
+  if (lonInput) lonInput.value = lonInput.defaultValue = w.lon;
 }
 
 function cancelMarkerDrag() {
@@ -1294,9 +1296,9 @@ function cancelMarkerDrag() {
 function onMarkerDragEnd() {
   if (dragMarkerLink && markerDidMove) {
     updateHeroStats();
-    // A drag that moved a first/last waypoint changes this chapter's start/end, so refresh the
-    // cross-chapter sync indicators (🔗 / ⇄). Done once at drag end, not per drag frame.
-    renderAllChapters();
+    // A drag that moved a first/last waypoint changes this chapter's start/end. Done once at drag
+    // end, not per drag frame.
+    refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
   }
   cancelMarkerDrag();
 }
@@ -1333,6 +1335,7 @@ function onGhostDragEnd(e) {
   const ch = getChapter(chNum);
   if (!ch) return;
 
+  noteFirstEdit();
   const wpt = makeWaypoint();
   wpt.lat = round5(pos.lat);
   wpt.lon = normLon(round5(pos.lng));
@@ -1411,7 +1414,7 @@ function selectWaypoint(chNum, idx, opts = {}) {
   if (!ch || !ch.waypoints[idx]) return;
   if (chNum !== activeChapterNum) selectChapter(chNum, true); // activate without the fit-jump
   selectedChapterNum = chNum;
-  selectedWptIdx = idx;
+  selectedWpt = ch.waypoints[idx];
   updateMapChapter(chNum); // redraw this chapter so the selected marker grows + turns crimson
   const w = ch.waypoints[idx];
   if (opts.zoom && hasCoord(w)) {
@@ -1425,10 +1428,10 @@ function selectWaypoint(chNum, idx, opts = {}) {
 // highlight, and redraws the affected chapter so the crimson selected marker reverts to normal.
 // Used by Escape and by a click on empty chart space.
 function deselectWaypoint() {
-  if (selectedWptIdx == null) return;
+  if (selectedWpt == null) return;
   const chNum = selectedChapterNum;
   selectedChapterNum = null;
-  selectedWptIdx = null;
+  selectedWpt = null;
   document.querySelectorAll('.wpt-row-selected').forEach(r => r.classList.remove('wpt-row-selected'));
   if (chNum != null) updateMapChapter(chNum);
 }
@@ -1437,8 +1440,17 @@ function deselectWaypoint() {
 // lights up — but only when focus crosses into a DIFFERENT row than the one already selected, so
 // tabbing between fields within the same row does nothing. No zoom (the map must not jump while
 // editing) and keepFocus so the user's focused field is not yanked to the name input.
+// The selected waypoint's current row in its chapter, or null when nothing is selected or the
+// waypoint is no longer in the chapter.
+function selectedIndex() {
+  if (selectedWpt == null) return null;
+  const ch = getChapter(selectedChapterNum);
+  const i = ch ? ch.waypoints.indexOf(selectedWpt) : -1;
+  return i === -1 ? null : i;
+}
+
 function onWptRowFocus(chNum, idx) {
-  if (chNum === selectedChapterNum && idx === selectedWptIdx) return; // same row — leave it alone
+  if (chNum === selectedChapterNum && idx === selectedIndex()) return; // same row — leave it alone
   selectWaypoint(chNum, idx, { keepFocus: true });
 }
 
@@ -1555,10 +1567,12 @@ function pickSearchResult(i) {
       wpt.lon = lon;
       // Country rides along free in the search result's address details — fill only if empty.
       if (r.address && r.address.country) wpt.country = r.address.country;
+      noteFirstEdit();
       ch.waypoints.push(wpt);
       renderChapterWaypoints(activeChapterNum);
       updateMapChapter(activeChapterNum);
-      updateHeroStats();
+      updateChapterCountries(activeChapterNum); // the result may carry a country
+      refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
     }
   } else {
     // No chapter active (#58): don't silently drop the pin — pan to it and hint where adds go.
@@ -1737,6 +1751,8 @@ function showLookupConfirm(n, action) {
   const msg = document.getElementById('lookup-confirm-msg');
   if (msg) msg.textContent = `This will look up countries for ${n} waypoint${n === 1 ? '' : 's'} at about one per second - roughly ${m} minute${m === 1 ? '' : 's'}.`;
   document.getElementById('lookup-confirm-modal').classList.add('open');
+  // Proceed takes focus, so Enter and the visible default agree; Shift+Tab reaches Cancel.
+  document.getElementById('lookup-confirm-ok').focus();
 }
 function closeLookupConfirm() {
   document.getElementById('lookup-confirm-modal').classList.remove('open');
@@ -1866,14 +1882,13 @@ function processFwdGeoQueue() {
       const latInput = document.querySelector(`#wpt-lat-${chNum}-${curIdx}`);
       const lonInput = document.querySelector(`#wpt-lon-${chNum}-${curIdx}`);
       const countryInput = document.querySelector(`#wpt-country-${chNum}-${curIdx}`);
-      if (latInput) latInput.value = w.lat;
-      if (lonInput) lonInput.value = w.lon;
+      if (latInput) latInput.value = latInput.defaultValue = w.lat; // the stepper steps from defaultValue
+      if (lonInput) lonInput.value = lonInput.defaultValue = w.lon;
       if (countryInput && w.country) { countryInput.value = w.country; syncCountryFlag(countryInput); }
       updateMapChapter(chNum);
       updateChapterCountries(chNum);
-      const chEl = document.getElementById(`ch-${chNum}`);
-      if (chEl) chEl.querySelector('.ch-nm').textContent = fmtDist(chapterNm(ch));
-      updateHeroStats();
+      // Filling a first or last row moves this chapter's start or end.
+      refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
     })
     .catch(() => {})
     .finally(() => {
@@ -2329,6 +2344,38 @@ function renderAllChapters() {
   updateHeroStats();
 }
 
+// The chapter header's connection to the previous chapter: 🔗 when this chapter starts where the
+// previous one ends, a ⇄ button that pulls the start across when there is a gap, and nothing for the
+// first chapter. Built here only, so the full list render and the light refresh draw it identically.
+function chapterSyncHTML(ch) {
+  const prev = getPredecessorChapter(ch);
+  if (!prev) return '';
+  const approach = chapterApproachNm(ch);
+  if (approach < 1) {
+    return `<span class="ch-sync linked" title="Start point matches Ch ${prev.num}'s endpoint">🔗</span>`;
+  }
+  return `<button class="ch-sync pull" title="Pull start from Ch ${prev.num}'s endpoint (${fmtDist(approach)} gap)" onclick="event.stopPropagation();pullFromPrevious(${ch.num})">⇄</button>`;
+}
+
+// Bring every chapter header's connection indicator and distance up to date in place, and the
+// header stats with them. A change to a chapter's first or last point (an edit, a drag, an append, a
+// delete, a reorder) can open or close the gap to the next chapter, but it changes nothing else in
+// the list, so the list is not rebuilt: a rebuild would destroy the field being edited, losing focus
+// on every Tab out of a coordinate. Each caller redraws its own waypoint table when its rows changed.
+function refreshChapterLinks() {
+  STATE.chapters.forEach(ch => {
+    const el = document.getElementById(`ch-${ch.num}`);
+    if (!el) return;
+    const nmEl = el.querySelector('.ch-nm');
+    const old = el.querySelector('.ch-header .ch-sync');
+    if (old) old.remove();
+    const html = chapterSyncHTML(ch);
+    if (html && nmEl) nmEl.insertAdjacentHTML('beforebegin', html);
+    if (nmEl) nmEl.textContent = fmtDist(chapterNm(ch));
+  });
+  updateHeroStats();
+}
+
 function createChapterElement(ch) {
   const div = document.createElement('div');
   div.className = `ch-item${ch.num === activeChapterNum ? ' active' : ''}`;
@@ -2336,16 +2383,7 @@ function createChapterElement(ch) {
   div.id = `ch-${ch.num}`;
 
   const nm = chapterNm(ch);
-  const prev = getPredecessorChapter(ch);
-  const approach = chapterApproachNm(ch);
-  let syncEl = '';
-  if (prev) {
-    if (approach < 1) {
-      syncEl = `<span class="ch-sync linked" title="Start point matches Ch ${prev.num}'s endpoint">🔗</span>`;
-    } else {
-      syncEl = `<button class="ch-sync pull" title="Pull start from Ch ${prev.num}'s endpoint (${fmtDist(approach)} gap)" onclick="event.stopPropagation();pullFromPrevious(${ch.num})">⇄</button>`;
-    }
-  }
+  const syncEl = chapterSyncHTML(ch);
 
   div.innerHTML = `
     <div class="ch-header" onclick="selectChapter(${ch.num})" ondblclick="dblClickChapter(${ch.num})">
@@ -2484,12 +2522,12 @@ function renderWaypointPanel(ch) {
 function renderWaypointRow(chNum, w, idx) {
   const isShaping = !w.name || w.name.trim() === '';
   return `
-    <tr class="${isShaping ? 'shaping' : ''}" data-idx="${idx}" onfocusin="onWptRowFocus(${chNum},${idx})">
+    <tr class="${[isShaping ? 'shaping' : '', (chNum === selectedChapterNum && w === selectedWpt) ? 'wpt-row-selected' : ''].filter(Boolean).join(' ')}" data-idx="${idx}" onfocusin="onWptRowFocus(${chNum},${idx})">
       <td class="wpt-row-drag">≡</td>
       <td class="wpt-row-num" title="Zoom to and select this waypoint" onclick="selectWaypoint(${chNum},${idx},{zoom:true})">${idx + 1}</td>
       <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" value="${esc(w.name)}" placeholder="(shaping vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
-      <td class="col-lat"><input type="number" step="any" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="updateWpt(${chNum},${idx},'lat',toCoord(this.value))"></td>
-      <td class="col-lon"><input type="number" step="any" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="updateWpt(${chNum},${idx},'lon',toCoord(this.value))"></td>
+      <td class="col-lat"><input type="number" step="0.01" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="updateWpt(${chNum},${idx},'lat',toCoord(this.value));this.defaultValue=this.value"></td>
+      <td class="col-lon"><input type="number" step="0.01" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="updateWpt(${chNum},${idx},'lon',toCoord(this.value));this.defaultValue=this.value"></td>
       <td class="col-cb"><input type="checkbox" ${w.major?'checked':''} onchange="updateWpt(${chNum},${idx},'major',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.gateway?'checked':''} onchange="updateWpt(${chNum},${idx},'gateway',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.decision?'checked':''} onchange="updateWpt(${chNum},${idx},'decision',this.checked)"></td>
@@ -2522,7 +2560,7 @@ function updateWpt(chNum, idx, field, value) {
     const row = document.querySelector(`#wpt-body-${chNum} tr[data-idx="${idx}"]`);
     if (row) {
       const isShaping = !value || value.trim() === '';
-      row.className = isShaping ? 'shaping' : '';
+      row.classList.toggle('shaping', isShaping);
     }
     // A name added/cleared flips this row between shaping vertex and named waypoint, so refresh
     // the chapter's named count and redraw the map (marker style + tooltip change accordingly).
@@ -2541,8 +2579,8 @@ function updateWpt(chNum, idx, field, value) {
   if (field === 'lat' || field === 'lon') {
     updateMapChapter(chNum);
     // A coordinate change on a first/last waypoint moves this chapter's start/end, which can open or
-    // close the gap to a neighbour, so refresh the cross-chapter sync indicators (🔗 / ⇄).
-    renderAllChapters();
+    // close the gap to a neighbor. The list is not rebuilt, so focus moves on to the next field.
+    refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
   }
   if (field === 'major' || field === 'decision' || field === 'gateway') {
     updateMapChapter(chNum);
@@ -2557,7 +2595,8 @@ function addWaypoint(chNum) {
   // Item 6: insert the new row after the selected row when one is selected in this chapter;
   // otherwise append at the end. (Map-click and geocode adds still append.)
   let insertIdx = ch.waypoints.length;
-  if (selectedChapterNum === chNum && selectedWptIdx != null) insertIdx = selectedWptIdx + 1;
+  const sel = selectedChapterNum === chNum ? selectedIndex() : null;
+  if (sel != null) insertIdx = sel + 1;
   ch.waypoints.splice(insertIdx, 0, makeWaypoint());
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
@@ -2569,14 +2608,14 @@ function addWaypoint(chNum) {
 function deleteWpt(chNum, idx) {
   const ch = getChapter(chNum);
   if (!ch) return;
+  // Deleting the selected waypoint clears the selection; any other selection stays on its waypoint.
+  if (ch.waypoints[idx] === selectedWpt) { selectedWpt = null; selectedChapterNum = null; }
   ch.waypoints.splice(idx, 1);
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
   updateChapterCountries(chNum);
-  // Deleting a first/last waypoint changes this chapter's connection to its neighbours, so the
-  // cross-chapter sync indicators (🔗 linked / ⇄ pull) must be recomputed, not just this table.
-  renderAllChapters();
-  updateHeroStats();
+  // Deleting a first/last waypoint changes this chapter's connection to its neighbors.
+  refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
 }
 
 let pendingDeleteWpt = null;
@@ -2644,7 +2683,7 @@ function selectChapter(chNum, skipFit) {
   activeChapterNum = chNum;
   // #56: a chapter switch clears the waypoint selection (highlight + row).
   selectedChapterNum = null;
-  selectedWptIdx = null;
+  selectedWpt = null;
   document.querySelectorAll('.wpt-row-selected').forEach(r => r.classList.remove('wpt-row-selected'));
   // Update active styling
   document.querySelectorAll('.ch-item').forEach(el => {
@@ -2713,15 +2752,21 @@ function pullFromPrevious(chNum) {
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
   updateChapterCountries(chNum);
-  renderAllChapters(); // refresh sync indicators + nm across chapters
+  refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
   selectChapter(chNum);
 }
 
 function deleteChapter(chNum) {
   confirmModal('Delete Chapter', `Delete chapter ${chNum}? This cannot be undone.`, () => {
+    // The chapters after the deleted one are renumbered, so the active chapter and the selection are
+    // carried by their chapter objects; either is cleared when its chapter was the one deleted.
+    const activeCh = activeChapterNum !== null ? getChapter(activeChapterNum) : null;
+    const selCh = selectedChapterNum !== null ? getChapter(selectedChapterNum) : null;
     STATE.chapters = STATE.chapters.filter(c => c.num !== chNum);
     renumberChapters();
-    if (activeChapterNum === chNum) activeChapterNum = null;
+    activeChapterNum = (activeCh && STATE.chapters.includes(activeCh)) ? activeCh.num : null;
+    if (selCh && STATE.chapters.includes(selCh)) { selectedChapterNum = selCh.num; }
+    else { selectedChapterNum = null; selectedWpt = null; }
     renderAllChapters();
   });
 }
@@ -2765,10 +2810,10 @@ function initWaypointSortable(chNum) {
       ch.waypoints.splice(evt.newIndex, 0, moved);
       renderChapterWaypoints(chNum);
       updateMapChapter(chNum);
+      updateChapterCountries(chNum); // the derived country list follows first-appearance order
       // Reordering can move a waypoint into or out of the first/last slot, changing this chapter's
-      // start/end, so refresh the cross-chapter sync indicators (🔗 / ⇄).
-      renderAllChapters();
-      updateHeroStats();
+      // start/end. The selection stays on its waypoint wherever it moved.
+      refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
     }
   });
 }
@@ -2801,8 +2846,11 @@ function openBulkModal(chNum) {
 function closeBulkModal() {
   document.getElementById('bulk-modal').classList.remove('open');
 }
+// The number of rows one bulk add creates is held to the field's own range, 1 to 500.
+const BULK_MAX = 500;
 function doBulkAdd() {
-  const n = parseInt(document.getElementById('bulk-count').value) || 10;
+  const typed = parseInt(document.getElementById('bulk-count').value, 10);
+  const n = Math.min(BULK_MAX, Math.max(1, Number.isNaN(typed) ? 10 : typed));
   const ch = getChapter(bulkTargetChNum);
   if (!ch) return;
   for (let i = 0; i < n; i++) ch.waypoints.push(makeWaypoint());
@@ -2811,9 +2859,8 @@ function doBulkAdd() {
   closeBulkModal();
   renderChapterWaypoints(bulkTargetChNum);
   // Appending waypoints changes this chapter's last point, which can alter the connection to the
-  // next chapter, so refresh the cross-chapter sync indicators (🔗 / ⇄).
-  renderAllChapters();
-  updateHeroStats();
+  // next chapter.
+  refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
 }
 
 function openPasteModal(chNum) {
@@ -2854,10 +2901,10 @@ function doPaste() {
   closePasteModal();
   renderChapterWaypoints(pasteTargetChNum);
   updateMapChapter(pasteTargetChNum);
+  updateChapterCountries(pasteTargetChNum); // pasted rows may carry countries
   // Pasted rows append to the chapter, changing its last point and possibly the connection to the
-  // next chapter, so refresh the cross-chapter sync indicators (🔗 / ⇄).
-  renderAllChapters();
-  updateHeroStats();
+  // next chapter.
+  refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
   // Forward-geocode ONLY the pasted rows that have a name but no coordinates.
   // The country rides along free in that same response, so it's filled too (only-if-empty);
   // rows pasted WITH coordinates make no call, so their country still comes from the button.
@@ -2993,7 +3040,7 @@ function resetSession() {
   STATE.metaTitle = '';
   activeChapterNum = null;
   selectedChapterNum = null;
-  selectedWptIdx = null;
+  selectedWpt = null;
   if (rapidClickMode) toggleRapidClick();
   // Lookups still waiting in the two lookup queues are dropped. One already handed to the request
   // queue, or in flight, belongs to the old session: its request may still go out, at the usual
@@ -3318,6 +3365,13 @@ function exportWaypointsCSV() {
 /* ═══════════════════════════════════════════════════════════════
    EXPORT — KML
    ═══════════════════════════════════════════════════════════════ */
+// A palette color (#RRGGBB) as a KML color, which is written aabbggrr: full opacity, then the blue,
+// green and red bytes.
+function kmlColor(hex) {
+  const h = String(hex).replace('#', '');
+  return 'ff' + h.slice(4, 6) + h.slice(2, 4) + h.slice(0, 2);
+}
+
 function exportKML() {
   closeDropdowns();
   announce('export', 'kml');
@@ -3343,7 +3397,7 @@ function exportKML() {
     if (pts.length >= 2) {
       const coords = pts.map(w => `${w.lon},${w.lat},0`).join('\n');
       kml += `<Placemark><name>${escXml(ch.name)} route</name>
-<Style><LineStyle><color>ff${chapterColor(ch.num).slice(1).split('').reverse().join('')}</color><width>2</width></LineStyle></Style>
+<Style><LineStyle><color>${kmlColor(chapterColor(ch.num))}</color><width>2</width></LineStyle></Style>
 <LineString><tessellate>1</tessellate><coordinates>\n${coords}\n</coordinates></LineString></Placemark>\n`;
     }
 
@@ -3418,6 +3472,10 @@ function toggleTheme() {
     map.removeLayer(tileDark);
     tileLight.addTo(map);
   }
+  // The browser bar follows the page background, as in the viewer.
+  document.querySelector('meta[name=theme-color]').setAttribute('content', isDark ? '#0b1622' : '#f4efe4');
+  // Selected markers are drawn in the theme's accent color, read when a chapter is drawn.
+  updateMapAll();
 }
 
 // Close dropdowns on outside click
@@ -3509,22 +3567,27 @@ document.addEventListener('keydown', function(e) {
       document.getElementById('paste-modal').classList.contains('open') ||
       document.getElementById('csv-step2-modal').classList.contains('open') ||
       document.getElementById('delete-wpt-modal').classList.contains('open') ||
-      document.getElementById('confirm-modal').classList.contains('open');
+      document.getElementById('confirm-modal').classList.contains('open') ||
+      document.getElementById('lookup-confirm-modal').classList.contains('open');
     if (document.getElementById('bulk-modal').classList.contains('open')) closeBulkModal();
     if (document.getElementById('paste-modal').classList.contains('open')) closePasteModal();
     if (document.getElementById('csv-step2-modal').classList.contains('open')) closeCSVStep2();
     if (document.getElementById('delete-wpt-modal').classList.contains('open')) closeDeleteWptModal();
     if (document.getElementById('confirm-modal').classList.contains('open')) closeConfirmModal();
+    if (document.getElementById('lookup-confirm-modal').classList.contains('open')) closeLookupConfirm();
     closeDropdowns();
     // Deselect: with no modal open, Escape clears an active waypoint selection (its highlight + the
     // crimson chart marker). Guarded so it never competes with modal-close or the search Escape.
-    if (!anyModalOpen && selectedWptIdx != null) deselectWaypoint();
+    if (!anyModalOpen && selectedWpt != null) deselectWaypoint();
   }
   if (e.key === 'Enter' && !e.shiftKey) {
     if (document.getElementById('bulk-modal').classList.contains('open')) { e.preventDefault(); doBulkAdd(); }
     if (document.getElementById('csv-step2-modal').classList.contains('open')) { e.preventDefault(); document.getElementById('file-csv-waypoints').click(); }
     if (document.getElementById('delete-wpt-modal').classList.contains('open')) { e.preventDefault(); doDeleteWpt(); }
     if (document.getElementById('confirm-modal').classList.contains('open')) { e.preventDefault(); if (confirmSafeDefault) { closeConfirmModal(); } else { proceedConfirmModal(); } }
+    // Enter on one of the dialog's own buttons is left to that button, so a focused Cancel cancels.
+    if (document.getElementById('lookup-confirm-modal').classList.contains('open') &&
+        !(e.target && e.target.closest && e.target.closest('#lookup-confirm-modal button'))) { e.preventDefault(); proceedLookupConfirm(); }
   }
 });
 

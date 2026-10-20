@@ -104,14 +104,14 @@ const uiStubs = () => ({
 const DIRTY_SESSION = `
   STATE = { chapters: [{ num: 3, waypoints: [] }], metaTitle: 'Old voyage',
             settings: { distanceOverride: 99999, nationsOverride: 40, territoriesOverride: 9, distanceUnit: 'km' } };
-  activeChapterNum = 3; selectedChapterNum = 3; selectedWptIdx = 0; rapidClickMode = true;
+  activeChapterNum = 3; selectedChapterNum = 3; selectedWpt = {}; rapidClickMode = true;
   revGeoQueue = [{}, {}]; fwdGeoQueue = [{}]; geoTotal = 3; geoDone = 1; geoResolved = 1;`;
 const SESSION_STATE = `session: () => ({ settings: STATE.settings, metaTitle: STATE.metaTitle, activeChapterNum,
-  selectedChapterNum, selectedWptIdx, rapidClickMode, queued: revGeoQueue.length + fwdGeoQueue.length, geoTotal }),
+  selectedChapterNum, selectedWpt, rapidClickMode, queued: revGeoQueue.length + fwdGeoQueue.length, geoTotal }),
   chapters: () => STATE.chapters`;
 const CLEAN = {
   settings: { distanceOverride: null, nationsOverride: null, territoriesOverride: null, distanceUnit: 'nm' },
-  metaTitle: '', activeChapterNum: null, selectedChapterNum: null, selectedWptIdx: null, rapidClickMode: false,
+  metaTitle: '', activeChapterNum: null, selectedChapterNum: null, selectedWpt: null, rapidClickMode: false,
   queued: 0, geoTotal: 0,
 };
 

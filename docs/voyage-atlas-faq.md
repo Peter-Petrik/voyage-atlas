@@ -142,12 +142,14 @@ While any look-up is in flight, both the per-chapter **Look up countries** and t
 ## Adjusting waypoint positions
 
 1. **Drag the marker** on the chart to reposition it; lat/lon update live.
-2. **Edit lat/lon** directly in the table fields, or use the small steppers for fine nudges.
+2. **Edit lat/lon** directly in the table fields, or use the small steppers for fine nudges: each step moves 0.01 of a degree, about 0.6 nm of latitude, and keeps the value's other digits.
 3. **Drag a ghost midpoint** — each leg shows a faint "ghost" marker at its midpoint; drag it to insert a new shaping vertex on that leg, bending the route. (Ghost midpoints sit *on* the rendered line, even on long ocean legs.)
 
 ## Selecting a waypoint (chart ↔ list)
 
-Clicking a **marker** on the chart selects that waypoint: the marker grows and turns crimson, and its row in the table is highlighted, scrolled into view, and briefly flashed. Clicking a waypoint's **sequence number** in the table does the same and also zooms the chart to that point and makes its chapter active — handy for jumping straight to a point on a long leg. Focusing any field in a different row also selects that row's waypoint, lighting its marker on the chart without moving the chart or stealing focus from the field being edited. Adding a waypoint selects the new row too. Only one waypoint is selected at a time.
+Clicking a **marker** on the chart selects that waypoint: the marker grows and turns crimson, and its row in the table is highlighted, scrolled into view, and briefly flashed. Clicking a waypoint's **sequence number** in the table does the same and also zooms the chart to that point and makes its chapter active — handy for jumping straight to a point on a long leg. Focusing any field in a different row also selects that row's waypoint, lighting its marker on the chart without moving the chart or stealing focus from the field being edited. Adding a waypoint selects the new row too. Only one waypoint is selected at a time, and the selection stays on that waypoint when other rows are deleted, added or reordered around it.
+
+Editing a latitude or longitude updates the chapter connection indicators (🔗 / ⇄) and the distances in place, so **Tab** moves straight on to the next field.
 
 The selection clears on switching to another chapter, on pressing **Escape**, or on clicking empty chart space away from any marker — any of which removes the row highlight and returns the marker to its normal style.
 
@@ -209,7 +211,7 @@ The **Save** button reads `Save *` (with an "Unsaved changes" tooltip) whenever 
 
 ## Keyboard shortcuts
 
-1. In any dialog (bulk add, paste, CSV import, delete confirmation): **Enter** confirms, **Escape** cancels.
+1. In any dialog (bulk add, paste, CSV import, delete confirmation, Look Up Countries): **Enter** confirms, **Escape** cancels.
 2. In the paste box specifically: **Cmd/Ctrl+Enter** adds the rows, while plain **Enter** inserts a newline (allowing multi-line content to be pasted or typed first).
 3. In the Nominatim search box: **Enter** searches; once results show, **↑/↓** move through them, **Enter** adds the highlighted result, **Escape** dismisses the results. A **second Escape** (once the results are already dismissed) clears the typed query.
 4. With a waypoint selected and no dialog open: **Escape** clears the selection.
@@ -239,7 +241,7 @@ On load, how the viewer frames the chart depends on the voyage's span. A voyage 
 
 Each chapter is drawn in its own color, with named waypoints as markers and the route line tracing all points in order. Click a waypoint for its name and the chapter's season; major ports are marked. The hero stats at the top summarize the whole voyage. When a chapter has a blog URL set, its info panel shows a "Read the posts →" link.
 
-**Selecting a chapter** — click a chapter in the list (or its route on the chart) to focus it. The selected chapter's route and waypoints stay at full strength while every other chapter dims, so the active one stands out; the chart eases to that chapter's extent (one step wider than a tight fit, so it isn't pinned to the edges or hidden under the corner panels), and the detail panel opens. Clearing the selection restores all chapters to full strength.
+**Selecting a chapter** — click a chapter in the list (or its route on the chart) to focus it. Past chapters are dimmed in the lists but open like any other; only a chapter with fewer than two points shows "No geometry" and cannot be selected. The selected chapter's route and waypoints stay at full strength while every other chapter dims, so the active one stands out; the chart eases to that chapter's extent (one step wider than a tight fit, so it isn't pinned to the edges or hidden under the corner panels), and the detail panel opens. Clearing the selection restores all chapters to full strength.
 
 The on-chart panels sit in the four corners: zoom controls top-left, **Chart & Layers** top-right, the **chapter list** bottom-left, and the **selected-chapter detail** bottom-right. (On a narrow/mobile screen they stack instead: Chart & Layers below the zoom control, the detail panel as a bottom sheet.)
 

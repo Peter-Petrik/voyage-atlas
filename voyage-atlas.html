@@ -160,14 +160,6 @@
   #filter .panel-h { margin-bottom: 9px; padding-bottom: 7px; border-bottom: 1px solid var(--border); }
   #filter.collapsed .panel-body { display: none; }
   #filter.collapsed .panel-h { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-  .seg { display: flex; gap: 4px; margin-bottom: 11px; }
-  .seg button {
-    flex: 1; padding: 5px 0; font-family: inherit; font-size: 10px;
-    background: transparent; color: var(--muted);
-    border: 1px solid var(--border); border-radius: 3px; cursor: pointer;
-    transition: all 0.15s;
-  }
-  .seg button.on { background: var(--accent); color: var(--panel-solid); border-color: var(--accent); }
   .toggle { display: flex; align-items: center; gap: 8px; padding: 4px 2px; cursor: pointer; font-size: 11px; color: var(--ink); }
   .toggle input { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
 
@@ -180,7 +172,9 @@
   .leg-row { display: flex; align-items: center; gap: 8px; padding: 3px 3px; border-radius: 3px; cursor: pointer; transition: background 0.12s; }
   .leg-row:hover { background: var(--accent-soft); }
   .leg-row.active { background: var(--accent-soft); }
-  .leg-row.past { opacity: 0.55; }
+  .leg-row.past, .leg-row.no-geo { opacity: 0.55; }
+  .leg-row.no-geo { cursor: default; }
+  .leg-row.no-geo:hover { background: none; }
   .leg-sw { width: 22px; height: 4px; border-radius: 2px; flex-shrink: 0; }
   .leg-name { font-size: 10px; color: var(--ink); line-height: 1.3; }
 
@@ -234,8 +228,9 @@
   .dr-row { display: flex; gap: 11px; padding: 11px 16px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.12s; }
   .dr-row:hover { background: var(--accent-soft); }
   .dr-row.active { background: var(--accent-soft); border-left: 3px solid var(--accent); padding-left: 13px; }
-  .dr-row.past { opacity: 0.62; cursor: default; }
-  .dr-row.past:hover { background: none; }
+  .dr-row.past, .dr-row.no-geo { opacity: 0.62; }
+  .dr-row.no-geo { cursor: default; }
+  .dr-row.no-geo:hover { background: none; }
   .dr-sw { width: 5px; border-radius: 3px; flex-shrink: 0; align-self: stretch; }
   .dr-when { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; margin-bottom: 2px; }
   .dr-name { font-family: 'Fraunces', serif; font-size: 14px; color: var(--ink); margin-bottom: 3px; line-height: 1.2; }
@@ -254,7 +249,6 @@
   #footer > .footer-left, #footer > .footer-ver { flex: 1 1 0; }
   #footer > .footer-ver { text-align: right; }
   #footer .footer-credit { flex: 0 1 auto; text-align: center; white-space: nowrap; padding: 0 10px; }
-  .footer-credit { flex: 0 1 auto; text-align: center; white-space: nowrap; padding: 0 10px; }
 
   .leaflet-popup-content-wrapper { background: var(--panel-solid) !important; border: 1px solid var(--border-strong) !important; border-radius: 4px !important; box-shadow: var(--shadow) !important; color: var(--ink) !important; }
   .leaflet-popup-tip { background: var(--panel-solid) !important; border: 1px solid var(--border-strong) !important; }
@@ -443,7 +437,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.7</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.8</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -565,6 +559,18 @@ bindToggle('t-gate',   gatewayLayer);
 function refreshMarkerStrokes() {
   const stroke = document.body.classList.contains('dark') ? '#0b1622' : '#fbf8f1';
   wptsLayer.eachLayer(l => l.setStyle && l.setStyle({ color: stroke }));
+  // Decision and Gateway markers carry their stroke inside the icon, so each is rebuilt from the
+  // shape it was drawn with.
+  [decisionLayer, gatewayLayer].forEach(g => g.eachLayer(l => {
+    if (l._vaShape) l.setIcon(shapeIcon(l._vaShape.kind, l._vaShape.size, l._vaShape.color, stroke));
+  }));
+}
+
+// A Decision (diamond) or Gateway (star) marker icon in the given size, fill and stroke.
+function shapeIcon(kind, size, color, stroke) {
+  const half = size / 2;
+  const svg = (kind === 'decision' ? decisionMarkerSVG : gatewayMarkerSVG)(size, color, stroke, 1.5, 0.9);
+  return L.divIcon({ html: svg, className: '', iconSize: [size, size], iconAnchor: [half, half] });
 }
 
 const WORLD_COPIES = [-360, 0, 360];
@@ -963,19 +969,15 @@ function loadVoyageData(raw) {
         // Decision markers
         if (w.decision) {
           const size = major ? 20 : 16;
-          const half = size / 2;
-          const svg = decisionMarkerSVG(size, color, stroke, 1.5, 0.9);
-          const icon = L.divIcon({ html: svg, className: '', iconSize: [size, size], iconAnchor: [half, half] });
-          const dm = L.marker([w.lat, w.lon + off], { icon }).bindPopup(popup, { maxWidth: 230 });
+          const dm = L.marker([w.lat, w.lon + off], { icon: shapeIcon('decision', size, color, stroke) }).bindPopup(popup, { maxWidth: 230 });
+          dm._vaShape = { kind: 'decision', size, color };
           dm.addTo(decisionLayer);
         }
         // Gateway markers
         if (w.gateway) {
           const size = major ? 20 : 16;
-          const half = size / 2;
-          const svg = gatewayMarkerSVG(size, color, stroke, 1.5, 0.9);
-          const icon = L.divIcon({ html: svg, className: '', iconSize: [size, size], iconAnchor: [half, half] });
-          const gm = L.marker([w.lat, w.lon + off], { icon }).bindPopup(popup, { maxWidth: 230 });
+          const gm = L.marker([w.lat, w.lon + off], { icon: shapeIcon('gateway', size, color, stroke) }).bindPopup(popup, { maxWidth: 230 });
+          gm._vaShape = { kind: 'gateway', size, color };
           gm.addTo(gatewayLayer);
         }
       });
@@ -999,19 +1001,23 @@ function loadVoyageData(raw) {
   DATA.chapters.forEach(ch => {
     const color = chapterColor(ch.num);
     const hasRoutes = ch.routes && ch.routes.length && ch.routes[0].length >= 2;
-    const isPast = ch.era === 'past' || !hasRoutes;
+    // A past chapter is dimmed but opens like any other; only a chapter with no route to frame (fewer
+    // than two points) is marked "No geometry" and cannot be selected.
+    const isPast = ch.era === 'past';
+    const noGeometry = !hasRoutes;
+    const rowClass = (isPast ? ' past' : '') + (noGeometry ? ' no-geo' : '');
 
     const lr = document.createElement('div');
-    lr.className = 'leg-row' + (isPast ? ' past' : '');
+    lr.className = 'leg-row' + rowClass;
     lr.id = `leg-${ch.num}`;
     lr.innerHTML = `<div class="leg-sw" style="background:${color}"></div><div class="leg-name">${esc(ch.name)}</div>`;
-    if (!isPast) lr.addEventListener('click', () => selectChapter(ch.num));
+    if (!noGeometry) lr.addEventListener('click', () => selectChapter(ch.num));
     legendBody.appendChild(lr);
 
     const dr = document.createElement('div');
-    dr.className = 'dr-row' + (isPast ? ' past' : '');
+    dr.className = 'dr-row' + rowClass;
     dr.id = `dr-${ch.num}`;
-    const badge = isPast ? '<span class="dr-badge">No geometry</span>' : '';
+    const badge = noGeometry ? '<span class="dr-badge">No geometry</span>' : '';
     dr.innerHTML =
       `<div class="dr-sw" style="background:${color}"></div>
        <div style="min-width:0;flex:1">
@@ -1021,7 +1027,7 @@ function loadVoyageData(raw) {
          <div class="dr-name">${esc(ch.name)}</div>
          <div class="dr-dest">${esc((ch.keyDestinations||[]).join(' · '))}</div>
        </div>`;
-    if (!isPast) dr.addEventListener('click', () => { selectChapter(ch.num); if (window.innerWidth <= 640) closeDrawer(); });
+    if (!noGeometry) dr.addEventListener('click', () => { selectChapter(ch.num); if (window.innerWidth <= 640) closeDrawer(); });
     drawerBody.appendChild(dr);
   });
 
