@@ -609,7 +609,7 @@ th .hi { margin-left: 2px; }
             <input type="number" id="set-nm" value="" placeholder="AUTO:" onchange="updateSettings()">
           </div>
           <div class="meta-field">
-            <label>Nations <span class="hi" data-tip="Sovereign nations in the voyage. Auto-calculated by classifying waypoint countries against a built-in territory reference list (~65 entries). Override here if the auto-count is wrong.">i</span></label>
+            <label>Nations <span class="hi" data-tip="Sovereign nations in the voyage. Auto-calculated by classifying waypoint countries against a built-in territory reference list (54 names). Override here if the auto-count is wrong.">i</span></label>
             <input type="number" id="set-nations" value="" placeholder="AUTO:" onchange="updateSettings()">
           </div>
           <div class="meta-field">
@@ -657,7 +657,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.9</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.10</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1040,7 +1040,7 @@ function updateMapAll() {
   mapLayers = {};
   // Draw inactive chapters first, then the active chapter last so its route and markers
   // sit on top — keeps the active chapter's waypoints clickable where they coincide with a
-  // neighbour's endpoint, and makes "active wins" at a shared point (defect 2).
+  // neighbor's endpoint, and makes "active wins" at a shared point (defect 2).
   STATE.chapters.forEach(ch => { if (ch.num !== activeChapterNum) updateMapChapter(ch.num); });
   if (activeChapterNum !== null) updateMapChapter(activeChapterNum);
 }
@@ -2648,7 +2648,7 @@ function confirmModal(title, message, onConfirm, okLabel, cancelLabel, safeDefau
   pendingConfirmAction = onConfirm;
   // safeDefault marks a confirmation whose dangerous outcome should NOT be what a reflexive Enter
   // hits — for those, Enter maps to cancel and the cancel button takes initial focus. Defaults to
-  // false, so existing confirmations (e.g. Delete Chapter) keep Enter-confirms behaviour.
+  // false, so existing confirmations (e.g. Delete Chapter) keep Enter-confirms behavior.
   confirmSafeDefault = !!safeDefault;
   document.getElementById('confirm-modal-title').textContent = title;
   document.getElementById('confirm-modal-msg').textContent = message;
@@ -2658,7 +2658,7 @@ function confirmModal(title, message, onConfirm, okLabel, cancelLabel, safeDefau
   document.getElementById('confirm-modal-cancel').textContent = cancelLabel || 'Cancel';
   document.getElementById('confirm-modal').classList.add('open');
   // Focus the safe button on a safe-default confirmation so the keyboard default and the visual
-  // default both favour not losing work; otherwise leave focus on the proceed button as before.
+  // default both favor not losing work; otherwise leave focus on the proceed button as before.
   const focusBtn = confirmSafeDefault ? 'confirm-modal-cancel' : 'confirm-modal-ok';
   const el = document.getElementById(focusBtn);
   if (el) el.focus();

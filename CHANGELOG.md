@@ -6,6 +6,11 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.10] - 2026-10-20
+
+### Fixed
+- **Territory Count in the Nations Help**: The help on the Nations override in Voyage Settings now gives the built-in territory list's real size, 54 names, instead of "~65 entries". The FAQ now carries the full list. A test keeps the help in step with the list.
+
 ## [v3.9.9] - 2026-10-20
 
 ### Changed
@@ -694,6 +699,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.10]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.9...v3.9.10
 [v3.9.9]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.8...v3.9.9
 [v3.9.8]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.7...v3.9.8
 [v3.9.7]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.6...v3.9.7

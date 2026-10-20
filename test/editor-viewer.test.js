@@ -385,3 +385,17 @@ test(`${EDITOR}: the Paste dialog splits at tabs when the text holds one, otherw
   doPaste();
   assert.deepEqual(seen, ['\t', ',']);
 });
+
+test(`${EDITOR}: the Nations help gives the territory list's real size`, () => {
+  const { TERRITORIES } = pick(editor, ['TERRITORIES']);
+  const tip = (editor.html.match(/<label>Nations <span class="hi" data-tip="([^"]*)"/) || [])[1] || '';
+  const n = (tip.match(/\((\d+) names\)/) || [])[1];
+  assert.equal(Number(n), TERRITORIES.size, tip);
+});
+
+test('both tools use American spelling in their source, comments included', () => {
+  const british = /\b(neighbour\w*|behaviour\w*|favour\w*|colour\w*|centre[sd]?|initialis\w*|organis\w*|recognis\w*|normalis\w*|labelled|cancelled|travelling|modelling|maths)\b/gi;
+  for (const tool of [editor, viewer]) {
+    assert.deepEqual(tool.html.match(british) || [], [], tool.name);
+  }
+});
