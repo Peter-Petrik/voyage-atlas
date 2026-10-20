@@ -85,7 +85,7 @@ The atlas shows exactly what is entered. A charted backtrack, a waypoint on land
 
 ## Contributing
 
-Issues and feature suggestions are welcome via the issue tracker. Contributions to the code are best raised in an issue first to discuss the change. The design rationale behind the architecture (why chapters, the predecessor seam, the distance model) is documented for maintainers; non-trivial work is worth a question in an issue before starting.
+Issues and feature suggestions are welcome via the issue tracker. Contributions to the code are best raised in an issue first to discuss the change. The design rationale behind the architecture (why chapters, the predecessor seam, the distance model) is documented for maintainers; non-trivial work is worth a question in an issue before starting. The test suite runs with `node --test` from the repository root, on Node 20 or later with nothing to install, and runs on every push and pull request to `main`.
 
 ## License
 

@@ -1,0 +1,38 @@
+# Test suite on every push and pull request to main.
+#
+# The project has no package and no dependencies, so the job checks out the
+# repository, sets up Node and runs Node's built-in test runner. `node --test`
+# with no arguments runs every file under test/: syntax, markup structure,
+# shared-core parity between the editor and the viewer, the CHANGELOG header
+# chain, and the behavior of the geocoder queue and the checks applied to
+# voyage files. Nothing is installed and no secrets are used.
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Read access is enough to check out and test; the job writes nothing.
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Run tests
+        run: node --test
