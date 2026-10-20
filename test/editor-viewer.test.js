@@ -124,7 +124,7 @@ test(`${EDITOR}: placing a waypoint from a search result or a ghost midpoint cou
 });
 
 test(`${EDITOR}: the lat and lon steppers move 0.01 of a degree`, () => {
-  const inputs = editor.html.match(/<input type="number" step="[^"]*" id="wpt-(lat|lon)-/g) || [];
+  const inputs = editor.html.match(/<input type="number" step="[^"]*"(?: min="-90" max="90")? id="wpt-(lat|lon)-/g) || [];
   assert.equal(inputs.length, 2);
   inputs.forEach(i => assert.match(i, /step="0\.01"/));
 });
@@ -307,7 +307,8 @@ test(`${EDITOR}: the theme switch sets the browser theme color and the marker ac
 test(`${EDITOR}: the lat and lon fields keep their stepper base with their value`, () => {
   const inputs = editor.html.match(/id="wpt-(lat|lon)-\$\{chNum\}-\$\{idx\}"[^>]*>/g) || [];
   assert.equal(inputs.length, 2);
-  inputs.forEach(i => assert.match(i, /this\.defaultValue=this\.value/));
+  inputs.forEach(i => assert.match(i, /onCoordInput\(this,/));
+  assert.match(editor.defs.onCoordInput, /input\.defaultValue = input\.value/);
   assert.match(editor.defs.onMarkerDrag, /latInput\.value = latInput\.defaultValue = w\.lat/);
   assert.match(editor.defs.processFwdGeoQueue, /latInput\.value = latInput\.defaultValue = w\.lat/);
 });

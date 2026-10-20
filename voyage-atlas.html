@@ -369,7 +369,7 @@
     <button id="landing-close" onclick="closeChooser()" title="Close" style="display:none;">×</button>
     <h2>Voyage Atlas</h2>
     <div class="landing-advisory"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> for the full experience, view on a larger screen.</span></div>
-    <div class="landing-advisory" id="landing-data-note" style="display:none;"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> Voyage files must be on this site.</span></div>
+    <div class="landing-advisory" id="landing-data-note" style="display:none;"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> <span id="landing-data-note-text">Voyage files must be on this site.</span></span></div>
     <p class="landing-intro">Chart a multi-year voyage as a sequence of chapters — regions and seasons, not a list of waypoints.</p>
     <div class="landing-actions">
       <button id="landing-sample" class="landing-btn" onclick="loadSampleFromChooser()" style="display:none;">
@@ -437,7 +437,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.10</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.11</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -504,6 +504,14 @@ function splitAtDateline(coords) {
     const [la0, lo0] = coords[i-1], [la1, lo1] = coords[i];
     if (Math.abs(lo1 - lo0) > 180) {
       const lo1c = lo1 + (lo1 - lo0 > 0 ? -360 : 360);
+      if (lo1c === lo0) {
+        // Both points sit on the dateline itself (+180, then -180): the same meridian, so the leg runs
+        // along it and the next segment starts on the other side, with nothing to interpolate.
+        seg.push([la1, lo0]);
+        segs.push(seg);
+        seg = [[la1, lo1]];
+        continue;
+      }
       const seam = lo1c > lo0 ? 180 : -180;
       const t = (seam - lo0) / (lo1c - lo0);
       seg.push([la0 + (la1 - la0) * t, seam]);
@@ -575,9 +583,13 @@ function shapeIcon(kind, size, color, stroke) {
 
 const WORLD_COPIES = [-360, 0, 360];
 const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlngs;
-// Canonicalize a longitude to [-180,180). Shared with the editor; used so a dateline-side center
-// resolves correctly. Same definition in both tools.
-const normLon = lon => ((lon + 180) % 360 + 360) % 360 - 180;
+// Canonicalize a longitude to [-180,180). Map clicks/drags near the dateline can return values
+// outside that range (e.g. +200 instead of -160), and some files hold 0-360 longitudes;
+// splitAtDateline needs canonical input to detect a crossing. A longitude already in range is
+// returned as it is: the wrapping arithmetic adds floating-point noise (16.64429 came back as
+// 16.644289999999955), so a wrapped value is rounded to nine decimals. Shared between editor and
+// viewer (identical definitions in both).
+const normLon = lon => (lon >= -180 && lon < 180) ? lon : Math.round((((lon + 180) % 360 + 360) % 360 - 180) * 1e9) / 1e9;
 
 /* Marker shape SVG builders — shared between editor and viewer (identical definitions in both).
    Geometry is fixed; appearance (fill/stroke/strokeW/opacity) is passed by the caller so each tool's
@@ -676,14 +688,24 @@ function hasCoord(w) {
   return !!w && Number.isFinite(w.lat) && Number.isFinite(w.lon);
 }
 
-// A coordinate read from a file or a field: a finite number, or text that reads as one, is kept as a
-// number, 0 included; anything else becomes null. Coordinates are written into the waypoint table's
-// inputs and the KML export, so a value that is not a number must never reach that markup. Shared
-// between editor and viewer (identical definitions in both).
+// A coordinate read from a file or a field: a finite number, or text that reads as one in full, is
+// kept as a number, 0 included; anything else becomes null. Text must be a whole number ("12abc" and
+// "38,53" are not read as 12 and 38, which would move the point silently). Coordinates are written
+// into the waypoint table's inputs and the KML export, so a value that is not a number must never
+// reach that markup. Shared between editor and viewer (identical definitions in both).
 function toCoord(v) {
-  if (v === null || v === undefined || v === '') return null;
-  const n = typeof v === 'number' ? v : parseFloat(v);
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  if (typeof v !== 'string' || !/^\s*[-+]?(\d+(\.\d*)?|\.\d+)(e[-+]?\d+)?\s*$/i.test(v)) return null;
+  const n = parseFloat(v);
   return Number.isFinite(n) ? n : null;
+}
+
+// A number written with a decimal comma ("38,53", as spreadsheets in much of Europe write it), with
+// the comma made a point; any other value as it is. Used only where a comma cannot be a column
+// separator: a semicolon-separated CSV and a tab-separated paste. Shared between editor and viewer
+// (identical definitions in both).
+function decimalPoint(v) {
+  return (typeof v === 'string' && /^\s*[-+]?\d+,\d+\s*$/.test(v)) ? v.replace(',', '.') : v;
 }
 
 // A list typed into a field or held as text in a file (countries, key destinations), split into its
@@ -716,14 +738,160 @@ function mergeTerritoryNames(parts) {
 }
 
 // A list field (countriesOverride, keyDestinations) as read from a voyage file: an array as saved, or
-// text in a hand-edited file, split as typed text is. Entries are trimmed and empty ones dropped, and
-// a territory name that an earlier version saved split at its commas is joined back up. Anything else
-// reads as an empty list. Shared between editor and viewer (identical definitions in both).
+// text in a hand-edited file, split as typed text is. Spaces and commas at either end of an entry are
+// trimmed, as splitList trims them, so a list reads the same from a voyage file and from a CSV, and
+// empty entries are dropped; a territory name that an earlier version saved split at its commas is
+// joined back up. Anything else reads as an empty list. Shared between editor and viewer (identical
+// definitions in both).
 function fileList(v) {
   if (typeof v === 'string') return splitList(v);
   if (!Array.isArray(v)) return [];
-  return mergeTerritoryNames(v.map(x => String(x == null ? '' : x).trim()).filter(Boolean));
+  return mergeTerritoryNames(v.map(x => toText(x).replace(/^[\s,]+|[\s,]+$/g, '')).filter(Boolean));
 }
+
+/* ── Reading voyage files ──────────────────────────────────────────
+   Both tools read a voyage file through the definitions below, so the same file gives the same
+   chapters, flags, distances and selection in each. Shared between editor and viewer (identical
+   definitions in both). */
+
+// Text from a file: a string as it is, a number or true/false as its text, and anything else
+// (missing, null, a list or an object) as empty. Names, the When, notes and countries are written
+// into the page and read with string methods, so a value of another kind must become text first.
+function toText(v) {
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  return '';
+}
+
+// A flag read as true for true, 'true', '1' or 'yes', in any case, and false for anything else, so
+// a file, a CSV and a pasted row cannot disagree ("false" is false in both tools).
+function parseBool(v) {
+  if (v === true) return true;
+  const s = String(v == null ? '' : v).trim().toLowerCase();
+  return s === 'true' || s === '1' || s === 'yes';
+}
+
+// A chapter number as an integer (0 when unreadable). Chapter numbers are written into the chapter
+// list's inline handlers and element ids, so only a number may reach that markup.
+function toChapterNum(v) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+// The chapter era as one of the three known values, matched case-insensitively; anything else reads
+// as 'future'. The era is written into the chapter list as a class name and a label.
+function toEra(v) {
+  const s = String(v == null ? '' : v).toLowerCase();
+  return (s === 'past' || s === 'current' || s === 'future') ? s : 'future';
+}
+
+// A list column of a CSV row split into its entries, or null when it holds none.
+function csvList(v) {
+  const list = splitList(v);
+  return list.length ? list : null;
+}
+
+// A chapter's notes, with the routing, bail-out and prose fields of early files folded in when the
+// chapter has no notes of its own.
+function composeNotesFallback(raw) {
+  return toText(raw.notes) || [
+    raw.routing ? `Routing: ${toText(raw.routing)}` : '',
+    raw.bailout ? `Bail-out: ${toText(raw.bailout)}` : '',
+    toText(raw.prose)
+  ].filter(Boolean).join('\n\n');
+}
+
+// A waypoint as both tools hold it. Coordinates are read by toCoord, 0 included. A latitude beyond
+// ±90 is not a position, so it is left empty; a longitude outside -180 to 180 (a 0-360 file, or 190
+// for -170) is brought into that range, so the route splits at the dateline where it crosses.
+function normalizeWaypoint(w, opts = {}) {
+  const lat = toCoord(w.lat), lon = toCoord(w.lon);
+  return {
+    name: toText(w.name),
+    lat: lat !== null && Math.abs(lat) <= 90 ? lat : null,
+    lon: lon !== null ? normLon(lon) : null,
+    major: parseBool(w.major),
+    decision: parseBool(w.decision),
+    gateway: parseBool(w.gateway),
+    country: toText(w.country),
+    notes: toText(w.notes)
+  };
+}
+
+// A chapter as both tools hold it. The csv option marks a row of chapters.csv, whose countries and
+// key destinations arrive as text lists in its countries and keyDestinations columns; a voyage file
+// holds them as arrays in countriesOverride and keyDestinations (fileList also reads text). A
+// missing, unreadable or non-positive pad multiplier reads as 1.2.
+function normalizeChapter(ch, opts = {}) {
+  const csv = !!opts.csv;
+  const pad = toCoord(ch.padMultiplier);
+  return {
+    num: toChapterNum(ch.num),
+    name: toText(ch.name),
+    when: toText(ch.when),
+    era: toEra(ch.era),
+    notes: composeNotesFallback(ch),
+    countriesOverride: csv ? csvList(ch.countries) : (fileList(ch.countriesOverride).length ? fileList(ch.countriesOverride) : null),
+    keyDestinations: csv ? (csvList(ch.keyDestinations) || []) : fileList(ch.keyDestinations),
+    blogUrl: toText(ch.blogUrl) || null,
+    padMultiplier: pad !== null && pad > 0 ? pad : 1.2,
+    waypoints: (Array.isArray(ch.waypoints) ? ch.waypoints : []).map(w => normalizeWaypoint(w, opts))
+  };
+}
+
+// True when a waypoint's latitude reads as a number beyond ±90, which normalizeWaypoint leaves empty.
+function latOutOfRange(w) {
+  const lat = toCoord(w.lat);
+  return lat !== null && Math.abs(lat) > 90;
+}
+
+// Chapters put in number order and renumbered 1 to n. A file edited by hand can skip a number,
+// repeat one or leave it out, and both tools find a chapter by its number, so a gap or a repeat
+// would send an edit, a delete or a selection to the wrong chapter. The sort is stable, so chapters
+// with the same number keep their order in the file, and a chapter with no number (0 or less, as
+// toChapterNum reads one it cannot) stays just after the chapter before it in the file instead of
+// moving to the top. Returns true when any number changed.
+function orderChapters(chapters) {
+  let last = 0;
+  const keyed = chapters.map(ch => {
+    if (ch.num > 0) last = ch.num;
+    return { ch, key: ch.num > 0 ? ch.num : last + 0.5 };
+  });
+  keyed.sort((a, b) => a.key - b.key);
+  keyed.forEach((k, i) => { chapters[i] = k.ch; });
+  let changed = false;
+  chapters.forEach((ch, i) => { if (ch.num !== i + 1) { ch.num = i + 1; changed = true; } });
+  return changed;
+}
+
+// A voyage file read into what both tools work with: its title, settings and chapters, and what was
+// corrected on the way in (chapters renumbered, latitudes left empty). A file that is not shaped as
+// a voyage (no chapters list, or a chapter or waypoint that is not an object) throws, with a message
+// naming what is wrong, before anything is read. The file itself is never changed.
+function readVoyage(data) {
+  const isObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  if (!isObject(data) || !Array.isArray(data.chapters)) throw new Error('the file has no "chapters" list');
+  data.chapters.forEach((ch, i) => {
+    if (!isObject(ch)) throw new Error(`chapter ${i + 1} is not a chapter`);
+    if (ch.waypoints != null && !Array.isArray(ch.waypoints)) throw new Error(`the waypoints of chapter ${i + 1} are not a list`);
+    (ch.waypoints || []).forEach((w, j) => {
+      if (!isObject(w)) throw new Error(`waypoint ${j + 1} of chapter ${i + 1} is not a waypoint`);
+    });
+  });
+  const meta = isObject(data.meta) ? data.meta : {};
+  const chapters = data.chapters.map(ch => normalizeChapter(ch));
+  const latitudesDropped = data.chapters.reduce((n, ch) => n + (ch.waypoints || []).filter(latOutOfRange).length, 0);
+  const renumbered = orderChapters(chapters);
+  return { title: toText(meta.title), settings: normalizeSettings(meta.settings), chapters, renumbered, latitudesDropped };
+}
+
+// The notes the arrival chooser shows when the voyage file named for this visit could not be used.
+// Shared between editor and viewer (identical definitions in both).
+const DATA_NOTES = {
+  offSite: 'Voyage files must be on this site.',
+  notFound: 'The voyage file named in the address was not found.',
+  unreadable: "The voyage file couldn't be read. It may be malformed or not a Voyage Atlas file."
+};
 function haversineNm(lat1, lon1, lat2, lon2) {
   const R = 3440.065;
   const toRad = d => d * Math.PI / 180;
@@ -869,27 +1037,27 @@ function normalizeSettings(raw) {
 }
 
 /* ===================== Schema normalization ==================== */
-function normalizeData(data) {
-  data.meta = (data.meta && typeof data.meta === 'object') ? data.meta : {};
-  data.meta.settings = normalizeSettings(data.meta.settings);
-  data.chapters.forEach(ch => {
-    // Coordinates are read as numbers (text that reads as one is converted, 0 is kept), so the route
-    // and every distance see the same values.
-    (ch.waypoints || []).forEach(w => { w.lat = toCoord(w.lat); w.lon = toCoord(w.lon); });
-    // Build the render route from the unified waypoint list (named + shaping vertices, in order).
-    const coords = (ch.waypoints || [])
-      .filter(hasCoord)
-      .map(w => [w.lat, w.lon]);
+// The voyage as the viewer draws it: the chapters as readVoyage reads them (the editor reads a file
+// the same way), each with its route (the waypoints that have coordinates, named and shaping, in
+// order); the title and settings; and the avoidance zones whose bounds are four numbers. A file that
+// is not a voyage throws, through readVoyage; the file itself is never changed.
+function normalizeData(raw) {
+  const v = readVoyage(raw);
+  v.chapters.forEach(ch => {
+    const coords = ch.waypoints.filter(hasCoord).map(w => [w.lat, w.lon]);
     ch.routes = coords.length >= 2 ? [coords] : [];
-    // Lists as arrays of entries (hand-authored data may hold a list as text).
-    ch.countriesOverride = fileList(ch.countriesOverride);
-    ch.keyDestinations = fileList(ch.keyDestinations);
   });
-  return data;
+  const paz = (Array.isArray(raw.paz) ? raw.paz : [])
+    .filter(z => z && Array.isArray(z.bounds) && z.bounds.length === 4 && z.bounds.every(Number.isFinite))
+    .map(z => ({ zone: toText(z.zone), bounds: z.bounds }));
+  return { meta: { title: v.title, settings: v.settings }, chapters: v.chapters, paz };
 }
 
 /* ====================== Load + render ======================== */
 function loadVoyageData(raw) {
+  // The file is read in full before anything on screen is cleared, so a file that fails to read
+  // (normalizeData throws) leaves the current voyage drawn, with its title and figures.
+  const next = normalizeData(raw);
   // Clear previous
   routesLayer.clearLayers();
   wptsLayer.clearLayers();
@@ -903,7 +1071,7 @@ function loadVoyageData(raw) {
   activeNum = null;
   closeInfo();
 
-  DATA = normalizeData(raw);
+  DATA = next;
 
   // Title — v3.0: the user title lives at meta.title; fall back to the app name when absent.
   const settings = (DATA.meta && DATA.meta.settings) || {};
@@ -935,8 +1103,8 @@ function loadVoyageData(raw) {
         WORLD_COPIES.forEach(off => {
           const poly = L.polyline(shiftLon(seg, off), { color, weight: 3, opacity: 0.85, smoothFactor: 1 }).addTo(routesLayer);
           poly.on('click', () => selectChapter(ch.num));
-          poly.on('mouseover', () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: activeNum ? 2 : 5, opacity: activeNum ? 0.25 : 1 }); });
-          poly.on('mouseout',  () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: activeNum ? 2 : 3, opacity: activeNum ? 0.25 : 0.85 }); });
+          poly.on('mouseover', () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: activeNum !== null ? 2 : 5, opacity: activeNum !== null ? 0.25 : 1 }); });
+          poly.on('mouseout',  () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: activeNum !== null ? 2 : 3, opacity: activeNum !== null ? 0.25 : 0.85 }); });
           polylines[ch.num].push(poly);
         });
       });
@@ -1294,15 +1462,18 @@ function isSameSitePath(path) {
 
 let sampleVoyage = null;      // parsed voyage from the resolved path, when it loaded cleanly
 let sampleAvailable = false;  // whether the chooser should offer "Explore the sample voyage"
-let dataPathRejected = false; // the ?data= address pointed off this site; the arrival chooser says so
+let dataNote = '';            // why the voyage file named for this visit could not be used (DATA_NOTES); the arrival chooser says so
 
 function openChooser() {
   document.getElementById('landing-sample').style.display = sampleAvailable ? '' : 'none';
-  // The data note shows on the arrival chooser only, when the ?data= address was rejected; any later
-  // opening of the chooser (the Load button or menu) leaves it hidden. Inline display overrides the
-  // small-screen rule that shows the other advisory, so the note never appears on its own.
-  document.getElementById('landing-data-note').style.display = dataPathRejected ? 'flex' : 'none';
-  dataPathRejected = false;
+  // The data note shows on the arrival chooser only, when the voyage file named for this visit could
+  // not be used (an address off this site, a ?data= file that was not found, or a file that could not
+  // be read); any later opening of the chooser (the Load button or menu) leaves it hidden. Inline
+  // display overrides the small-screen rule that shows the other advisory, so the note never appears
+  // on its own.
+  document.getElementById('landing-data-note').style.display = dataNote ? 'flex' : 'none';
+  if (dataNote) document.getElementById('landing-data-note-text').textContent = dataNote;
+  dataNote = '';
   // The close affordance (× and backdrop dismiss) is offered only when a voyage is already on
   // screen to return to. At a cold start the chooser is the only content, so it cannot be dismissed.
   document.getElementById('landing-close').style.display = DATA ? '' : 'none';
@@ -1336,27 +1507,32 @@ document.addEventListener('keydown', function(e) {
   const forceChooser = (new URLSearchParams(location.search).get('import') || '').toLowerCase() === 'yes';
   // A rejected ?data= address (null) takes the same path as a file that failed to load.
   const dataPath = resolveDataPath();
-  dataPathRejected = dataPath === null;
+  const named = !!(new URLSearchParams(location.search).get('data') || '').trim();
   (dataPath === null ? Promise.reject(new Error('not on this site')) : fetch(dataPath, { mode: 'same-origin' })).then(r => {
     if (!r.ok) throw new Error('not found');
     return r.text();
   }).then(text => {
-    // The file is present: parse it. A parse failure means it IS there but malformed or not a
-    // Voyage Atlas file — surface that rather than silently treating it as absent.
+    // The file is present: it is shown, or offered as the sample, only when it reads as a voyage.
+    // A file that is there but malformed or not a Voyage Atlas file opens the chooser with a note
+    // saying so, rather than being treated as absent.
     let parsed;
-    try { parsed = JSON.parse(text); }
+    try { parsed = JSON.parse(text); normalizeData(parsed); }
     catch (err) {
-      alert("Found a voyage file but couldn't read it — it may be malformed or not a Voyage Atlas JSON.\n\n(Details: " + err.message + ")");
+      dataNote = DATA_NOTES.unreadable;
       openChooser();
       return;
     }
     sampleVoyage = parsed;
     sampleAvailable = true;
-    if (forceChooser) { openChooser(); }   // ?import=yes: offer the chooser instead of auto-displaying
-    else { loadVoyageData(parsed); }
+    if (forceChooser) { openChooser(); return; }   // ?import=yes: offer the chooser instead of auto-displaying
+    // A file that reads but fails to draw is reported as unreadable here, rather than falling through
+    // to the catch below, which would call it missing.
+    try { loadVoyageData(parsed); }
+    catch (err) { sampleAvailable = false; dataNote = DATA_NOTES.unreadable; openChooser(); }
   }).catch(() => {
     // No file at the resolved path (including from disk, where the fetch is blocked): show the
-    // chooser with the sample option hidden.
+    // chooser with the sample option hidden, and a note when the file was named for this visit.
+    dataNote = dataPath === null ? DATA_NOTES.offSite : (named ? DATA_NOTES.notFound : '');
     openChooser();
   });
 })();

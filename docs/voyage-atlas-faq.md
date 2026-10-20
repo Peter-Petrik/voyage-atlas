@@ -102,7 +102,7 @@ The built-in list holds 54 names, as Nominatim's reverse geocoding returns them;
 ## What's the difference between the JSON and the CSV exports?
 
 1. **JSON** is the complete, authoritative file. It carries the source data — chapters, waypoints, flags, settings, and notes — in one structure. It does **not** store the computed figures (totals, per-chapter distances, derived country lists); both tools recompute those on load, so a hand-edited file never carries a stale number. This is what the viewer loads and what serves as the master file (`voyage-data.json`).
-2. **CSV** is a convenience for spreadsheet editing. There are two CSVs — one for chapters, one for waypoints — and the editor exports both together in one action. Round-trip through a spreadsheet for bulk edits, then re-import.
+2. **CSV** is a convenience for spreadsheet editing. There are two CSVs — one for chapters, one for waypoints — and the editor exports both together in one action. Round-trip through a spreadsheet for bulk edits, then re-import. A text cell that starts with `=`, `+`, `-`, `@` or a tab is written with a leading apostrophe, so a spreadsheet shows it as text instead of running it as a formula; the import takes the apostrophe off again.
 
 The data schema (field names, types, structure) is documented separately in `voyage-atlas-schema.md` for hand-editing the JSON.
 
@@ -118,15 +118,23 @@ The editor opens to a chooser on every visit, offering three starting points:
 
 1. **Explore the sample voyage.** When a voyage file resolves at the configured path (see below), the chooser offers it as the sample — a complete voyage to open and reshape. This option is hidden when no file resolves. The configured file is never loaded silently; it is always offered as an explicit choice.
 2. **Start a new voyage.** Dismisses the chooser to the empty editor, ready for the first chapter.
-3. **Load a voyage file.** Opens a v3.0 atlas JSON. Earlier formats are no longer supported. A malformed or non-Voyage-Atlas file is reported with a clear message, not silently swallowed.
+3. **Load a voyage file.** Opens a v3.0 atlas JSON. Earlier formats are no longer supported. A malformed or non-Voyage-Atlas file is reported with a clear message, not silently swallowed, and the current voyage stays as it was.
+
+A hand-edited file is corrected as it loads, and the status bar above the chart lists what changed (for example, "Loaded with corrections: chapters renumbered 1–20"):
+
+1. Chapters are put in number order and numbered 1 to n, so a number skipped, repeated or left out in the file cannot send an edit or a delete to the wrong chapter. A chapter with no number stays after the chapter before it in the file.
+2. A latitude beyond ±90 is not a position, so that waypoint loads without coordinates; a longitude outside -180 to 180 (a file written in 0-360, say) is brought into that range, with 180 itself read as -180, the same meridian.
+3. A number in a text field, such as a waypoint named 1770, is read as text, and a flag written as text counts only when it reads "true", "1" or "yes".
 
 The same three actions, plus CSV import, are available on demand from the header **Load** menu once a session is underway: "Load a voyage file," "Import CSVs," "New voyage," and "Sample voyage" (the sample item appears only when a file resolves at the configured path). Any of these replaces the current voyage, so when there are unsaved changes each one warns first with a "Discard unsaved changes?" prompt — the safe choice, "Keep editing," takes focus and is what the Enter key triggers, so a mis-click or stray keystroke cannot discard work. Choosing "Discard changes" proceeds. At arrival, where the editor is empty, these actions proceed without a prompt.
+
+**Importing CSVs** reads `chapters.csv`, then `waypoints.csv`. Each file is checked before anything is replaced: a chapters file without `num` and `name` columns, or with no numbered chapter (often `waypoints.csv` picked first), is refused at the first step, and a waypoints file without `chapter`, `name`, `lat` and `lon` columns at the second, which stays open for the right file. A decimal comma in a number column, as spreadsheets in much of Europe write it, reads as a point ("38,53" is 38.53). A file saved in the older Windows-1252 code page keeps its accented names. The status bar lists what was corrected, including numbers that could not be read (left empty), waypoint rows whose chapter is not in the chapters file, and repeated chapter numbers, whose waypoints join the first chapter with that number.
 
 The chooser can be dismissed with its close (×) button, a tap outside the box, or the Escape key — all equivalent. Dismissing loads the sample when one is available; with no sample it starts a new voyage. (At arrival the editor is empty, so starting a new voyage needs no confirmation; the confirm only guards the mid-session "New voyage" path above.)
 
 The voyage file is resolved from a `URL_VOYAGE_DATA` constant in the configuration block at the top of the editor's script — `voyage-data.json` by default. Editing that constant points the editor at a different file, including one in a subdirectory or a sibling folder, since relative paths are honored. A `?data=path` query parameter overrides the constant for a single visit. Both accept relative paths only; see "Can the voyage file be loaded from a web address?" below.
 
-Resolving the file requires the editor to be served over HTTP. Opening it directly from disk (a `file://` URL) cannot fetch a local file, so the sample option does not appear and the chooser offers only "Start a new voyage" and "Load a voyage file."
+Resolving the file requires the editor to be served over HTTP. Opening it directly from disk (a `file://` URL) cannot fetch a local file, so the sample option does not appear and the chooser offers only "Start a new voyage" and "Load a voyage file." When the file is there but cannot be read, or a `?data=` file is not found, the chooser carries a note saying so.
 
 **On load, the chart frames the whole voyage** — it fits to the combined extent of every chapter's waypoints, so an all-Mediterranean voyage opens on the Mediterranean and a global one on the world. **No chapter is selected to start:** the status bar above the chart reads "No chapter selected — click a chapter to begin." This matters because adding a waypoint — whether by clicking the chart, searching, or pasting — adds it to the *active* chapter, so a chapter must be selected (click it in the list) before those actions do anything. A place search with no chapter active pans the chart to the result and prompts for a chapter rather than dropping the point.
 
@@ -136,7 +144,7 @@ Within a chapter, there are five ways to add points:
 
 1. **+ Add row** — appends one blank row to type into directly.
 2. **+ Add N rows** — appends several blank rows at once (useful before a paste or bulk entry).
-3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line becomes a row. Columns are split at tabs when the pasted text contains a tab, and at commas otherwise. **Cmd/Ctrl+Enter** in the paste box adds the rows (plain Enter inserts a newline).
+3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line becomes a row. Columns are split at tabs when the pasted text contains a tab, and at commas otherwise. A decimal comma in a coordinate ("38,53") reads as a point. A coordinate that cannot be read is left empty, the status bar says how many, and that row is not looked up by name. **Cmd/Ctrl+Enter** in the paste box adds the rows (plain Enter inserts a newline).
 4. **Click on the chart** — with **Rapid click** mode ON (toggle above the chart), each click on the chart drops a new waypoint at that location. Standard chart navigation still works in this mode: drag to pan and scroll to zoom; only the single click is repurposed to place a waypoint. Turn the mode OFF to return the single click to normal selection.
 5. **Search (Nominatim)** — type a place name in the search box and press **Enter** (or click **Search**) to search; typing alone sends nothing, because the Nominatim usage policy forbids client-side autocomplete; use the **arrow keys** to move through results, **Enter** to add the highlighted one, **Escape** to dismiss. Adding a result drops a waypoint with coordinates (and country, when empty) filled.
 
@@ -158,7 +166,7 @@ While any look-up is in flight, both the per-chapter **Look up countries** and t
 ## Adjusting waypoint positions
 
 1. **Drag the marker** on the chart to reposition it; lat/lon update live.
-2. **Edit lat/lon** directly in the table fields, or use the small steppers for fine nudges: each step moves 0.01 of a degree, about 0.6 nm of latitude, and keeps the value's other digits.
+2. **Edit lat/lon** directly in the table fields, or use the small steppers for fine nudges: each step moves 0.01 of a degree, about 0.6 nm of latitude, and keeps the value's other digits. A typed latitude beyond ±90 is refused and the field goes back to its value, and a typed longitude outside -180 to 180 is brought into that range (200 becomes -160, and 180 becomes -180, the same meridian).
 3. **Drag a ghost midpoint** — each leg shows a faint "ghost" marker at its midpoint; drag it to insert a new shaping vertex on that leg, bending the route. (Ghost midpoints sit *on* the rendered line, even on long ocean legs.)
 
 ## Selecting a waypoint (chart ↔ list)
@@ -194,7 +202,7 @@ Clicking ⇄ **inserts a copy** of the previous chapter's last waypoint as a new
 Open a chapter's metadata panel (the 📋 toggle, or double-click the chapter header) to edit:
 
 1. **Name** — the chapter's display name.
-2. **When** — the season window, set with the start and end month and year dropdowns and written as a range with an en-dash (e.g., "May – Sep 2028"). The years offered run from ten years before the current year to fifteen after it, and widen to include any year from 1900 to 2199 that the voyage's chapters already use, so an earlier chapter keeps its year.
+2. **When** — the season window, set with the start and end month and year dropdowns and written as a range with an en-dash (e.g., "May – Sep 2028"). The years offered run from ten years before the current year to fifteen after it, and widen to include any year from 1900 to 2199 that the voyage's chapters already use, so an earlier chapter keeps its year. A file's When may be written shorter or longer: "Nov – Mar 2026" reads as November 2025 to March 2026, and full month names ("June 2025 – August 2025") are read. A When the dropdowns cannot show, such as "Summer 2025", is shown as saved under them, and choosing from them replaces it.
 3. **Era** — past, current, or future (controls styling and timeline placement).
 4. **Pad Multiplier** — the distance multiplier for this chapter (see distance calculation, Part 1).
 5. **Countries / Territories** — auto-derived from the chapter's waypoint countries, in first-appearance order. Leave it blank to keep that automatic; type a list, with entries separated by semicolons, to override it with a curated set (the override *replaces* the derived list, it does not add to it). A list typed with commas instead is also read, and the territory names that themselves contain commas, such as "Bonaire, Sint Eustatius and Saba", are recognized whole. A single entry that contains a comma is shown with a trailing semicolon, which keeps it one entry, and an entry cannot contain a semicolon. Each entry is then classified as a nation or a territory against the built-in reference list, exactly as the voyage totals are.
@@ -208,7 +216,7 @@ To open or close every chapter's panels in one go, use the compact controls abov
 
 The ⚙ panel above the chapter list holds voyage-level settings, saved into the JSON and reloaded on import:
 
-1. **Voyage Title** — the title shown in the page titles, the viewer header, and exports. Free text: include a vessel, a vehicle, or anything else, or leave it blank to fall back to the default "Voyage Atlas".
+1. **Voyage Title** — the title shown in the page titles and the viewer header, saved in the JSON file and used as the KML document's name. Free text: include a vessel, a vehicle, or anything else, or leave it blank to fall back to the default "Voyage Atlas".
 2. **Distance Units** — the display unit for every on-screen distance: nautical miles (default), kilometers, or miles. Display-only; the stored data and all exports stay in nautical miles.
 3. **Distance Override** — force the displayed total to a specific number, overriding the computed sum. Entered and shown in the selected display unit, stored as nautical miles. The header stat tile marks an active override with a ⚙.
 4. **Nations / Territories overrides** — force these counts, overriding the automatic classification.
@@ -217,7 +225,7 @@ The ⚙ panel above the chapter list holds voyage-level settings, saved into the
 
 1. **Save** — downloads the master file as `voyage-data.json` (a fixed filename; the browser replaces the prior download). This is the file the viewer auto-loads.
 2. **Save As ▾** — a dropdown for everything else: a timestamped JSON (a dated snapshot), the two CSVs together, and a KML.
-3. **KML** export produces a Google Earth–compatible file (waypoints + route lines per chapter, with styled markers for Major/Decision/Gateway). Useful for viewing the voyage in Google Earth Pro.
+3. **KML** export produces a Google Earth–compatible file named for the voyage title (waypoints + route lines per chapter, with styled markers for Major/Decision/Gateway). Useful for viewing the voyage in Google Earth Pro.
 
 The **Save** button reads `Save *` (with an "Unsaved changes" tooltip) whenever the document holds edits not yet written out — adding, moving, reordering or deleting a waypoint, or changing any chapter or voyage setting all set it. It returns to plain `Save` the moment the document is saved as JSON (**Save**, or the timestamped JSON under **Save As**) or a different file is loaded. The CSV and KML exports leave it showing: neither carries the voyage title or settings, and KML also leaves out notes, era and When, so neither reloads as the same voyage. The same unsaved state guards every action that would replace the current voyage — loading a file, importing CSVs, starting a new voyage, or loading the sample all warn before discarding it. As a further backstop, the browser's own "leave site?" prompt fires on any attempt to close or reload the tab while there are unsaved changes, so an accidental close won't quietly discard the work.
 
@@ -227,7 +235,7 @@ The **Save** button reads `Save *` (with an "Unsaved changes" tooltip) whenever 
 
 ## Keyboard shortcuts
 
-1. In any dialog (bulk add, paste, CSV import, delete confirmation, Look Up Countries): **Enter** confirms, **Escape** cancels.
+1. In any dialog (bulk add, paste, CSV import, delete confirmation, Look Up Countries): **Enter** confirms, **Escape** cancels. Enter on a focused button does what that button says, so a focused Cancel cancels. The one exception is "Discard unsaved changes?", where Enter always keeps editing.
 2. In the paste box specifically: **Cmd/Ctrl+Enter** adds the rows, while plain **Enter** inserts a newline (allowing multi-line content to be pasted or typed first).
 3. In the Nominatim search box: **Enter** searches; once results show, **↑/↓** move through them, **Enter** adds the highlighted result, **Escape** dismisses the results. A **second Escape** (once the results are already dismissed) clears the typed query.
 4. With a waypoint selected and no dialog open: **Escape** clears the selection.
@@ -246,8 +254,8 @@ The editor header shows the live totals as tiles — distance, nations, territor
 
 The viewer resolves its voyage from a `URL_VOYAGE_DATA` constant in the configuration block at the top of its script — `voyage-data.json` by default. Editing that constant, or passing a `?data=path` query parameter, points the viewer at a different file, including one in a subdirectory or sibling folder, since relative paths are honored. Both accept relative paths only; see "Can the voyage file be loaded from a web address?" below.
 
-1. **Auto-display.** When the configured file resolves, the viewer loads and displays it on open — the basis of the self-hosting model (below). A file that is present but unreadable is reported rather than silently treated as absent.
-2. **Chooser.** When no file resolves, the viewer shows the chooser: "Explore the sample voyage" (when a file resolves) and "Load a voyage file" (pick a v3.0 voyage JSON). Earlier formats are no longer supported, and a malformed file is reported rather than silently swallowed.
+1. **Auto-display.** When the configured file resolves, the viewer loads and displays it on open — the basis of the self-hosting model (below). A file that is present but unreadable opens the chooser with a note saying so rather than being treated as absent, and a `?data=` file that is not found gets a note too. The viewer reads a file exactly as the editor does, including the corrections a hand-edited file gets on load (see "Getting data in" under the editor).
+2. **Chooser.** When no file resolves, the viewer shows the chooser: "Explore the sample voyage" (when a file resolves) and "Load a voyage file" (pick a v3.0 voyage JSON). Earlier formats are no longer supported, and a malformed file is reported rather than silently swallowed; the voyage already on screen stays as it was.
 3. **Load button.** The header carries a persistent **Load…** button that opens the chooser at any time, so a different voyage can be opened without editing the URL. Once an atlas is shown the viewer remains read-only; the Load button only swaps which voyage is displayed. When a voyage is already on screen, the chooser can be dismissed without choosing — its close (×) button, a tap outside the box, or the Escape key all return to the current voyage. At a cold start, with no voyage behind it, the chooser stays open until an option is picked.
 4. **Force the chooser.** Adding `?import=yes` to the viewer's URL opens the chooser on arrival even when the configured file would otherwise auto-display — handy for opening a different file without removing the default. The match is case-insensitive (`yes`/`YES`/`Yes`).
 

@@ -80,10 +80,12 @@ test(`${EDITOR}: a coordinate of 0 from a CSV row or the waypoint table is kept`
   assert.equal(w.lat, 0);
   assert.equal(w.lon, -25);
   assert.equal(normalizeWaypoint({ lat: '', lon: 'x' }, { csv: true }).lat, null);
-  // The table's lat and lon inputs read their value through toCoord, so typing 0 stores 0.
+  // The table's lat and lon inputs read their value through onCoordInput, which reads it through
+  // toCoord, so typing 0 stores 0.
   const inputs = editor.html.match(/id="wpt-(lat|lon)-\$\{chNum\}-\$\{idx\}"[^>]*>/g) || [];
   assert.equal(inputs.length, 2, 'lat and lon inputs found');
-  inputs.forEach(i => assert.ok(i.includes("'lat',toCoord(this.value)") || i.includes("'lon',toCoord(this.value)"), i));
+  inputs.forEach(i => assert.ok(i.includes("onCoordInput(this,${chNum},${idx},'lat')") || i.includes("onCoordInput(this,${chNum},${idx},'lon')"), i));
+  assert.match(editor.defs.onCoordInput, /toCoord\(input\.value\)/);
 });
 
 // ---------------------------------------------------------------------------------------------
