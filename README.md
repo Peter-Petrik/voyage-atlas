@@ -24,7 +24,7 @@ The repository also ships a set of optional icon assets (`favicon.svg`, `favicon
 3. **To build a new atlas:** open `voyage-atlas-editor.html`. It opens to a chooser — pick "Start a new voyage," add a chapter, and start placing waypoints (click the chart, search by name, or type coordinates). Click **Save** to download `voyage-data.json`.
 4. **To view a finished atlas:** put the `voyage-data.json` next to `voyage-atlas.html` and open the viewer — or load the file from the viewer's chooser, reachable any time from the header **Load…** button.
 
-The repository ships with a small sample `voyage-data.json` (a short Greek Ionian cruise) so the tools open to a working example. See a full multi-year voyage at the live viewer linked above.
+The repository ships with a small sample `voyage-data.json` (a five-chapter voyage from Turkey across the Mediterranean and the Atlantic) so the tools open to a working example. See a full multi-year voyage at the live viewer linked above.
 
 ### A note on the data path and `file://`
 
@@ -36,7 +36,7 @@ Both tools keep their self-hosting settings in a labeled configuration block at 
 
 | Constant | Tool | Default | Purpose |
 |----------|------|---------|---------|
-| `URL_VOYAGE_DATA` | both | `voyage-data.json` | The voyage file to load. Relative paths only (a subdirectory or sibling folder is fine); a remote `http(s)` address is not supported. The `?data=path` query parameter overrides it for a single visit. |
+| `URL_VOYAGE_DATA` | both | `voyage-data.json` | The voyage file to load, on the same site as the tool: a relative path (a subdirectory or sibling folder is fine) or a full address on the same host. A file on another site is not loaded. The `?data=path` query parameter overrides it for a single visit, under the same rule. |
 | `URL_TILE_LIGHT` | both | CARTO Positron | The day basemap tile layer. |
 | `URL_TILE_DARK` | both | CARTO Dark Matter | The night basemap tile layer. |
 | `TILE_KEY` | both | empty | The basemap API key, added to every tile request when set. A key supplied by the hosting server at run time as `window.VOYAGE_ATLAS_CONFIG.tileKey` takes precedence. |
@@ -48,7 +48,7 @@ If the tile URLs are changed to another provider, update the attribution string 
 
 ## Features
 
-1. **Chapters** group waypoints by region and season, each with its own color, season window, era (past / current / future), countries, key destinations, notes, and an optional blog link.
+1. **Chapters** group waypoints by region and season, each drawn in its own palette color and carrying a season window, era (past / current / future), countries, key destinations, notes, and an optional blog link.
 2. **Unified waypoint model** — one ordered list per chapter; named rows render as markers, unnamed rows act as shaping vertices that bend the route line without cluttering the chart.
 3. **Three independent emphasis flags** per waypoint — Major (M), Gateway (G), Decision (D) — each with distinct chart rendering.
 4. **Distance with a pad multiplier** per chapter (accounting for tacking and cruising-ground exploration a straight-line track undercounts), plus an inter-chapter "approach leg" attributed to the destination chapter. All distances can display in nautical miles, kilometers, or miles (stored canonically as nm).
@@ -63,14 +63,14 @@ If the tile URLs are changed to another provider, update the attribution string 
 
 The editor surface has two layers per chapter, opened from the chapter row:
 
-1. **Chapter metadata** — the chapter's name, color, season window, era, countries, key destinations, notes, and blog link. Countries auto-derive from each waypoint's country, with an optional per-chapter override.
+1. **Chapter metadata** — the chapter's name, season window, era, countries, key destinations, notes, and blog link. Countries auto-derive from each waypoint's country, with an optional per-chapter override.
 2. **Waypoints** — the ordered table of waypoints for the chapter. Each row carries a name, latitude, longitude, the three emphasis flags (M / G / D), a country, and notes. A row with no name is a shaping vertex: it bends the route line but draws no marker.
 
 Additional controls worth knowing:
 
-1. **Emphasis flags** — Major (M) marks a provisioning hub or extended-stay port and draws a larger circle; Gateway (G) marks a customs entry or strategic staging port and draws a star; Decision (D) marks a routing fork or go/no-go point and draws a diamond. Where a waypoint carries more than one flag, the marker shape resolves in priority order M, G, D — the same order the columns are shown in.
+1. **Emphasis flags** — Major (M) marks a provisioning hub or extended-stay port and draws a larger circle; Gateway (G) marks a customs entry or strategic staging port and draws a star; Decision (D) marks a routing fork or go/no-go point and draws a diamond. Where a waypoint carries more than one flag, Decision's diamond wins the marker shape over Gateway's star, and Major sets the size rather than the shape; the columns are shown in that ascending order, M, G, D.
 2. **Look up countries** — the per-chapter button fills empty country fields for that chapter's waypoints from their coordinates; the global button does the same across every chapter. Both are rate-limited to respect the Nominatim usage policy, so a large lookup runs as a queue rather than all at once.
-3. **Expand / collapse all** — toggles every chapter's panels open or closed at once, for surveying the whole voyage or focusing on one chapter.
+3. **Expand / collapse all** — two pairs of controls above the chapter list, 📋 ⊞ ⊟ for the metadata panels and 📍 ⊞ ⊟ for the waypoint tables, open (⊞) or close (⊟) every panel of that kind at once, for surveying the whole voyage or focusing on one chapter.
 4. **Rapid click** — when enabled, a single click on the chart drops a new waypoint into the active chapter. Standard chart navigation still works in this mode: drag to pan and scroll to zoom; only the single click is repurposed to place a waypoint.
 
 ## Documentation

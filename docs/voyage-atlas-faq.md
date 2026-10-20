@@ -44,8 +44,8 @@ The route line connects every point in order, named or not. Shaping vertices all
 
 Each waypoint has three independent checkboxes — **M**, **G**, **D** — that control emphasis and meaning:
 
-1. **M — Major.** A strategic hub (a major port or landfall). Renders as a larger circle.
-2. **G — Gateway.** A threshold into a new region (a cape, canal, strait, or chokepoint). Renders as a star.
+1. **M — Major.** A provisioning hub: spares, repairs, or an extended stay. Renders as a larger circle.
+2. **G — Gateway.** A customs entry or strategic staging port. Renders as a star.
 3. **D — Decision.** A point where the route forks or a go/no-go choice is made. Renders as a diamond.
 
 They are independent and combinable — a port can be Major *and* Gateway. The columns are shown in the order M, G, D, which is ascending emphasis priority: Major is lowest, Gateway is middle, Decision is highest. When more than one flag is set, the highest-priority flag determines the marker shape — Decision's diamond wins, then Gateway's star — and Major adds size on top. The flags are optional; a plain named waypoint with no flags is a normal circle.
@@ -77,11 +77,27 @@ A genuine *gap* — where one chapter ends somewhere the next doesn't begin — 
 
 ## How are nations and territories counted?
 
-The hero stats distinguish **nations** (sovereign countries) from **territories** (overseas territories and dependencies). Each distinct country across all chapters' effective lists is classified automatically against a built-in reference list of ~65 territories (UK, French, Dutch, US, Danish, Norwegian, Australian, NZ, Portuguese, Spanish, and Chinese overseas territories, plus the Crown Dependencies). Anything not on the territory list counts as a nation.
+The hero stats distinguish **nations** (sovereign countries) from **territories** (overseas territories and dependencies). Each distinct country across all chapters' effective lists is classified automatically against a built-in reference list of territories (the full list is below). Anything not on the territory list counts as a nation.
 
 Both counts can be overridden in Voyage Settings when the automatic classification isn't the desired result. Separately, each chapter's country list is derived from its own waypoints' countries and can be replaced with a per-chapter override (the chapter's Countries / Territories field) — useful for a curated list that differs from what the waypoints imply. The voyage total is the classified union of every chapter's effective list.
 
 **Caveat:** the country values come from Nominatim geocoding, which sometimes returns the *parent nation* rather than the territory — e.g., a waypoint in the Azores may come back as "Portugal," and Réunion as "France." When that happens the auto-count reflects the parent nation, not the territory. Either correct the country value on the waypoint, or set the territory override in Voyage Settings.
+
+The built-in list holds 54 names, as Nominatim's reverse geocoding returns them; a few territories appear under more than one spelling:
+
+1. **UK overseas territories:** Anguilla, Bermuda, British Indian Ocean Territory, British Virgin Islands, Cayman Islands, Falkland Islands, Gibraltar, Montserrat, Pitcairn Islands, Saint Helena, Ascension and Tristan da Cunha, South Georgia and the South Sandwich Islands, Turks and Caicos Islands.
+2. **French overseas:** French Polynesia, French Southern Territories, Mayotte, New Caledonia, Réunion, Saint Barthélemy, Saint Martin, Saint Pierre and Miquelon, Wallis and Futuna.
+3. **Dutch overseas:** Aruba, Bonaire, Sint Eustatius and Saba, Curaçao, Sint Maarten.
+4. **US territories:** American Samoa, Guam, Northern Mariana Islands, Puerto Rico, U.S. Virgin Islands, United States Minor Outlying Islands, US Virgin Islands.
+5. **Danish autonomous territories:** Faroe Islands, Greenland.
+6. **Norwegian dependencies:** Svalbard and Jan Mayen, Svalbard, Jan Mayen, Bouvet Island.
+7. **Australian external territories:** Christmas Island, Cocos (Keeling) Islands, Norfolk Island.
+8. **New Zealand associated states:** Cook Islands, Niue, Tokelau.
+9. **Portuguese autonomous regions:** Azores, Madeira.
+10. **Spanish autonomous community:** Canary Islands.
+11. **Chinese special administrative regions:** Hong Kong, Macau, Macao.
+12. **Crown Dependencies:** Isle of Man, Jersey, Guernsey.
+13. **Finnish autonomous region:** Åland Islands.
 
 ## What's the difference between the JSON and the CSV exports?
 
@@ -267,7 +283,7 @@ The header shows total distance, the nations and territories touched, the chapte
 
 ## Self-hosting
 
-The viewer is designed to host as two files. Put `voyage-atlas.html` and `voyage-data.json` in the same directory on any static web host (or open the HTML locally) and the chart loads automatically — no build step, no server code, no database. To update the published chart, replace `voyage-data.json` with a fresh export. The repository also ships optional icon assets and `site.webmanifest` for the favicon and home-screen icons; they sit alongside the HTML when wanted and can be omitted without affecting how the tool runs.
+The viewer is designed to host as two files. Put `voyage-atlas.html` and `voyage-data.json` in the same directory on any static web host, or serve the folder locally over HTTP, and the chart loads automatically — no build step, no server code, no database. (Opened straight from disk as a `file://` page, the browser blocks the fetch, so the viewer opens to its chooser, where a voyage file can be picked instead.) To update the published chart, replace `voyage-data.json` with a fresh export. The repository also ships optional icon assets and `site.webmanifest` for the favicon and home-screen icons; they sit alongside the HTML when wanted and can be omitted without affecting how the tool runs.
 
 ---
 

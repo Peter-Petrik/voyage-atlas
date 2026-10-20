@@ -4,7 +4,7 @@ This document defines the data contract between the **editor** (`voyage-atlas-ed
 **viewer** (`voyage-atlas.html`). Any tool that produces data in this schema can feed the viewer; any tool
 that consumes it can read editor output. The editor is the authoring surface and the source of truth;
 **JSON** is the save and interchange format the viewer loads; **CSV** and **KML** are import/export
-conveniences. The two tools share their core logic (dateline handling, country derivation, distance maths),
+conveniences. The two tools share their core logic (dateline handling, country derivation, distance math),
 so they derive identically from the same file.
 
 ---
@@ -108,8 +108,8 @@ unset.
 |-------|------|---------|-------------|
 | `order` | integer | always | Position within the chapter (1-indexed, re-derived on export). |
 | `name` | string | always | Waypoint name. **Empty = shaping vertex** (route geometry only, no marker). |
-| `lat` | number | always | Latitude, decimal degrees. |
-| `lon` | number | always | Longitude, decimal degrees. |
+| `lat` | number \| null | always | Latitude, decimal degrees; `null` for a row with no coordinates yet. A value of 0 (the equator) is a real coordinate. |
+| `lon` | number \| null | always | Longitude, decimal degrees; `null` for a row with no coordinates yet. A value of 0 (the prime meridian) is a real coordinate. |
 | `major` | boolean | always | Major provisioning/spares hub. |
 | `decision` | boolean | always | Routing decision point / fork. |
 | `gateway` | boolean | always | Customs entry or strategic staging port. |
@@ -139,6 +139,17 @@ the final totals.
 **Nation vs territory classification:** the editor and viewer share a built-in reference list of overseas
 territories (the FAQ has the full list). Each distinct country name is checked against it — a match counts
 as a territory, no match as a nation. Overrides take precedence over the auto-count.
+
+### `paz` (avoidance zones)
+
+An optional top-level `paz` array holds permanent avoidance zones, which the viewer draws as dashed rectangles in every world copy, with the zone name and "Permanent avoidance zone" in each popup, under its **Avoidance zones** layer toggle (off by default).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `zone` | string | Zone display name. |
+| `bounds` | number[4] | `[south, west, north, east]`, decimal degrees. |
+
+The array is hand-authored: the editor neither reads nor writes it, so a voyage loaded into the editor and saved again loses its zones. Authoring zones in the editor, as polygons, is backlog item #43.
 
 ---
 
@@ -186,7 +197,7 @@ Both list columns are written with `; ` between entries, so an entry may contain
 3. `major` → a circle, slightly larger and with a heavier stroke.
 4. `gateway` → a star marker.
 5. `decision` → a diamond marker.
-6. The flags are independent and combinable. The editor columns are shown in the order M, G, D — ascending emphasis priority, Major lowest and Decision highest. **On the chart, when more than one flag is set the highest-priority flag wins the marker shape: a Decision diamond over a Gateway star**, while `major` affects size rather than shape. (KML uses the opposite icon priority — see the KML section.)
+6. The flags are independent and combinable. The editor columns are shown in the order M, G, D — ascending emphasis priority, Major lowest and Decision highest. **On the chart, when more than one flag is set the highest-priority flag wins the marker shape: a Decision diamond over a Gateway star**, while `major` affects size rather than shape. KML export uses the same priority (see the KML section).
 
 ### Route line construction
 
@@ -230,14 +241,15 @@ The editor exports KML (`voyage-route.kml`, date-prefixed) for Google Earth and 
 2. **Folders.** One per chapter, named `Ch N — Chapter Name`.
 3. **Route.** One `LineString` Placemark per chapter through all coordinate-bearing waypoints; its color is the chapter's palette color (written in KML `aabbggrr` order).
 4. **Waypoints.** A `Point` Placemark per **named** waypoint (shaping vertices are skipped).
-5. **Icon priority.** The `styleUrl` is assigned in the order major → decision → gateway, so the **last applicable flag wins: gateway, then decision, then major**. This is the reverse of the on-chart shape priority (where Decision wins), and is the one place the two presentations disagree.
+5. **Icon priority.** The `styleUrl` is assigned in the order major → gateway → decision, so the **last applicable flag wins: decision, then gateway, then major**, the same priority as the on-chart shape (where Decision wins).
 
 ---
 
 ## Future: `zones.csv` (not yet implemented)
 
-Planned for permanent avoidance zones, restricted areas, or user-defined regions. Current PAZ data
-(rectangles from the framework appendix) lives in the viewer code; `zones.csv` would externalize it.
+Planned for permanent avoidance zones, restricted areas, or user-defined regions. Avoidance zones are
+read today from the voyage file's hand-authored `paz` array (see above). The columns below predate backlog
+item #43, which moves zone authoring to polygons, so this layout is provisional.
 
 | Column | Type | Description |
 |--------|------|-------------|

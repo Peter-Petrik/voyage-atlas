@@ -5,7 +5,7 @@ The forward-looking backlog for the **editor** (`voyage-atlas-editor.html`) and 
 version. (The ~21 previously-"queued" items that had already shipped were pruned from this doc; all
 were confirmed present in the CHANGELOG first. The v3.0 release then pruned #53, #56, and #62 — shipped, and
 confirmed in the CHANGELOG — and dropped #52 as moot, since the CSV carries no distance figures to
-label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG. The v3.2–v3.4 releases then pruned #16, #49, #51, #55, #57, #58, and #61 — all shipped, and confirmed in the CHANGELOG. The v3.7 release pruned #38 and #39 — shipped, and confirmed in the CHANGELOG — and retired #40 as superseded by the Cloudflare-served deployment at `sailingamazinggrace.com/resources/voyage-atlas`, which provides the one-click live demo #40 sought without GitHub Pages. The v3.7 release also delivered the Open Graph / Twitter Card half of #32 and the favicon/manifest groundwork of #31, both of which remain open for their unshipped scope. The v3.9 release added #69 (opt-in remote-source loading), the deferred remainder of the configurable-data-path work that shipped in that release. The October 2026 review added #70 (play the voyage in the viewer) and #71 (vector basemap with globe view), both drawn from a look at Map Animator. In the same month #72 (era styling on the chart) recorded the open design for showing past, current, and future chapters on the chart, and #43 moved its zone shape from rectangles to polygons. Later in October 2026, #73 (geocoder choice), #74 (touch and keyboard access to help and dialogs) and #75 (self-hosting identity links) were added, and #72 gained the inactive chapter as a third state to tell apart.) Build decisions live in `voyage-atlas-runbook.md`.
+label. The v3.1.1 patch then pruned #66, and the v3.1.2 patch pruned #67 — both shipped, and confirmed in the CHANGELOG. The v3.2–v3.4 releases then pruned #16, #49, #51, #55, #57, #58, and #61 — all shipped, and confirmed in the CHANGELOG. The v3.7 release pruned #38 and #39 — shipped, and confirmed in the CHANGELOG — and retired #40 as superseded by the Cloudflare-served deployment at `sailingamazinggrace.com/resources/voyage-atlas`, which provides the one-click live demo #40 sought without GitHub Pages. The v3.7 release also delivered the Open Graph / Twitter Card half of #32 and the favicon/manifest groundwork of #31, both of which remain open for their unshipped scope. The v3.9 release added #69 (opt-in remote-source loading), the deferred remainder of the configurable-data-path work that shipped in that release. The October 2026 review added #70 (play the voyage in the viewer) and #71 (vector basemap with globe view), both drawn from a look at Map Animator. In the same month #72 (era styling on the chart) recorded the open design for showing past, current, and future chapters on the chart, and #43 moved its zone shape from rectangles to polygons. Later in October 2026, #73 (geocoder choice), #74 (touch and keyboard access to help and dialogs) and #75 (self-hosting identity links) were added, and #72 gained the inactive chapter as a third state to tell apart. The same month's docs pass moved #65 to "Explicitly out of scope" as rejected, and corrected #22's data dependency and the release #31 names.) Build decisions live in `voyage-atlas-runbook.md`.
 
 Items keep their **original numbers** — cross-references and the runbook depend on them, so the numbers
 are stable IDs, not sequence. They're grouped into **phases** meant to be worked roughly in order, each
@@ -165,13 +165,6 @@ Chapter cards below the map, or a split layout. Today the viewer is map-only.
 `Effort M · Impact Med · viewer · —`
 Search/filter waypoints across all chapters from the viewer.
 
-### 65. Deep-link to a pre-selected chapter
-`Effort S/M · Impact Med · viewer URL hash + selectChapter · needs #63`
-A shareable URL that opens the viewer with one chapter already selected and framed, e.g.
-`voyage-atlas.html#<chapter>`. The identifier scheme is the open question — a sequence number is
-brittle across edits, the chapter name is readable but mutable, a UUID (see #63) is stable but opaque.
-Resolving #63 (stable chapter identity) is the natural prerequisite.
-
 ### 70. Play the voyage
 `Effort M · Impact Med · viewer animation (routes + chart framing) · relates to #28, #21, #72`
 A Play control in the viewer that draws the voyage chapter by chapter in travel order, with the chart following the tip of the line and a boat glyph at the tip. Each chapter boundary pauses briefly on the chapter's name and When. Pause, stop, and a speed setting complete the controls. It builds on the existing dateline split and three world copies, and reuses the direction-of-travel framing from the on-load view. No video export: Map Animator (mapanimator.baldinger.se) already turns the editor's KML export into an MP4, reading one route per chapter and the named waypoints as signs, so video stays with a dedicated tool. **Open:** the whole voyage versus one chapter at a time; how past / current / future styling shows during playback (ties to the open era-styling design, #72); and whether playback pace follows distance, so a long ocean crossing does not dominate the run time.
@@ -185,7 +178,7 @@ Every chapter carries an `era` (`past`, `current`, or `future`), but the chart d
 ## Phase 5 — Wind overlay (flagship)
 
 ### 22. Wind data overlay toggle
-`Effort L · Impact High · viewer layers + wind-data parsing · dep: wind-data files (in project knowledge)`
+`Effort L · Impact High · viewer layers + wind-data parsing · dep: wind-data files, held outside this project and sourced when the item is taken up`
 A toggleable viewer layer visualizing prevailing wind along route legs, selectable by month, drawing
 from the structured wind-data files (SeaWinds/QuikSCAT 10-year averages — five ocean-basin files plus a
 methodology guide). **Not** departure-decision weather routing (that's LuckGrib's job) — this is
@@ -257,7 +250,7 @@ social-unfurl tags already in place.
 
 ### 31. PWA manifest + iframe embed — manifest shipped
 `Effort M · Impact Low · viewer · trades against the single-file goal`
-A web manifest (`site.webmanifest`) and the editor's mobile/standalone meta tags shipped in v3.7,
+A web manifest (`site.webmanifest`) and the editor's mobile/standalone meta tags shipped in v3.7.1,
 bringing both tools to basic installable-PWA parity. What remains is fuller PWA support (e.g. a service
 worker for offline use) and iframe embedding — the latter still traded against the single-file goal.
 
@@ -298,6 +291,14 @@ Replace the Leaflet raster chart with MapLibre GL drawing OpenFreeMap vector til
 ---
 
 ## Explicitly out of scope
+
+### 65. Deep-link to a pre-selected chapter — rejected
+`Effort S/M · Impact Med · viewer URL hash + selectChapter · needs #63`
+A shareable URL that opens the viewer with one chapter already selected and framed, e.g.
+`voyage-atlas.html#<chapter>`. The identifier scheme is the open question — a sequence number is
+brittle across edits, the chapter name is readable but mutable, a UUID (see #63) is stable but opaque.
+Resolving #63 (stable chapter identity) is the natural prerequisite.
+**Rejected**, as runbook Decision 47 records; kept here so the number stays reserved.
 
 ### 41. Live GPS position / "where are we now" tracking
 This is the *framework* atlas (the routes), not a live tracker. Current position belongs elsewhere.
