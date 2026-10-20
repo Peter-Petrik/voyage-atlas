@@ -6,6 +6,25 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.12] - 2026-10-20
+
+### Changed
+- **Overrides Take 0 and Keep the Typed Figure**: A Nations or Territories override can now be 0, and in the editor an override of 0 keeps its header tile, marked with the ⚙; previously 0 cleared the override. The viewer shows no tile for a count of 0. A Distance Override is stored to a thousandth of a nautical mile, so the tile shows the figure as typed (1,001 km stayed 1,001 instead of becoming 1,000). A Distance Override of 0 or less clears it, and each settings field shows the value in use. Both tools read the counts the same way.
+- **Pad Multiplier of 1 or More**: A Pad Multiplier below 1 is refused, with a note in the status bar, and the field goes back to its value. Padding adds sailing distance to the straight-line route, so a smaller value would shorten it; previously any value was taken, a negative one made the chapter distance negative, and 0 or a blank field stored 1.2 while the field still showed what was typed. A blank field now resets the pad to 1.2, and a pad below 1 in a voyage file or CSV reads as 1.2, the same rule.
+- **Empty Chapters in the Distance Chain**: A chapter with no waypoints, or none with coordinates, such as one still being planned, is now skipped when finding the previous chapter, so the chapter after it measures its approach leg from the chapter before. Previously that leg was not counted at all. The viewer's badge for a chapter with fewer than two points now reads "No route".
+- **New Waypoints Selected**: A waypoint added from a search result or by dragging a ghost midpoint is now selected, as one added with + Add row is, without opening a collapsed waypoint table. A search picked with no chapter active keeps its query in the box, and Rapid click with no chapter selected says so in the status bar instead of doing nothing silently.
+
+### Fixed
+- **Waypoints of the Selected Chapter Open in the Viewer**: Clicking a waypoint of the selected chapter now opens its popup. Previously selecting a chapter raised its route above its own markers, so the click landed on the route, opened nothing and re-framed the chart. The selected chapter stays on top when the Routes layer is turned off and on again, and its Decision and Gateway shapes sit above another chapter's at a shared handoff point.
+- **Viewer Selection and Drawer**: Selection dimming now reaches the Decision diamonds and Gateway stars of the other chapters, not only their dots. A waypoint that is both a Decision and a Gateway shows the diamond on top, whichever layer was turned on first. Escape while the chooser is open now closes only the chooser, keeping the selection as × and a tap outside do, and a click on empty chart clears the selection, as in the editor; a double-click still zooms and keeps it. The drawer now closes after a voyage is loaded from it, and after a chapter is picked on a screen 900 px wide or less, where it covered the chapter it had just framed.
+- **Framing at High Latitudes**: Every fit in both tools (the opening view, a chapter selection, a waypoint zoom) now keeps the chart filled from top to bottom, where before a polar voyage or chapter could leave much of the view above the top of the world. A chapter whose points all coincide is framed like a single point, instead of zooming in all the way.
+- **Lookups During Edits**: A country or name lookup answered after a chapter was deleted or reordered now lands on its own waypoint's row. Previously the answer used the chapter number from when it was queued, so countries appeared in the next chapter's rows and name lookups were discarded as unresolved. Queueing a whole-voyage country lookup no longer freezes the page: the status line is drawn once per chapter instead of once per row, which took 14 seconds for a 5,000-waypoint voyage. The lookup buttons stay disabled through any redraw during a run.
+- **Save Marker Only for Real Changes**: Redrawing the header figures no longer marks the voyage unsaved; each change marks it where it happens. Previously Look up countries on a chapter whose countries were all filled turned Save into Save * and armed the leave-page prompt with nothing changed.
+- **Status Line Follows the Chapter**: The status line now updates after a chapter is renamed, deleted, reordered or added to. Previously it went on showing the old name, number or waypoint count, and still named a deleted chapter as active.
+- **Editor Lists Keep Their Place**: Open chapter panels now stay with their chapter through a delete or reorder, instead of moving to whichever chapter took its number. A chapter reorder no longer re-frames the chart, and a double-click on a chapter header frames it once. Escape in the place search no longer also clears the waypoint selection, and focusing another row's ✕ no longer moves the selection to that row before deleting it.
+- **Pull Button and Gap Agree**: The ⇄ button now pulls for every gap it shows. Previously a gap between 0.5 and 1 nm showed the button with "1 nm gap", but the pull treated it as already linked and did nothing.
+- **Typed Country Refreshes the Chapter**: A country typed into a waypoint row now updates the chapter's automatic country list and its placeholder at once.
+
 ## [v3.9.11] - 2026-10-20
 
 ### Changed
@@ -722,6 +741,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.12]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.11...v3.9.12
 [v3.9.11]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.10...v3.9.11
 [v3.9.10]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.9...v3.9.10
 [v3.9.9]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.8...v3.9.9

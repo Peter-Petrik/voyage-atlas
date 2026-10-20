@@ -437,7 +437,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.11</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.12</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -820,8 +820,9 @@ function normalizeWaypoint(w, opts = {}) {
 
 // A chapter as both tools hold it. The csv option marks a row of chapters.csv, whose countries and
 // key destinations arrive as text lists in its countries and keyDestinations columns; a voyage file
-// holds them as arrays in countriesOverride and keyDestinations (fileList also reads text). A
-// missing, unreadable or non-positive pad multiplier reads as 1.2.
+// holds them as arrays in countriesOverride and keyDestinations (fileList also reads text). Padding
+// adds sailing distance, so a pad multiplier that is missing, unreadable or below 1 reads as 1.2, the
+// same rule the editor's field applies to a typed value.
 function normalizeChapter(ch, opts = {}) {
   const csv = !!opts.csv;
   const pad = toCoord(ch.padMultiplier);
@@ -834,7 +835,7 @@ function normalizeChapter(ch, opts = {}) {
     countriesOverride: csv ? csvList(ch.countries) : (fileList(ch.countriesOverride).length ? fileList(ch.countriesOverride) : null),
     keyDestinations: csv ? (csvList(ch.keyDestinations) || []) : fileList(ch.keyDestinations),
     blogUrl: toText(ch.blogUrl) || null,
-    padMultiplier: pad !== null && pad > 0 ? pad : 1.2,
+    padMultiplier: pad !== null && pad >= 1 ? pad : 1.2,
     waypoints: (Array.isArray(ch.waypoints) ? ch.waypoints : []).map(w => normalizeWaypoint(w, opts))
   };
 }
@@ -903,7 +904,12 @@ function getPredecessorChapter(ch) {
   if (!ch || !DATA) return null;
   const sorted = [...(DATA.chapters || [])].sort((a, b) => a.num - b.num);
   const i = sorted.findIndex(c => c.num === ch.num);
-  return i > 0 ? sorted[i - 1] : null;
+  // The nearest earlier chapter with coordinates: an empty chapter in between (one still being
+  // planned) has no endpoint, so the approach leg and the pull are taken from the chapter before it.
+  for (let j = i - 1; j >= 0; j--) {
+    if ((sorted[j].waypoints || []).some(hasCoord)) return sorted[j];
+  }
+  return null;
 }
 function chapterApproachNm(ch) {
   const prev = getPredecessorChapter(ch);
@@ -949,14 +955,14 @@ function computeHeroStats(chapters, settings) {
     displayNm: s.distanceOverride || totalNm,
     nationsAuto: classified.nations.length,
     territoriesAuto: classified.territories.length,
-    nations: s.nationsOverride || classified.nations.length,
-    territories: s.territoriesOverride || classified.territories.length,
+    nations: s.nationsOverride != null ? s.nationsOverride : classified.nations.length,
+    territories: s.territoriesOverride != null ? s.territoriesOverride : classified.territories.length,
     chapters: (chapters || []).length,
     namedWaypoints,
     shapingVertices,
     nmOverridden: !!s.distanceOverride,
-    nationsOverridden: !!s.nationsOverride,
-    territoriesOverridden: !!s.territoriesOverride
+    nationsOverridden: s.nationsOverride != null,
+    territoriesOverridden: s.territoriesOverride != null
   };
 }
 
@@ -982,6 +988,7 @@ function chapterCountries(ch) {
 }
 let polylines = {};
 let wptMarkers = {}; // per-chapter waypoint circle markers, so selection can dim non-selected dots
+let shapeMarkers = {}; // per-chapter Decision and Gateway markers, dimmed with the dots
 let activeNum = null;
 
 /* ======================== File loader ======================== */
@@ -1027,9 +1034,11 @@ function safeHttpUrl(value) {
 // definitions in both).
 function normalizeSettings(raw) {
   const s = (raw && typeof raw === 'object') ? raw : {};
-  const count = v => { const n = typeof v === 'number' ? v : parseFloat(v); return Number.isFinite(n) && n > 0 ? n : null; };
+  const num = v => (typeof v === 'number' ? v : parseFloat(v));
+  const distance = v => { const n = num(v); return Number.isFinite(n) && n > 0 ? n : null; };
+  const count = v => { const n = num(v); return Number.isInteger(n) && n >= 0 ? n : null; };
   return {
-    distanceOverride: count(s.distanceOverride),
+    distanceOverride: distance(s.distanceOverride),
     nationsOverride: count(s.nationsOverride),
     territoriesOverride: count(s.territoriesOverride),
     distanceUnit: Object.prototype.hasOwnProperty.call(NM_TO, s.distanceUnit) ? s.distanceUnit : 'nm'
@@ -1068,6 +1077,7 @@ function loadVoyageData(raw) {
   document.getElementById('drawer-body').innerHTML = '';
   polylines = {};
   wptMarkers = {};
+  shapeMarkers = {};
   activeNum = null;
   closeInfo();
 
@@ -1137,16 +1147,22 @@ function loadVoyageData(raw) {
         // Decision markers
         if (w.decision) {
           const size = major ? 20 : 16;
-          const dm = L.marker([w.lat, w.lon + off], { icon: shapeIcon('decision', size, color, stroke) }).bindPopup(popup, { maxWidth: 230 });
+          // A waypoint that is both a Decision and a Gateway shows the diamond on top, whichever layer
+          // was turned on first: the higher-priority shape wins, as on the editor's chart.
+          const dm = L.marker([w.lat, w.lon + off], { icon: shapeIcon('decision', size, color, stroke), zIndexOffset: 1000 }).bindPopup(popup, { maxWidth: 230 });
           dm._vaShape = { kind: 'decision', size, color };
+          dm._baseZ = 1000;
           dm.addTo(decisionLayer);
+          (shapeMarkers[ch.num] || (shapeMarkers[ch.num] = [])).push(dm);
         }
         // Gateway markers
         if (w.gateway) {
           const size = major ? 20 : 16;
           const gm = L.marker([w.lat, w.lon + off], { icon: shapeIcon('gateway', size, color, stroke) }).bindPopup(popup, { maxWidth: 230 });
           gm._vaShape = { kind: 'gateway', size, color };
+          gm._baseZ = 0;
           gm.addTo(gatewayLayer);
+          (shapeMarkers[ch.num] || (shapeMarkers[ch.num] = [])).push(gm);
         }
       });
     });
@@ -1170,7 +1186,7 @@ function loadVoyageData(raw) {
     const color = chapterColor(ch.num);
     const hasRoutes = ch.routes && ch.routes.length && ch.routes[0].length >= 2;
     // A past chapter is dimmed but opens like any other; only a chapter with no route to frame (fewer
-    // than two points) is marked "No geometry" and cannot be selected.
+    // than two points) is marked "No route" and cannot be selected.
     const isPast = ch.era === 'past';
     const noGeometry = !hasRoutes;
     const rowClass = (isPast ? ' past' : '') + (noGeometry ? ' no-geo' : '');
@@ -1185,7 +1201,7 @@ function loadVoyageData(raw) {
     const dr = document.createElement('div');
     dr.className = 'dr-row' + rowClass;
     dr.id = `dr-${ch.num}`;
-    const badge = noGeometry ? '<span class="dr-badge">No geometry</span>' : '';
+    const badge = noGeometry ? '<span class="dr-badge">No route</span>' : '';
     dr.innerHTML =
       `<div class="dr-sw" style="background:${color}"></div>
        <div style="min-width:0;flex:1">
@@ -1195,7 +1211,9 @@ function loadVoyageData(raw) {
          <div class="dr-name">${esc(ch.name)}</div>
          <div class="dr-dest">${esc((ch.keyDestinations||[]).join(' · '))}</div>
        </div>`;
-    if (!noGeometry) dr.addEventListener('click', () => { selectChapter(ch.num); if (window.innerWidth <= 640) closeDrawer(); });
+    // At 900 px and below the drawer is the main navigation and covers the chart it has just framed,
+    // so picking a chapter closes it.
+    if (!noGeometry) dr.addEventListener('click', () => { selectChapter(ch.num); if (window.innerWidth <= 900) closeDrawer(); });
     drawerBody.appendChild(dr);
   });
 
@@ -1203,6 +1221,8 @@ function loadVoyageData(raw) {
   document.getElementById('filter').style.display = '';
   document.getElementById('legend').style.display = '';
   document.getElementById('landing').classList.add('hidden');
+  // A voyage opened from the drawer's Load button is shown with the drawer closed.
+  closeDrawer();
 
   // P1: size the map to its final layout BEFORE fitting (getBoundsZoom measures against current
   // pixel size). invalidateSize first, then fit, in the same tick.
@@ -1231,11 +1251,27 @@ function noRepeatMinZoom() {
   while (z < 18 && 256 * Math.pow(2, z) < w) z++;
   return z;
 }
+// A center latitude for zoom z that keeps the chart filled from top to bottom. Centered on a high
+// latitude alone (a polar voyage or chapter), the view would show empty space above the top of the
+// world. When the whole world is shorter than the pane, the equator is the center. Shared between
+// editor and viewer (identical definitions in both).
+function chartCenterLat(lat, z) {
+  const worldH = 256 * Math.pow(2, z), h = map.getSize().y;
+  if (worldH <= h) return 0;
+  const y = map.project([lat, 0], z).y;
+  return map.unproject([0, Math.min(Math.max(y, h / 2), worldH - h / 2)], z).lat;
+}
 function fitToCoords(coords, easeOut) {
   if (!coords || coords.length === 0) return;
-  if (coords.length === 1) { map.setView([coords[0][0], normLon(coords[0][1])], FIT_POINT_ZOOM); return; }
+  if (coords.length === 1) { map.setView([chartCenterLat(coords[0][0], FIT_POINT_ZOOM), normLon(coords[0][1])], FIT_POINT_ZOOM); return; }
   const pts = unwrap(coords); // one continuous frame; dateline-safe
   const b = L.latLngBounds(pts);
+  // Points that all coincide have bounds with no extent, which getBoundsZoom answers with the
+  // maximum zoom; frame them as the single point they are.
+  if (b.getNorth() === b.getSouth() && b.getEast() === b.getWest()) {
+    map.setView([chartCenterLat(pts[0][0], FIT_POINT_ZOOM), normLon(pts[0][1])], FIT_POINT_ZOOM);
+    return;
+  }
   // getBoundsZoom frames the points (with padding for breathing room); clamp UP to the no-repeat
   // minimum so a globe-spanning voyage never tiles. When the clamp engages (a span too wide for one
   // world), the ends clip — but symmetrically, because the view is centered on the unwrapped midpoint.
@@ -1244,7 +1280,7 @@ function fitToCoords(coords, easeOut) {
   const fit = map.getBoundsZoom(b, false, [80, 80]);
   const z = Math.max(easeOut ? fit - 1 : fit, noRepeatMinZoom());
   const c = b.getCenter();
-  map.setView([c.lat, normLon(c.lng)], z);
+  map.setView([chartCenterLat(c.lat, z), normLon(c.lng)], z);
 }
 
 // Fit the map to the combined extent of every chapter's waypoints (#58). Used on load instead of
@@ -1337,15 +1373,32 @@ function fitVoyageOnLoad(chapters) {
   const screenCenterX = size.x / 2;
   // trailing should be at targetX; trailing.ulon = centerLon + (targetX - screenCenterX) * degPerPx
   const centerLon = normLon(trailing.ulon - (targetX - screenCenterX) * degPerPx);
-  map.setView([focusLatMean, centerLon], z);
+  map.setView([chartCenterLat(focusLatMean, z), centerLon], z);
 }
 
 /* ======================== Interaction ======================== */
 function setChapterStyle(num, style) { (polylines[num]||[]).forEach(p => p.setStyle(style)); }
-// Dim or restore a chapter's waypoint dots. dim=true fades them; dim=false restores base fillOpacity.
+// Dim or restore a chapter's waypoint dots and its Decision and Gateway shapes. dim=true fades them;
+// dim=false restores the dots' base fillOpacity and the shapes' full opacity.
 function setChapterWptDim(num, dim) {
   (wptMarkers[num]||[]).forEach(m => m.setStyle({ opacity: dim ? 0.25 : 1, fillOpacity: dim ? 0.18 : m._baseFill }));
+  (shapeMarkers[num]||[]).forEach(m => m.setOpacity(dim ? 0.3 : 1));
 }
+
+// A click on empty chart clears the chapter selection, as in the editor. A click on a route, a
+// waypoint or a zone lands on an interactive layer, which has its own handler, and is left alone. A
+// double-click zooms the chart and keeps the selection: the clear waits a moment and is canceled
+// when the double-click or a zoom follows, and the second click of a double-click is ignored.
+let clearSelectionTimer = null;
+map.on('click', e => {
+  const t = e.originalEvent && e.originalEvent.target;
+  if (activeNum === null || (t && t.closest && t.closest('.leaflet-interactive'))) return;
+  if (e.originalEvent && e.originalEvent.detail > 1) return;
+  const selected = activeNum;
+  clearTimeout(clearSelectionTimer);
+  clearSelectionTimer = setTimeout(() => { if (activeNum === selected) closeInfo(); }, 300);
+});
+map.on('dblclick zoomstart', () => clearTimeout(clearSelectionTimer));
 
 function selectChapter(num) {
   if (!DATA) return;
@@ -1358,6 +1411,7 @@ function selectChapter(num) {
   });
   Object.keys(wptMarkers).forEach(k => setChapterWptDim(+k, +k !== num));
   (polylines[num]||[]).forEach(p => p.bringToFront());
+  raiseChapterMarkers(num);
 
   document.querySelectorAll('.dr-row').forEach(el => el.classList.toggle('active', el.id === `dr-${num}`));
   document.querySelectorAll('.leg-row').forEach(el => el.classList.toggle('active', el.id === `leg-${num}`));
@@ -1398,8 +1452,23 @@ function selectChapter(num) {
   document.getElementById('info').classList.add('show');
 }
 
+// The selected chapter's dots and shapes above everything else. The routes and the dots share one
+// layer pane, so raising the routes would cover this chapter's own dots (a route runs through the
+// middle of each), and a click on one would land on the route and re-select the chapter instead of
+// opening the waypoint. Its Decision and Gateway shapes are lifted over the other chapters' shapes,
+// which matters where two chapters share a handoff point. Passing null puts every shape back at its
+// base order (Decision above Gateway).
+function raiseChapterMarkers(num) {
+  if (num !== null) (wptMarkers[num]||[]).forEach(m => m.bringToFront());
+  Object.keys(shapeMarkers).forEach(k => shapeMarkers[k].forEach(m => m.setZIndexOffset(m._baseZ + (+k === num ? 2000 : 0))));
+}
+// Turning the Routes layer back on draws the routes over every dot, so the selected chapter is
+// raised again.
+routesLayer.on('add', () => { if (activeNum !== null) raiseChapterMarkers(activeNum); });
+
 function closeInfo() {
   activeNum = null;
+  raiseChapterMarkers(null);
   document.getElementById('info').classList.remove('show');
   Object.keys(polylines).forEach(k => setChapterStyle(+k, { weight: 3, opacity: 0.85 }));
   Object.keys(wptMarkers).forEach(k => setChapterWptDim(+k, false));
@@ -1425,8 +1494,12 @@ function toggleTheme() {
 }
 
 /* Esc closes things */
+// With the chooser open, Escape belongs to the chooser (it returns to the current voyage, selection
+// and all), so the selection is cleared only when the chooser is not showing.
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeInfo(); closeDrawer(); }
+  if (e.key !== 'Escape' || !document.getElementById('landing').classList.contains('hidden')) return;
+  closeInfo();
+  closeDrawer();
 });
 
 /* ============================ Voyage data source ============================

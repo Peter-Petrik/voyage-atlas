@@ -81,8 +81,8 @@ The editor writes this on **Save**; the viewer loads it. This is the canonical i
 |-------|------|---------|-------------|
 | `distanceUnit` | enum | always | Display unit for on-screen distances: `"nm"` (default), `"km"`, or `"mi"`. **Display-only** — every stored value and every export stays in nautical miles. |
 | `distanceOverride` | number | only when set | Replaces the recomputed total distance. Entered and shown in the selected unit, **stored in nautical miles**. |
-| `nationsOverride` | integer | only when set | Replaces the recomputed nations count. |
-| `territoriesOverride` | integer | only when set | Replaces the recomputed territories count. |
+| `nationsOverride` | integer | only when set | Replaces the recomputed nations count. A whole number; 0 is a valid count. |
+| `territoriesOverride` | integer | only when set | Replaces the recomputed territories count. A whole number; 0 is a valid count. |
 
 Unset overrides are **omitted** from the file (not written as `null`); the loader treats a missing key as
 unset.
@@ -144,8 +144,9 @@ the file itself is not changed until it is saved again, and the editor's status 
    only when the whole text is a number (`"38.53"`, not `"38,53"` or `"12abc"`).
 3. **Text and flags.** A number or `true`/`false` in a text field is read as its text; any other value (an
    object, a list) reads as empty. A flag is true only for `true`, `"true"`, `"1"` or `"yes"`, in any case.
-4. **Era and padding.** `era` is matched case-insensitively and reads as `future` when unrecognized. A missing,
-   unreadable or non-positive `padMultiplier` reads as 1.2.
+4. **Era and padding.** `era` is matched case-insensitively and reads as `future` when unrecognized. A missing or
+   unreadable `padMultiplier`, or one below 1, reads as 1.2: padding adds sailing distance, and the editor refuses a
+   typed value below 1 by the same rule.
 5. **Lists.** `countriesOverride` and `keyDestinations` are also read from text (split as in the CSV), with
    spaces and commas trimmed from the ends of each entry.
 
@@ -249,8 +250,8 @@ antimeridian and drawn across three world copies, so a crossing route stays cont
 The last waypoint of chapter N and the first waypoint of chapter N+1 may be the same geographic point (the
 transit point between chapters). The connecting leg's distance counts toward chapter N+1's total (it
 captures "getting to the start point"). When the two chapters genuinely differ — a repositioning gap — the
-approach leg is non-zero. The editor stores the two rows independently; the predecessor is resolved
-positionally (chapter num − 1).
+approach leg is non-zero. The editor stores the two rows independently; the predecessor is the nearest
+earlier chapter, by number, that has coordinates, so a chapter with no waypoints yet is skipped.
 
 ---
 

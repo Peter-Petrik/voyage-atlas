@@ -241,7 +241,7 @@ test(`${EDITOR}: focusing another field in the selected row does not reselect it
 });
 
 test(`${EDITOR}: deleting an earlier chapter keeps the active chapter and the selection on their chapters`, () => {
-  const fns = pick(editor, ['deleteChapter'], { confirmModal: (t, m, action) => action(), renderAllChapters() {} }, {
+  const fns = pick(editor, ['deleteChapter'], { confirmModal: (t, m, action) => action(), renderAllChapters() {}, setDirty() {} }, {
     lets: true,
     prelude: `STATE.chapters = [1, 2, 3].map(n => ({ num: n, waypoints: [{ name: 'W' + n }] }));
       activeChapterNum = 3; selectedChapterNum = 3; selectedWpt = STATE.chapters[2].waypoints[0];`,
@@ -365,7 +365,7 @@ test(`${VIEWER}: past chapters with a route open from the legend and the drawer;
   assert.equal(legend[0].listeners.length, 1, 'the past chapter opens from the legend');
   assert.equal(drawer[0].listeners.length, 1, 'the past chapter opens from the drawer');
   assert.equal(legend[1].listeners.length, 0, 'a chapter without a route does not open');
-  assert.ok(!/No geometry/.test(drawer[0].innerHTML) && /No geometry/.test(drawer[1].innerHTML));
+  assert.ok(!/No route/.test(drawer[0].innerHTML) && /No route/.test(drawer[1].innerHTML));
   legend[0].listeners[0]();
   assert.deepEqual(selected, [1]);
 });

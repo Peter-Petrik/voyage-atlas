@@ -657,7 +657,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.11</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.12</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -922,9 +922,11 @@ function gatewayMarkerSVG(size, fill, stroke, strokeW, opacity) {
 // definitions in both).
 function normalizeSettings(raw) {
   const s = (raw && typeof raw === 'object') ? raw : {};
-  const count = v => { const n = typeof v === 'number' ? v : parseFloat(v); return Number.isFinite(n) && n > 0 ? n : null; };
+  const num = v => (typeof v === 'number' ? v : parseFloat(v));
+  const distance = v => { const n = num(v); return Number.isFinite(n) && n > 0 ? n : null; };
+  const count = v => { const n = num(v); return Number.isInteger(n) && n >= 0 ? n : null; };
   return {
-    distanceOverride: count(s.distanceOverride),
+    distanceOverride: distance(s.distanceOverride),
     nationsOverride: count(s.nationsOverride),
     territoriesOverride: count(s.territoriesOverride),
     distanceUnit: Object.prototype.hasOwnProperty.call(NM_TO, s.distanceUnit) ? s.distanceUnit : 'nm'
@@ -1015,7 +1017,11 @@ function initMap() {
 function onMapClick(e) {
   // Rapid-click mode: a click on empty chart space drops a new waypoint.
   if (rapidClickMode) {
-    if (activeChapterNum === null || ghostDragTarget) return;
+    if (ghostDragTarget) return;
+    if (activeChapterNum === null) {
+      document.getElementById('status-text').innerHTML = '<span class="status-active">Select a chapter first — Rapid click adds to the selected chapter</span>';
+      return;
+    }
     const ch = getChapter(activeChapterNum);
     if (!ch) return;
     noteFirstEdit();
@@ -1023,6 +1029,7 @@ function onMapClick(e) {
     wpt.lat = round5(e.latlng.lat);
     wpt.lon = normLon(round5(e.latlng.lng));
     ch.waypoints.push(wpt);
+    setDirty(true);
     renderChapterWaypoints(activeChapterNum);
     updateMapChapter(activeChapterNum);
     refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
@@ -1361,10 +1368,13 @@ function onGhostDragEnd(e) {
   wpt.lat = round5(pos.lat);
   wpt.lon = normLon(round5(pos.lng));
   ch.waypoints.splice(insertAfter + 1, 0, wpt);
+  setDirty(true);
 
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
   updateHeroStats();
+  // The new vertex is selected, as a row added any other single way is.
+  selectWaypoint(chNum, insertAfter + 1, { keepFocus: true, keepPanel: true });
 }
 
 // Shared fit routine — the single place every "frame these points" operation goes through, so the
@@ -1389,11 +1399,27 @@ function noRepeatMinZoom() {
   while (z < 18 && 256 * Math.pow(2, z) < w) z++;
   return z;
 }
+// A center latitude for zoom z that keeps the chart filled from top to bottom. Centered on a high
+// latitude alone (a polar voyage or chapter), the view would show empty space above the top of the
+// world. When the whole world is shorter than the pane, the equator is the center. Shared between
+// editor and viewer (identical definitions in both).
+function chartCenterLat(lat, z) {
+  const worldH = 256 * Math.pow(2, z), h = map.getSize().y;
+  if (worldH <= h) return 0;
+  const y = map.project([lat, 0], z).y;
+  return map.unproject([0, Math.min(Math.max(y, h / 2), worldH - h / 2)], z).lat;
+}
 function fitToCoords(coords, easeOut) {
   if (!coords || coords.length === 0) return;
-  if (coords.length === 1) { map.setView([coords[0][0], normLon(coords[0][1])], FIT_POINT_ZOOM); return; }
+  if (coords.length === 1) { map.setView([chartCenterLat(coords[0][0], FIT_POINT_ZOOM), normLon(coords[0][1])], FIT_POINT_ZOOM); return; }
   const pts = unwrap(coords); // one continuous frame; dateline-safe
   const b = L.latLngBounds(pts);
+  // Points that all coincide have bounds with no extent, which getBoundsZoom answers with the
+  // maximum zoom; frame them as the single point they are.
+  if (b.getNorth() === b.getSouth() && b.getEast() === b.getWest()) {
+    map.setView([chartCenterLat(pts[0][0], FIT_POINT_ZOOM), normLon(pts[0][1])], FIT_POINT_ZOOM);
+    return;
+  }
   // getBoundsZoom frames the points (with padding for breathing room); clamp UP to the no-repeat
   // minimum so a globe-spanning voyage never tiles. When the clamp engages (a span too wide for one
   // world), the ends clip — but symmetrically, because the view is centered on the unwrapped midpoint.
@@ -1402,7 +1428,7 @@ function fitToCoords(coords, easeOut) {
   const fit = map.getBoundsZoom(b, false, [80, 80]);
   const z = Math.max(easeOut ? fit - 1 : fit, noRepeatMinZoom());
   const c = b.getCenter();
-  map.setView([c.lat, normLon(c.lng)], z);
+  map.setView([chartCenterLat(c.lat, z), normLon(c.lng)], z);
 }
 
 function focusMapOnChapter(chNum) {
@@ -1442,7 +1468,7 @@ function selectWaypoint(chNum, idx, opts = {}) {
     const lon = normLon(w.lon); // normalize so a dateline-side waypoint centers correctly
     map.setView([w.lat, lon], 7); // B4: fixed zoom level 7
   }
-  revealWaypointRow(chNum, idx, opts.keepFocus);
+  revealWaypointRow(chNum, idx, opts.keepFocus, opts.keepPanel);
 }
 
 // Clear the current waypoint selection (item: deselect). Drops the selection state, removes the row
@@ -1470,15 +1496,22 @@ function selectedIndex() {
   return i === -1 ? null : i;
 }
 
-function onWptRowFocus(chNum, idx) {
+function onWptRowFocus(chNum, idx, event) {
   if (chNum === selectedChapterNum && idx === selectedIndex()) return; // same row — leave it alone
+  // Focus on a row's ✕ is the start of deleting that row, not a choice of it: selecting it would make
+  // the delete clear the selection the user had elsewhere.
+  if (event && event.target && event.target.closest && event.target.closest('.wpt-del')) return;
   selectWaypoint(chNum, idx, { keepFocus: true });
 }
 
 // Reveal the selected waypoint's row: open the table if collapsed, mark the row selected (clearing any
 // prior), scroll it just into view, flash it briefly, and focus the name field.
-function revealWaypointRow(chNum, idx, keepFocus) {
+// keepPanel leaves a collapsed table collapsed (the row is drawn selected when the table opens),
+// for additions made on the chart, often in runs, where opening and scrolling the table each time
+// would only get in the way.
+function revealWaypointRow(chNum, idx, keepFocus, keepPanel) {
   const panel = document.getElementById(`ch-wpts-${chNum}`);
+  if (keepPanel && panel && !panel.classList.contains('open')) return;
   if (panel && !panel.classList.contains('open')) {
     panel.classList.add('open');
     const tgl = document.querySelector(`#ch-${chNum} .ch-toggle[title="Waypoints"]`);
@@ -1534,7 +1567,8 @@ function nomKeydown(e) {
     else nomSearch();
   } else if (e.key === 'Escape') {
     // First Escape dismisses the results dropdown; a second Escape (results already hidden) clears the
-    // typed query (#57).
+    // typed query (#57). The key stops here, so it does not also clear the waypoint selection.
+    e.stopPropagation();
     if (showing) {
       hideSearchResults();
     } else if (document.getElementById('nom-input').value) {
@@ -1576,10 +1610,11 @@ function pickSearchResult(i) {
   const lat = round5(parseFloat(r.lat));
   const lon = round5(parseFloat(r.lon));
   const name = r.display_name.split(',')[0].trim();
-  document.getElementById('nom-input').value = '';
 
-  // Add to active chapter if one is selected
+  // Add to active chapter if one is selected. With none active, the query stays in the box, so the
+  // result can be picked again once a chapter is selected.
   if (activeChapterNum !== null) {
+    document.getElementById('nom-input').value = '';
     const ch = getChapter(activeChapterNum);
     if (ch) {
       const wpt = makeWaypoint();
@@ -1590,10 +1625,12 @@ function pickSearchResult(i) {
       if (r.address && r.address.country) wpt.country = r.address.country;
       noteFirstEdit();
       ch.waypoints.push(wpt);
+      setDirty(true);
       renderChapterWaypoints(activeChapterNum);
       updateMapChapter(activeChapterNum);
       updateChapterCountries(activeChapterNum); // the result may carry a country
       refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
+      selectWaypoint(activeChapterNum, ch.waypoints.length - 1, { keepFocus: true, keepPanel: true });
     }
   } else {
     // No chapter active (#58): don't silently drop the pin — pan to it and hint where adds go.
@@ -1703,11 +1740,19 @@ function renderGeoStatus() {
   }
 }
 
+// Queues one country lookup. The caller draws the status line once it has queued all of its rows:
+// drawing it per row took seconds when a whole voyage was queued at once.
 function reverseGeocode(lat, lon, callback) {
   revGeoQueue.push({ lat, lon, callback });
   geoTotal++;
-  renderGeoStatus();
   processRevGeoQueue();
+}
+
+// The chapter that holds a waypoint now. A lookup answer can arrive after chapters were deleted or
+// reordered, which renumbers them, so the chapter is found from the waypoint itself, never from the
+// number it had when the lookup was queued.
+function chapterOf(wpt) {
+  return STATE.chapters.find(c => c.waypoints.includes(wpt)) || null;
 }
 
 function processRevGeoQueue() {
@@ -1741,20 +1786,19 @@ function queueChapterCountryLookups(ch) {
   ch.waypoints.forEach(w => {
     if (hasCoord(w) && (!w.country || w.country.trim() === '')) {
       n++;
-      const wptRef = w, chNum = ch.num; // capture by reference; index may shift during async
+      const wptRef = w; // captured by reference; its chapter and row are found when the answer arrives
       reverseGeocode(w.lat, w.lon, function(country) {
-        if (country) {
-          wptRef.country = country;
-          const curIdx = ch.waypoints.indexOf(wptRef);
-          if (curIdx !== -1) {
-            const input = document.querySelector(`#wpt-country-${chNum}-${curIdx}`);
-            if (input) { input.value = country; syncCountryFlag(input); }
-          }
-          updateChapterCountries(chNum);
-        }
+        const owner = chapterOf(wptRef);
+        if (!country || !owner) return; // no answer, or the waypoint was deleted meanwhile
+        wptRef.country = country;
+        setDirty(true);
+        const input = document.querySelector(`#wpt-country-${owner.num}-${owner.waypoints.indexOf(wptRef)}`);
+        if (input) { input.value = country; syncCountryFlag(input); }
+        updateChapterCountries(owner.num);
       });
     }
   });
+  renderGeoStatus();
   return n;
 }
 
@@ -1878,7 +1922,7 @@ function forwardGeocodeWaypoint(chNum, idx, name) {
 function processFwdGeoQueue() {
   if (fwdGeoRunning || fwdGeoQueue.length === 0) return;
   fwdGeoRunning = true;
-  const { chNum, wptRef, name } = fwdGeoQueue.shift();
+  const { wptRef, name } = fwdGeoQueue.shift();
   const session = geoSession;
   noteGeocodeUse();
   geoRequest(`${URL_GEOCODE}/search?format=json&q=${encodeURIComponent(name)}&limit=1&addressdetails=1`)
@@ -1886,15 +1930,16 @@ function processFwdGeoQueue() {
       if (session !== geoSession) return;
       if (!results || results.length === 0) return;
       const r = results[0];
-      const ch = getChapter(chNum);
-      if (!ch) return;
-      // Locate the waypoint by reference (index may have shifted)
-      const curIdx = ch.waypoints.indexOf(wptRef);
-      if (curIdx === -1) return; // deleted during fetch
+      // The chapter and row are found from the waypoint now: a delete or reorder while the lookup
+      // ran renumbers chapters and shifts rows.
+      const ch = chapterOf(wptRef);
+      if (!ch) return; // deleted during fetch
+      const chNum = ch.num, curIdx = ch.waypoints.indexOf(wptRef);
       const w = wptRef;
       if (w.lat != null || w.lon != null) return; // coords set meanwhile
       w.lat = round5(parseFloat(r.lat));
       w.lon = round5(parseFloat(r.lon));
+      setDirty(true);
       geoResolved++; // coordinates successfully resolved
       // Country rides along free in this forward response — fill only if empty
       // (never clobber a value typed or pasted by hand).
@@ -2109,8 +2154,9 @@ function normalizeWaypoint(w, opts = {}) {
 
 // A chapter as both tools hold it. The csv option marks a row of chapters.csv, whose countries and
 // key destinations arrive as text lists in its countries and keyDestinations columns; a voyage file
-// holds them as arrays in countriesOverride and keyDestinations (fileList also reads text). A
-// missing, unreadable or non-positive pad multiplier reads as 1.2.
+// holds them as arrays in countriesOverride and keyDestinations (fileList also reads text). Padding
+// adds sailing distance, so a pad multiplier that is missing, unreadable or below 1 reads as 1.2, the
+// same rule the editor's field applies to a typed value.
 function normalizeChapter(ch, opts = {}) {
   const csv = !!opts.csv;
   const pad = toCoord(ch.padMultiplier);
@@ -2123,7 +2169,7 @@ function normalizeChapter(ch, opts = {}) {
     countriesOverride: csv ? csvList(ch.countries) : (fileList(ch.countriesOverride).length ? fileList(ch.countriesOverride) : null),
     keyDestinations: csv ? (csvList(ch.keyDestinations) || []) : fileList(ch.keyDestinations),
     blogUrl: toText(ch.blogUrl) || null,
-    padMultiplier: pad !== null && pad > 0 ? pad : 1.2,
+    padMultiplier: pad !== null && pad >= 1 ? pad : 1.2,
     waypoints: (Array.isArray(ch.waypoints) ? ch.waypoints : []).map(w => normalizeWaypoint(w, opts))
   };
 }
@@ -2222,7 +2268,12 @@ function getPredecessorChapter(ch) {
   if (!ch) return null;
   const sorted = [...(STATE.chapters || [])].sort((a, b) => a.num - b.num);
   const i = sorted.findIndex(c => c.num === ch.num);
-  return i > 0 ? sorted[i - 1] : null;
+  // The nearest earlier chapter with coordinates: an empty chapter in between (one still being
+  // planned) has no endpoint, so the approach leg and the pull are taken from the chapter before it.
+  for (let j = i - 1; j >= 0; j--) {
+    if ((sorted[j].waypoints || []).some(hasCoord)) return sorted[j];
+  }
+  return null;
 }
 
 /* Distance from the predecessor chapter's last waypoint to this chapter's first
@@ -2275,14 +2326,14 @@ function computeHeroStats(chapters, settings) {
     displayNm: s.distanceOverride || totalNm,
     nationsAuto: classified.nations.length,
     territoriesAuto: classified.territories.length,
-    nations: s.nationsOverride || classified.nations.length,
-    territories: s.territoriesOverride || classified.territories.length,
+    nations: s.nationsOverride != null ? s.nationsOverride : classified.nations.length,
+    territories: s.territoriesOverride != null ? s.territoriesOverride : classified.territories.length,
     chapters: (chapters || []).length,
     namedWaypoints,
     shapingVertices,
     nmOverridden: !!s.distanceOverride,
-    nationsOverridden: !!s.nationsOverride,
-    territoriesOverridden: !!s.territoriesOverride
+    nationsOverridden: s.nationsOverride != null,
+    territoriesOverridden: s.territoriesOverride != null
   };
 }
 
@@ -2304,10 +2355,16 @@ function computeEditorTitle() {
 function updateSettings() {
   const s = STATE.settings;
   STATE.metaTitle = document.getElementById('set-title').value.trim();
-  const ovRaw = parseFloat(document.getElementById('set-nm').value);
-  s.distanceOverride = ovRaw ? Math.round(ovRaw / NM_TO[distUnit()]) : null; // stored as canonical nm
-  s.nationsOverride = parseInt(document.getElementById('set-nations').value) || null;
-  s.territoriesOverride = parseInt(document.getElementById('set-territories').value) || null;
+  // The Distance Override is a positive distance in the display unit, stored in nautical miles to a
+  // thousandth, so the tile shows the figure as typed; anything else clears it. The Nations and
+  // Territories overrides are whole numbers, 0 included; anything else clears them. Each field then
+  // shows the value in use (loadSettings).
+  const ov = toCoord(document.getElementById('set-nm').value);
+  s.distanceOverride = ov !== null && ov > 0 ? Math.round(ov / NM_TO[distUnit()] * 1000) / 1000 : null;
+  const whole = id => { const n = toCoord(document.getElementById(id).value); return Number.isInteger(n) && n >= 0 ? n : null; };
+  s.nationsOverride = whole('set-nations');
+  s.territoriesOverride = whole('set-territories');
+  loadSettings();
   // Update page title
   const title = computeEditorTitle();
   document.querySelector('#header h1').textContent = title;
@@ -2330,16 +2387,19 @@ function loadSettings() {
   document.getElementById('set-title').value = STATE.metaTitle || '';
   document.getElementById('set-unit').value = distUnit();
   document.getElementById('set-nm').value = s.distanceOverride ? Math.round(s.distanceOverride * NM_TO[distUnit()]) : '';
-  document.getElementById('set-nations').value = s.nationsOverride || '';
-  document.getElementById('set-territories').value = s.territoriesOverride || '';
+  document.getElementById('set-nations').value = s.nationsOverride != null ? s.nationsOverride : '';
+  document.getElementById('set-territories').value = s.territoriesOverride != null ? s.territoriesOverride : '';
   // Update page title
   const title = computeEditorTitle();
   document.querySelector('#header h1').textContent = title;
   document.title = title;
 }
 
+// Draws the header stats, the settings placeholders and the status line from the current state. It
+// changes no data, so it does not mark the voyage unsaved: each function that changes the voyage does
+// that itself (setDirty), and a redraw with nothing changed leaves Save as it is.
 function updateHeroStats() {
-  setDirty(true);
+  renderStatus();
   const h = computeHeroStats(STATE.chapters, STATE.settings);
   // Editor-only side effect: drive the settings-panel AUTO: placeholders (pre-override values).
   const nmInput = document.getElementById('set-nm');
@@ -2353,8 +2413,9 @@ function updateHeroStats() {
   const u = distUnit();
   const items = [];
   if (h.displayNm) items.push([Math.round(h.displayNm * NM_TO[u]).toLocaleString(), UNIT_LABEL[u], h.nmOverridden]);
-  if (h.nations) items.push([h.nations, h.nations === 1 ? 'Nation' : 'Nations', h.nationsOverridden]);
-  if (h.territories) items.push([h.territories, h.territories === 1 ? 'Territory' : 'Territories', h.territoriesOverridden]);
+  // A count overridden to 0 keeps its tile, marked with the ⚙, so the override in force stays visible.
+  if (h.nations || h.nationsOverridden) items.push([h.nations, h.nations === 1 ? 'Nation' : 'Nations', h.nationsOverridden]);
+  if (h.territories || h.territoriesOverridden) items.push([h.territories, h.territories === 1 ? 'Territory' : 'Territories', h.territoriesOverridden]);
   items.push([h.chapters, h.chapters === 1 ? 'Chapter' : 'Chapters']);
   if (h.namedWaypoints) items.push([h.namedWaypoints, h.namedWaypoints === 1 ? 'Waypoint' : 'Waypoints']);
   if (h.shapingVertices) items.push([h.shapingVertices, h.shapingVertices === 1 ? 'Vertex' : 'Vertices']);
@@ -2491,14 +2552,13 @@ function setAllWpts(open) {
 function renderAllChapters() {
   // Preserve which panels are expanded so a full rebuild (e.g. after a pull-sync, reorder, or add)
   // doesn't collapse open chapter metadata / waypoint panels.
+  // The panels are remembered by their chapter, not its number: a delete or reorder renumbers the
+  // chapters before this rebuild, so a number would reopen another chapter's panel.
   const openMeta = new Set();
   const openWpts = new Set();
-  document.querySelectorAll('.ch-meta.open').forEach(el => {
-    const m = el.id.match(/^ch-meta-(\d+)$/); if (m) openMeta.add(m[1]);
-  });
-  document.querySelectorAll('.ch-wpts.open').forEach(el => {
-    const m = el.id.match(/^ch-wpts-(\d+)$/); if (m) openWpts.add(m[1]);
-  });
+  const chapterOfPanel = el => { const item = el.closest('.ch-item'); return item && item._chapter; };
+  document.querySelectorAll('.ch-meta.open').forEach(el => { const c = chapterOfPanel(el); if (c && STATE.chapters.includes(c)) openMeta.add(c.num); });
+  document.querySelectorAll('.ch-wpts.open').forEach(el => { const c = chapterOfPanel(el); if (c && STATE.chapters.includes(c)) openWpts.add(c.num); });
 
   const list = document.getElementById('chapter-list');
   list.innerHTML = '';
@@ -2559,6 +2619,7 @@ function refreshChapterLinks() {
 function createChapterElement(ch) {
   const div = document.createElement('div');
   div.className = `ch-item${ch.num === activeChapterNum ? ' active' : ''}`;
+  div._chapter = ch; // lets a rebuild find which chapter an open panel belonged to
   div.dataset.chNum = ch.num;
   div.id = `ch-${ch.num}`;
 
@@ -2566,7 +2627,7 @@ function createChapterElement(ch) {
   const syncEl = chapterSyncHTML(ch);
 
   div.innerHTML = `
-    <div class="ch-header" onclick="selectChapter(${ch.num})" ondblclick="dblClickChapter(${ch.num})">
+    <div class="ch-header" onclick="selectChapter(${ch.num}, event.detail > 1)" ondblclick="dblClickChapter(${ch.num})">
       <span class="ch-drag" title="Drag to reorder">≡</span>
       <span class="ch-num">${ch.num}</span>
       <span class="ch-name">${esc(ch.name)}</span>
@@ -2620,7 +2681,7 @@ function renderMetaForm(ch) {
       </div>
       <div class="meta-field">
         <label>Pad Multiplier <span class="hi" data-tip="Distance adjustment factor. Multiplied against the great-circle base nm to account for cruising-ground exploration. Default 1.20 (20%). Range: 1.05 (ocean crossing) to 3.00 (dense cruising ground like Scottish lochs).">i</span></label>
-        <input type="number" step="0.05" min="1" value="${ch.padMultiplier}" onchange="updateMeta(${ch.num},'padMultiplier',parseFloat(this.value)||1.2)">
+        <input type="number" step="0.05" min="1" value="${ch.padMultiplier}" onchange="onPadInput(this,${ch.num})">
       </div>
       <div class="meta-field">
         <label>Blog URL <span class="hi" data-tip="Link to blog posts covering this chapter. Enables a Read posts link in the viewer info panel. Can point to a year archive, tag page, or custom URL.">i</span></label>
@@ -2642,6 +2703,25 @@ function renderMetaForm(ch) {
   `;
 }
 
+// The Pad Multiplier typed into a chapter's form. Padding adds sailing distance to the straight-line
+// route, so a value below 1, which would shorten it, is refused: the field goes back to the value in
+// use and the status line says why. A blank field resets to the default, 1.2. The field shows the
+// value in use either way.
+const PAD_RANGE_NOTE = 'Pad Multiplier must be 1 or more.';
+function onPadInput(input, chNum) {
+  const ch = getChapter(chNum);
+  if (!ch) return;
+  const status = document.getElementById('status-text');
+  const v = input.value.trim() === '' ? 1.2 : toCoord(input.value);
+  if (v === null || v < 1) {
+    input.value = ch.padMultiplier;
+    status.textContent = PAD_RANGE_NOTE;
+    return;
+  }
+  input.value = v;
+  updateMeta(chNum, 'padMultiplier', v);
+}
+
 function updateMeta(chNum, field, value) {
   const ch = getChapter(chNum);
   if (!ch) return;
@@ -2653,6 +2733,7 @@ function updateMeta(chNum, field, value) {
   } else {
     ch[field] = value;
   }
+  setDirty(true);
   // Update header display
   const el = document.getElementById(`ch-${chNum}`);
   if (el) {
@@ -2674,7 +2755,7 @@ function renderWaypointPanel(ch) {
       <button class="btn btn-sm" onclick="addWaypoint(${ch.num})">+ Add row</button>
       <button class="btn btn-sm" onclick="openBulkModal(${ch.num})">+ Add N rows</button>
       <button class="btn btn-sm" onclick="openPasteModal(${ch.num})">Paste</button>
-      <button class="btn btn-sm lookup-btn" onclick="fillChapterCountries(${ch.num})" title="Look up the country for waypoints that have coordinates but no country (1/sec rate limit)">Look up countries</button>
+      <button class="btn btn-sm lookup-btn"${geoPending() > 0 ? ' disabled' : ''} onclick="fillChapterCountries(${ch.num})" title="Look up the country for waypoints that have coordinates but no country (1/sec rate limit)">Look up countries</button>
       <span class="wpt-count" id="wpt-count-${ch.num}">${ch.waypoints.length} ${ch.waypoints.length === 1 ? 'row' : 'rows'} · ${namedCount} named</span>
     </div>
     <div class="wpt-table-wrap">
@@ -2703,7 +2784,7 @@ function renderWaypointPanel(ch) {
 function renderWaypointRow(chNum, w, idx) {
   const isShaping = !w.name || w.name.trim() === '';
   return `
-    <tr class="${[isShaping ? 'shaping' : '', (chNum === selectedChapterNum && w === selectedWpt) ? 'wpt-row-selected' : ''].filter(Boolean).join(' ')}" data-idx="${idx}" onfocusin="onWptRowFocus(${chNum},${idx})">
+    <tr class="${[isShaping ? 'shaping' : '', (chNum === selectedChapterNum && w === selectedWpt) ? 'wpt-row-selected' : ''].filter(Boolean).join(' ')}" data-idx="${idx}" onfocusin="onWptRowFocus(${chNum},${idx},event)">
       <td class="wpt-row-drag">≡</td>
       <td class="wpt-row-num" title="Zoom to and select this waypoint" onclick="selectWaypoint(${chNum},${idx},{zoom:true})">${idx + 1}</td>
       <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" value="${esc(w.name)}" placeholder="(shaping vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
@@ -2734,7 +2815,7 @@ function renderChapterWaypoints(chNum) {
 
 // A coordinate typed into the waypoint table, read through toCoord (0 included). A latitude beyond
 // ±90 is not a position, so the field goes back to its previous value and the status line says why
-// until a valid value is entered; a longitude outside -180 to 180 is brought into that range (200
+// (a valid entry, or any later edit, redraws the line); a longitude outside -180 to 180 is brought into that range (200
 // becomes -160, 180 becomes -180) and shown that way. The field's value attribute moves with the
 // value, so the stepper steps from the new value. The latitude field carries no min or max: a number
 // field with a min steps from it, which would snap every nudge onto the 0.01 grid.
@@ -2759,6 +2840,7 @@ function updateWpt(chNum, idx, field, value) {
   const ch = getChapter(chNum);
   if (!ch || !ch.waypoints[idx]) return;
   ch.waypoints[idx][field] = value;
+  setDirty(true);
   if (field === 'name') {
     // Update row styling
     const row = document.querySelector(`#wpt-body-${chNum} tr[data-idx="${idx}"]`);
@@ -2789,6 +2871,8 @@ function updateWpt(chNum, idx, field, value) {
   if (field === 'major' || field === 'decision' || field === 'gateway') {
     updateMapChapter(chNum);
   }
+  // A typed country changes the chapter's derived list, and with it the AUTO placeholder.
+  if (field === 'country') updateChapterCountries(chNum);
   updateHeroStats();
 }
 
@@ -2802,6 +2886,7 @@ function addWaypoint(chNum) {
   const sel = selectedChapterNum === chNum ? selectedIndex() : null;
   if (sel != null) insertIdx = sel + 1;
   ch.waypoints.splice(insertIdx, 0, makeWaypoint());
+  setDirty(true);
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
   updateHeroStats();
@@ -2815,6 +2900,7 @@ function deleteWpt(chNum, idx) {
   // Deleting the selected waypoint clears the selection; any other selection stays on its waypoint.
   if (ch.waypoints[idx] === selectedWpt) { selectedWpt = null; selectedChapterNum = null; }
   ch.waypoints.splice(idx, 1);
+  setDirty(true);
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
   updateChapterCountries(chNum);
@@ -2899,10 +2985,21 @@ function selectChapter(chNum, skipFit) {
   // Update map
   updateMapAll();
   if (!skipFit) focusMapOnChapter(chNum); // selectWaypoint activates without the fit-jump
-  // Update status
-  const ch = getChapter(chNum);
-  document.getElementById('status-text').innerHTML =
-    `<span class="status-active">Ch ${ch.num}: ${esc(ch.name)}</span> · ${ch.waypoints.length} ${ch.waypoints.length === 1 ? 'waypoint' : 'waypoints'} · ${fmtDist(chapterNm(ch))}`;
+  renderStatus();
+}
+
+// The status line for the current state: the active chapter with its number, name, waypoint count
+// and distance, or the prompt to pick one. Drawn with the header stats, so it follows every rename,
+// delete, reorder and add. A lookup run writes its own progress here, so the line is left to it while
+// lookups are pending.
+function renderStatus() {
+  if (geoPending() > 0) return;
+  const el = document.getElementById('status-text');
+  if (!el) return;
+  const ch = activeChapterNum !== null ? getChapter(activeChapterNum) : null;
+  el.innerHTML = ch
+    ? `<span class="status-active">Ch ${ch.num}: ${esc(ch.name)}</span> · ${ch.waypoints.length} ${ch.waypoints.length === 1 ? 'waypoint' : 'waypoints'} · ${fmtDist(chapterNm(ch))}`
+    : 'No chapter selected — click a chapter to begin';
 }
 
 function toggleMeta(chNum, btn) {
@@ -2929,6 +3026,7 @@ function addChapter() {
   // Past the highest number in use, so a new chapter can never share a number with another.
   const num = STATE.chapters.reduce((m, c) => Math.max(m, c.num), 0) + 1;
   STATE.chapters.push(makeChapter(num));
+  setDirty(true);
   renderAllChapters();
   selectChapter(num);
 }
@@ -2941,8 +3039,10 @@ function pullFromPrevious(chNum) {
   if (prevPts.length === 0) return;
   const last = prevPts[prevPts.length - 1];
   // Guard: if already synced (first coord waypoint matches the endpoint), do nothing
+  // Linked when the gap rounds to 0 nm, the same rule as the 🔗 indicator (chapterApproachNm), so
+  // the ⇄ button never shows for a gap the pull would refuse.
   const firstPt = ch.waypoints.find(hasCoord);
-  if (firstPt && haversineNm(firstPt.lat, firstPt.lon, last.lat, last.lon) < 1) return;
+  if (firstPt && Math.round(haversineNm(firstPt.lat, firstPt.lon, last.lat, last.lon)) < 1) return;
   // Insert a full copy of the predecessor's last waypoint as a NEW first row.
   // Never overwrites the existing waypoint 1 — this matches the shared-handoff data model
   // (the handoff point appears as the last row of the prior chapter and the first row of this
@@ -2957,6 +3057,7 @@ function pullFromPrevious(chNum) {
     country: last.country || '',
     notes: last.notes || ''
   });
+  setDirty(true);
   renderChapterWaypoints(chNum);
   updateMapChapter(chNum);
   updateChapterCountries(chNum);
@@ -2972,6 +3073,7 @@ function deleteChapter(chNum) {
     const selCh = selectedChapterNum !== null ? getChapter(selectedChapterNum) : null;
     STATE.chapters = STATE.chapters.filter(c => c.num !== chNum);
     renumberChapters();
+    setDirty(true);
     activeChapterNum = (activeCh && STATE.chapters.includes(activeCh)) ? activeCh.num : null;
     if (selCh && STATE.chapters.includes(selCh)) { selectedChapterNum = selCh.num; }
     else { selectedChapterNum = null; selectedWpt = null; }
@@ -2997,8 +3099,9 @@ function initChapterSortable() {
       const moved = STATE.chapters.splice(evt.oldIndex, 1)[0];
       STATE.chapters.splice(evt.newIndex, 0, moved);
       renumberChapters();
+      if (evt.oldIndex !== evt.newIndex) setDirty(true);
       renderAllChapters();
-      if (activeCh) selectChapter(activeCh.num); // use the object's new num
+      if (activeCh) selectChapter(activeCh.num, true); // the object's new num; the chart stays where it is
     }
   });
 }
@@ -3016,6 +3119,7 @@ function initWaypointSortable(chNum) {
       if (!ch) return;
       const moved = ch.waypoints.splice(evt.oldIndex, 1)[0];
       ch.waypoints.splice(evt.newIndex, 0, moved);
+      if (evt.oldIndex !== evt.newIndex) setDirty(true);
       renderChapterWaypoints(chNum);
       updateMapChapter(chNum);
       updateChapterCountries(chNum); // the derived country list follows first-appearance order
@@ -3062,6 +3166,7 @@ function doBulkAdd() {
   const ch = getChapter(bulkTargetChNum);
   if (!ch) return;
   for (let i = 0; i < n; i++) ch.waypoints.push(makeWaypoint());
+  setDirty(true);
   noteFirstEdit();
   announce('import', 'bulk');
   closeBulkModal();
@@ -3112,6 +3217,7 @@ function doPaste() {
     ch.waypoints.push(wpt);
   });
 
+  setDirty(true);
   noteFirstEdit();
   announce('import', 'paste');
 
@@ -3582,8 +3688,8 @@ function buildExportJSON() {
       generatedAt: new Date().toISOString(),
       settings: {
         ...(s.distanceOverride ? { distanceOverride: s.distanceOverride } : {}),
-        ...(s.nationsOverride ? { nationsOverride: s.nationsOverride } : {}),
-        ...(s.territoriesOverride ? { territoriesOverride: s.territoriesOverride } : {}),
+        ...(s.nationsOverride != null ? { nationsOverride: s.nationsOverride } : {}),
+        ...(s.territoriesOverride != null ? { territoriesOverride: s.territoriesOverride } : {}),
         distanceUnit: s.distanceUnit || 'nm'
       }
     },

@@ -183,7 +183,7 @@ test(`${EDITOR}: the status line says what a load corrected`, () => {
 });
 
 test(`${EDITOR}: a new chapter takes a number past the highest in use and an empty list`, () => {
-  const fns = pick(editor, ['addChapter'], { noteFirstEdit() {}, renderAllChapters() {}, selectChapter() {} },
+  const fns = pick(editor, ['addChapter'], { noteFirstEdit() {}, renderAllChapters() {}, selectChapter() {}, setDirty() {} },
     { lets: true, prelude: `STATE = { chapters: [{ num: 1 }, { num: 3 }], settings: {}, metaTitle: '' };`, expose: EXPOSE });
   fns.addChapter();
   const added = fns.state().chapters[2];

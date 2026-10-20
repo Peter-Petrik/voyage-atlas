@@ -57,13 +57,16 @@ for (const name of [EDITOR, VIEWER]) {
     assert.ok(out.includes('&lt;img src=x&gt;') && out.includes('&lt;b&gt;Label&lt;/b&gt;'), out);
   });
 
-  test(`${name}: settings are reduced to known units and positive numbers`, () => {
+  test(`${name}: settings are reduced to known units, a positive distance and whole counts`, () => {
     const { normalizeSettings } = pick(tool, ['NM_TO', 'normalizeSettings']);
     assert.deepEqual(normalizeSettings({
       distanceOverride: '<img src=x>', nationsOverride: '<script>', territoriesOverride: -3, distanceUnit: '<b>',
     }), { distanceOverride: null, nationsOverride: null, territoriesOverride: null, distanceUnit: 'nm' });
+    // A count of 0 is a real override (a voyage with no territories); a distance must be positive.
     assert.deepEqual(normalizeSettings({ distanceOverride: '1200', nationsOverride: 14, territoriesOverride: 0, distanceUnit: 'km' }),
-      { distanceOverride: 1200, nationsOverride: 14, territoriesOverride: null, distanceUnit: 'km' });
+      { distanceOverride: 1200, nationsOverride: 14, territoriesOverride: 0, distanceUnit: 'km' });
+    assert.deepEqual(normalizeSettings({ distanceOverride: 0, nationsOverride: 2.5, territoriesOverride: '3' }),
+      { distanceOverride: null, nationsOverride: null, territoriesOverride: 3, distanceUnit: 'nm' });
     assert.equal(normalizeSettings({ distanceUnit: 'toString' }).distanceUnit, 'nm', 'inherited property names are not units');
     assert.deepEqual(normalizeSettings(undefined),
       { distanceOverride: null, nationsOverride: null, territoriesOverride: null, distanceUnit: 'nm' });

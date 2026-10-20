@@ -136,7 +136,7 @@ The voyage file is resolved from a `URL_VOYAGE_DATA` constant in the configurati
 
 Resolving the file requires the editor to be served over HTTP. Opening it directly from disk (a `file://` URL) cannot fetch a local file, so the sample option does not appear and the chooser offers only "Start a new voyage" and "Load a voyage file." When the file is there but cannot be read, or a `?data=` file is not found, the chooser carries a note saying so.
 
-**On load, the chart frames the whole voyage** — it fits to the combined extent of every chapter's waypoints, so an all-Mediterranean voyage opens on the Mediterranean and a global one on the world. **No chapter is selected to start:** the status bar above the chart reads "No chapter selected — click a chapter to begin." This matters because adding a waypoint — whether by clicking the chart, searching, or pasting — adds it to the *active* chapter, so a chapter must be selected (click it in the list) before those actions do anything. A place search with no chapter active pans the chart to the result and prompts for a chapter rather than dropping the point.
+**On load, the chart frames the whole voyage** — it fits to the combined extent of every chapter's waypoints, so an all-Mediterranean voyage opens on the Mediterranean and a global one on the world. **No chapter is selected to start:** the status bar above the chart reads "No chapter selected — click a chapter to begin." This matters because adding a waypoint — whether by clicking the chart, searching, or pasting — adds it to the *active* chapter, so a chapter must be selected (click it in the list) before those actions do anything. A place search with no chapter active pans the chart to the result and prompts for a chapter rather than dropping the point; the query stays in the box, so the result can be picked again once a chapter is selected. Rapid click with no chapter selected says so in the status bar.
 
 ## Adding waypoints
 
@@ -146,7 +146,7 @@ Within a chapter, there are five ways to add points:
 2. **+ Add N rows** — appends several blank rows at once (useful before a paste or bulk entry).
 3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line becomes a row. Columns are split at tabs when the pasted text contains a tab, and at commas otherwise. A decimal comma in a coordinate ("38,53") reads as a point. A coordinate that cannot be read is left empty, the status bar says how many, and that row is not looked up by name. **Cmd/Ctrl+Enter** in the paste box adds the rows (plain Enter inserts a newline).
 4. **Click on the chart** — with **Rapid click** mode ON (toggle above the chart), each click on the chart drops a new waypoint at that location. Standard chart navigation still works in this mode: drag to pan and scroll to zoom; only the single click is repurposed to place a waypoint. Turn the mode OFF to return the single click to normal selection.
-5. **Search (Nominatim)** — type a place name in the search box and press **Enter** (or click **Search**) to search; typing alone sends nothing, because the Nominatim usage policy forbids client-side autocomplete; use the **arrow keys** to move through results, **Enter** to add the highlighted one, **Escape** to dismiss. Adding a result drops a waypoint with coordinates (and country, when empty) filled.
+5. **Search (Nominatim)** — type a place name in the search box and press **Enter** (or click **Search**) to search; typing alone sends nothing, because the Nominatim usage policy forbids client-side autocomplete; use the **arrow keys** to move through results, **Enter** to add the highlighted one, **Escape** to dismiss. Adding a result drops a waypoint with coordinates (and country, when empty) filled, and selects it.
 
 ## Geocoding (name ↔ coordinates)
 
@@ -171,11 +171,11 @@ While any look-up is in flight, both the per-chapter **Look up countries** and t
 
 ## Selecting a waypoint (chart ↔ list)
 
-Clicking a **marker** on the chart selects that waypoint: the marker grows and turns crimson, and its row in the table is highlighted, scrolled into view, and briefly flashed. Clicking a waypoint's **sequence number** in the table does the same and also zooms the chart to that point and makes its chapter active — handy for jumping straight to a point on a long leg. Focusing any field in a different row also selects that row's waypoint, lighting its marker on the chart without moving the chart or stealing focus from the field being edited. Adding a waypoint selects the new row too. Only one waypoint is selected at a time, and the selection stays on that waypoint when other rows are deleted, added or reordered around it.
+Clicking a **marker** on the chart selects that waypoint: the marker grows and turns crimson, and its row in the table is highlighted, scrolled into view, and briefly flashed. Clicking a waypoint's **sequence number** in the table does the same and also zooms the chart to that point and makes its chapter active — handy for jumping straight to a point on a long leg. Focusing any field in a different row also selects that row's waypoint, lighting its marker on the chart without moving the chart or stealing focus from the field being edited. Adding a single waypoint — with **+ Add row**, from a search result, or by dragging a ghost midpoint — selects the new row too; Rapid click and paste do not, so a run of additions doesn't keep moving the table, and a search or ghost-midpoint addition leaves a collapsed table collapsed. Focusing a row's ✕ to delete it leaves the selection where it was. Only one waypoint is selected at a time, and the selection stays on that waypoint when other rows are deleted, added or reordered around it.
 
 Editing a latitude or longitude updates the chapter connection indicators (🔗 / ⇄) and the distances in place, so **Tab** moves straight on to the next field.
 
-The selection clears on switching to another chapter, on pressing **Escape**, or on clicking empty chart space away from any marker — any of which removes the row highlight and returns the marker to its normal style.
+The selection clears on switching to another chapter, on pressing **Escape** (outside the search box), or on clicking empty chart space away from any marker — any of which removes the row highlight and returns the marker to its normal style.
 
 ## Reordering
 
@@ -185,8 +185,10 @@ Drag the **≡** handle on a row to reorder waypoints within a chapter. Drag the
 
 Because chapters share handoff points (Part 1), the editor shows the connection state in each chapter header:
 
-1. **🔗 (linked)** — this chapter's first waypoint is within 1 nm of the previous chapter's last waypoint. They already connect; nothing to do.
-2. **⇄ (pull)** — there's a gap (more than 1 nm). The tooltip shows the gap distance.
+1. **🔗 (linked)** — this chapter's first waypoint is within half a nautical mile of the previous chapter's last waypoint (the gap rounds to 0 nm). They already connect; nothing to do.
+2. **⇄ (pull)** — there's a gap of half a nautical mile or more. The tooltip shows the gap distance, and the button always pulls.
+
+The previous chapter is the nearest earlier chapter that has coordinates: a chapter with no waypoints yet, or none with coordinates, such as one still being planned, is skipped, so the chapter after it connects to (and measures its approach leg from) the one before it.
 
 Clicking ⇄ **inserts a copy** of the previous chapter's last waypoint as a new first row in this chapter. It does **not** move or overwrite the existing first waypoint — that point stays exactly where it is, name and coordinates intact. After the pull, this chapter begins precisely where the previous one ended, the gap closes, and the indicator flips to 🔗. The inserted row carries the full identity of the handoff point (name, coordinates, country, and any M/G/D flags); if the predecessor ended at an unnamed shaping vertex, the inserted row is an unnamed shaping vertex.
 
@@ -204,7 +206,7 @@ Open a chapter's metadata panel (the 📋 toggle, or double-click the chapter he
 1. **Name** — the chapter's display name.
 2. **When** — the season window, set with the start and end month and year dropdowns and written as a range with an en-dash (e.g., "May – Sep 2028"). The years offered run from ten years before the current year to fifteen after it, and widen to include any year from 1900 to 2199 that the voyage's chapters already use, so an earlier chapter keeps its year. A file's When may be written shorter or longer: "Nov – Mar 2026" reads as November 2025 to March 2026, and full month names ("June 2025 – August 2025") are read. A When the dropdowns cannot show, such as "Summer 2025", is shown as saved under them, and choosing from them replaces it.
 3. **Era** — past, current, or future (controls styling and timeline placement).
-4. **Pad Multiplier** — the distance multiplier for this chapter (see distance calculation, Part 1).
+4. **Pad Multiplier** — the distance multiplier for this chapter (see distance calculation, Part 1). It is 1 or more, since padding adds sailing distance; a smaller value is refused with a note in the status bar, and a blank field resets it to 1.2. A value below 1 in a voyage file or CSV reads as 1.2.
 5. **Countries / Territories** — auto-derived from the chapter's waypoint countries, in first-appearance order. Leave it blank to keep that automatic; type a list, with entries separated by semicolons, to override it with a curated set (the override *replaces* the derived list, it does not add to it). A list typed with commas instead is also read, and the territory names that themselves contain commas, such as "Bonaire, Sint Eustatius and Saba", are recognized whole. A single entry that contains a comma is shown with a trailing semicolon, which keeps it one entry, and an entry cannot contain a semicolon. Each entry is then classified as a nation or a territory against the built-in reference list, exactly as the voyage totals are.
 6. **Key Destinations** — highlights for the viewer's chapter summary, with entries separated by semicolons, so an entry may contain a comma (e.g., "Horta, Faial; Lajes do Pico"). A list with no semicolon is split at commas. A single entry that contains a comma is shown with a trailing semicolon, which keeps it one entry, and an entry cannot contain a semicolon.
 7. **Blog URL** — an optional link to a post about this chapter, surfaced in the viewer. Only an `http` or `https` address is shown as a link.
@@ -218,8 +220,8 @@ The ⚙ panel above the chapter list holds voyage-level settings, saved into the
 
 1. **Voyage Title** — the title shown in the page titles and the viewer header, saved in the JSON file and used as the KML document's name. Free text: include a vessel, a vehicle, or anything else, or leave it blank to fall back to the default "Voyage Atlas".
 2. **Distance Units** — the display unit for every on-screen distance: nautical miles (default), kilometers, or miles. Display-only; the stored data and all exports stay in nautical miles.
-3. **Distance Override** — force the displayed total to a specific number, overriding the computed sum. Entered and shown in the selected display unit, stored as nautical miles. The header stat tile marks an active override with a ⚙.
-4. **Nations / Territories overrides** — force these counts, overriding the automatic classification.
+3. **Distance Override** — force the displayed total to a specific number, overriding the computed sum. Entered and shown in the selected display unit, stored as nautical miles, so the tile shows the figure as typed. A value of 0 or less, or a blank field, clears it. The header stat tile marks an active override with a ⚙.
+4. **Nations / Territories overrides** — force these counts, overriding the automatic classification. Each is a whole number, and 0 is a valid count (a voyage with no territories, say); a blank field clears it. In the editor's header an override of 0 still shows its tile, marked with the ⚙; the viewer shows no tile for a count of 0.
 
 ## Saving and exporting
 
@@ -238,7 +240,7 @@ The **Save** button reads `Save *` (with an "Unsaved changes" tooltip) whenever 
 1. In any dialog (bulk add, paste, CSV import, delete confirmation, Look Up Countries): **Enter** confirms, **Escape** cancels. Enter on a focused button does what that button says, so a focused Cancel cancels. The one exception is "Discard unsaved changes?", where Enter always keeps editing.
 2. In the paste box specifically: **Cmd/Ctrl+Enter** adds the rows, while plain **Enter** inserts a newline (allowing multi-line content to be pasted or typed first).
 3. In the Nominatim search box: **Enter** searches; once results show, **↑/↓** move through them, **Enter** adds the highlighted result, **Escape** dismisses the results. A **second Escape** (once the results are already dismissed) clears the typed query.
-4. With a waypoint selected and no dialog open: **Escape** clears the selection.
+4. With a waypoint selected and no dialog open: **Escape** clears the selection, except in the search box, where it only dismisses the results and then the query.
 
 ## Header stats
 
@@ -263,9 +265,9 @@ On load, how the viewer frames the chart depends on the voyage's span. A voyage 
 
 ## Reading the chart
 
-Each chapter is drawn in its own color, with named waypoints as markers and the route line tracing all points in order. Click a waypoint for its name and the chapter's season; major ports are marked. The hero stats at the top summarize the whole voyage. When a chapter has a blog URL set, its info panel shows a "Read the posts →" link.
+Each chapter is drawn in its own color, with named waypoints as markers and the route line tracing all points in order. Click a waypoint for its name and the chapter's season; major ports are marked. A waypoint that is both a Decision and a Gateway shows the Decision diamond on top when both layers are on. The hero stats at the top summarize the whole voyage. When a chapter has a blog URL set, its info panel shows a "Read the posts →" link.
 
-**Selecting a chapter** — click a chapter in the list (or its route on the chart) to focus it. Past chapters are dimmed in the lists but open like any other; only a chapter with fewer than two points shows "No geometry" and cannot be selected. The selected chapter's route and waypoints stay at full strength while every other chapter dims, so the active one stands out; the chart eases to that chapter's extent (one step wider than a tight fit, so it isn't pinned to the edges or hidden under the corner panels), and the detail panel opens. Clearing the selection restores all chapters to full strength.
+**Selecting a chapter** — click a chapter in the list (or its route on the chart) to focus it. Past chapters are dimmed in the lists but open like any other; only a chapter with fewer than two points shows "No route" and cannot be selected. On a screen 900 px wide or less, picking a chapter in the drawer closes the drawer, as loading a voyage from it does. The selected chapter's route and waypoints stay at full strength while every other chapter dims, so the active one stands out; the chart eases to that chapter's extent (one step wider than a tight fit, so it isn't pinned to the edges or hidden under the corner panels), and the detail panel opens. The selected chapter's waypoints sit above its route, so each can be clicked for its popup, and the Decision and Gateway shapes of the other chapters dim with their dots. Clearing the selection — with the detail panel's ×, Escape, or a click on empty chart (a double-click zooms and keeps it) — restores all chapters to full strength. Escape while the chooser is open only closes the chooser.
 
 The on-chart panels sit in the four corners: zoom controls top-left, **Chart & Layers** top-right, the **chapter list** bottom-left, and the **selected-chapter detail** bottom-right. (On a narrow/mobile screen they stack instead: Chart & Layers below the zoom control, the detail panel as a bottom sheet.)
 
