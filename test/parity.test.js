@@ -8,7 +8,6 @@ const assert = require('node:assert/strict');
 const { EDITOR, VIEWER, loadTool } = require('./support.js');
 
 const KNOWN_DIFFERENCES = [
-  'TOL_PALETTE',
   'closeChooser',
   'fmtDist',
   'getPredecessorChapter',

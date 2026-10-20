@@ -353,7 +353,8 @@ test(`${VIEWER}: past chapters with a route open from the legend and the drawer;
     document: doc, L: chain(), map: chain(), routesLayer: chain(), wptsLayer: chain(), pazLayer: chain(),
     decisionLayer: chain(), gatewayLayer: chain(), setTimeout() {}, window: { innerWidth: 1400 },
     selectChapter: n => selected.push(n), closeInfo() {}, closeDrawer() {}, fitVoyageOnLoad() {},
-    polylines: {}, wptMarkers: {}, DATA: null, activeNum: null,
+    getComputedStyle: () => ({ getPropertyValue: () => '#1d2b3a' }),
+    polylines: {}, casings: {}, wptMarkers: {}, DATA: null, activeNum: null,
   }, { prelude: '' });
   loadVoyageData({ meta: {}, chapters: [
     { num: 1, name: 'Sailed', era: 'past', waypoints: [wpt('A', 36, 28), wpt('B', 36.5, 27)] },

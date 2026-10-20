@@ -466,7 +466,7 @@ test(`${EDITOR}: the When parser reads year-crossing seasons, full month names a
   assert.deepEqual(p('Jun 2019 – Aug 2019'), ['Jun', '2019', 'Aug', '2019', true]);
   assert.deepEqual(p('Summer 2025'), ['', '2025', '', '', false]);
   assert.deepEqual(p(''), ['', '', '', '', true]);
-  assert.deepEqual(p(2025), ['', '2025', '', '', true]);
+  assert.deepEqual(p(2025), ['', '2025', '', '2025', true]);
 });
 
 test(`${EDITOR}: a When the lists cannot show is shown as saved`, () => {

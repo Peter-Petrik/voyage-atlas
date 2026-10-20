@@ -88,8 +88,9 @@ for (const tool of tools) {
 // ---------------------------------------------------------------------------------------------
 
 test(`${VIEWER}: a selected chapter's dots and shapes are raised above its route and the other chapters`, () => {
-  assert.match(viewer.defs.selectChapter, /\(polylines\[num\]\|\|\[\]\)\.forEach\(p => p\.bringToFront\(\)\);\s*raiseChapterMarkers\(num\);/);
-  assert.match(viewer.js, /routesLayer\.on\('add', \(\) => \{ if \(activeNum !== null\) raiseChapterMarkers\(activeNum\); \}\);/);
+  assert.match(viewer.defs.selectChapter, /raiseChapterRoute\(num\);/);
+  assert.match(viewer.defs.raiseChapterRoute, /\(polylines\[num\]\|\|\[\]\)\.forEach\(p => p\.bringToFront\(\)\);\s*raiseChapterMarkers\(num\);/);
+  assert.match(viewer.js, /routesLayer\.on\('add', \(\) => \{ if \(activeNum !== null\) raiseChapterRoute\(activeNum\); \}\);/);
   assert.match(viewer.defs.closeInfo, /raiseChapterMarkers\(null\)/);
   const raised = [], z = [];
   const dot = n => ({ bringToFront: () => raised.push(n) });
