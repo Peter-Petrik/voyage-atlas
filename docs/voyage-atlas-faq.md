@@ -120,7 +120,7 @@ Within a chapter, there are five ways to add points:
 
 1. **+ Add row** — appends one blank row to type into directly.
 2. **+ Add N rows** — appends several blank rows at once (useful before a paste or bulk entry).
-3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line becomes a row. **Cmd/Ctrl+Enter** in the paste box adds the rows (plain Enter inserts a newline).
+3. **Paste** — paste tabular data (e.g., from a spreadsheet) into the paste dialog; each line becomes a row. Columns are split at tabs when the pasted text contains a tab, and at commas otherwise. **Cmd/Ctrl+Enter** in the paste box adds the rows (plain Enter inserts a newline).
 4. **Click on the chart** — with **Rapid click** mode ON (toggle above the chart), each click on the chart drops a new waypoint at that location. Standard chart navigation still works in this mode: drag to pan and scroll to zoom; only the single click is repurposed to place a waypoint. Turn the mode OFF to return the single click to normal selection.
 5. **Search (Nominatim)** — type a place name in the search box and press **Enter** (or click **Search**) to search; typing alone sends nothing, because the Nominatim usage policy forbids client-side autocomplete; use the **arrow keys** to move through results, **Enter** to add the highlighted one, **Escape** to dismiss. Adding a result drops a waypoint with coordinates (and country, when empty) filled.
 
@@ -275,7 +275,7 @@ The viewer is designed to host as two files. Put `voyage-atlas.html` and `voyage
 
 ## Why self-contained HTML files?
 
-Each tool is a single HTML file with all its CSS and JavaScript inline, pulling only well-known libraries (Leaflet, PapaParse, SortableJS) from a CDN. No build step, no framework, no server. This means the exact same file runs identically whether opened from the local file system, hosted on a static server, or hand it to someone else. One file, one behavior, nothing to install. The optional icon assets and `site.webmanifest` that ship alongside add a favicon and home-screen icons but change none of this — they are cosmetic, and a copy hosted without them behaves exactly the same.
+Each tool is a single HTML file with all its CSS and JavaScript inline, pulling only well-known libraries (Leaflet, PapaParse, SortableJS) from a CDN, each pinned to an exact version with an integrity hash, so the browser refuses any file that differs from that version. No build step, no framework, no server. This means the exact same file runs identically whether opened from the local file system, hosted on a static server, or hand it to someone else. One file, one behavior, nothing to install. The optional icon assets and `site.webmanifest` that ship alongside add a favicon and home-screen icons but change none of this — they are cosmetic, and a copy hosted without them behaves exactly the same.
 
 The editor and viewer are deliberately *vanilla* (not React or another framework): a framework would need a build pipeline to host, defeating the "open it anywhere" goal.
 

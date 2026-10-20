@@ -6,6 +6,15 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.9] - 2026-10-20
+
+### Changed
+- **SortableJS 1.15.7**: The editor's drag-to-reorder library moves from 1.15.0 to 1.15.7, which fixes a possible browser freeze and several drag and text-selection problems. The options the editor uses (drag handle, animation, ghost and chosen classes, and the reorder event) are unchanged.
+- **PapaParse 5.7.0**: The editor's CSV library moves from 5.4.1 to 5.7.0, which drops its optional jQuery plugin and adds a download timeout the editor does not use. Imported and exported CSV files read and write as before, including quoted commas and quotes, Windows line endings, blank lines and a byte-order mark; a file with duplicate column names now has them renamed, with a note in the browser console. The Paste dialog now splits rows at tabs when the pasted text contains a tab and at commas otherwise, instead of guessing: 5.7.0 guesses differently, and a paste with rows of different lengths and a semicolon in its notes would have been split at the semicolons, so each line became one name with no coordinates. Setting the delimiter also keeps a name that contains a comma, such as "Horta, Faial", whole in a tab-separated paste.
+
+### Security
+- **Integrity Checks on Library Files**: Every library tag in both tools (Leaflet in both, SortableJS and PapaParse in the editor) now carries a sha512 integrity hash and `crossorigin="anonymous"`. The browser refuses to run a file from the CDN that differs from the pinned version, so a changed or tampered copy cannot run inside the tools. Leaflet stays at 1.9.4, its latest stable release.
+
 ## [v3.9.8] - 2026-10-20
 
 ### Changed
@@ -685,6 +694,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.9]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.8...v3.9.9
 [v3.9.8]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.7...v3.9.8
 [v3.9.7]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.6...v3.9.7
 [v3.9.6]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.5...v3.9.6

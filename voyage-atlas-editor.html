@@ -33,10 +33,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Voyage Atlas Editor">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.7/Sortable.min.js" integrity="sha512-ri8dokds012Oxz+iFzMs4KNJXVc+h7J1zq6unM1NTtzBLj4jD1R5BWiK6QycK0TdSdkt7zYcIcv6sUPhmYkbdQ==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.7.0/papaparse.min.js" integrity="sha512-wyNDcNr/iqpMDH6ud/BVoy2SoWXnBZ6Bnq3kZa5XXYq7HZ4l8/ECCZkauMv5HDScNBYSl99P1fkiNOo74zig1Q==" crossorigin="anonymous"></script>
 <style>
 /* ═══════════════════════════════════════════════════════════════
    THEME — matches the voyage-atlas viewer admiralty-chart aesthetic
@@ -657,7 +657,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.8</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.9</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -2880,7 +2880,11 @@ function doPaste() {
 
   const startIdx = ch.waypoints.length; // pasted rows are appended starting here
 
-  const parsed = Papa.parse(text, { header: false, skipEmptyLines: true });
+  // The delimiter is set rather than guessed: tab when the text holds one (rows copied from a
+  // spreadsheet), comma otherwise. PapaParse's guess favors the candidate with the most consistent
+  // field count, so a paste with rows of different lengths and a semicolon in its notes was split at
+  // the semicolons, turning each line into one name with no coordinates.
+  const parsed = Papa.parse(text, { header: false, skipEmptyLines: true, delimiter: text.includes('\t') ? '\t' : ',' });
   parsed.data.forEach(row => {
     const wpt = makeWaypoint();
     // Minimum: name, lat, lon

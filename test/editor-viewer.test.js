@@ -368,3 +368,20 @@ test(`${VIEWER}: past chapters with a route open from the legend and the drawer;
   legend[0].listeners[0]();
   assert.deepEqual(selected, [1]);
 });
+
+test(`${EDITOR}: the Paste dialog splits at tabs when the text holds one, otherwise at commas`, () => {
+  const seen = [];
+  const STATE = { chapters: [{ num: 1, waypoints: [] }] };
+  const area = { value: '' };
+  const { doPaste } = pick(editor, ['doPaste'], {
+    STATE, Papa: { parse: (text, opts) => { seen.push(opts.delimiter); return { data: [] }; } },
+    document: { getElementById: id => (id === 'paste-area' ? area : { classList: { remove() {} } }) },
+    closePasteModal() {}, noteFirstEdit() {}, announce() {}, renderChapterWaypoints() {}, updateMapChapter() {},
+    updateChapterCountries() {}, refreshChapterLinks() {}, forwardGeocodeWaypoint() {},
+  }, { lets: true, prelude: 'pasteTargetChNum = 1;' });
+  area.value = 'Lisbon\t38.70\t-9.14\nHorta\t38.53\t-28.63\ttrue\tfalse\tfalse\tPT\tFuel; water';
+  doPaste();
+  area.value = 'Lisbon,38.70,-9.14\nHorta,38.53,-28.63,true,false,false,PT,Fuel; water';
+  doPaste();
+  assert.deepEqual(seen, ['\t', ',']);
+});
