@@ -35,7 +35,7 @@ Thinking in chapters keeps a multi-year, tens-of-thousands-of-mile voyage compre
 
 Every chapter is a single ordered list of waypoints. Each waypoint is one of two kinds:
 
-1. **A named waypoint** — it has a name. It renders as a marker on the chart and counts in the named-waypoint total.
+1. **A named waypoint** — it has a name. It renders as a marker on the chart once it has coordinates, and counts in the header's Waypoints figure (see "What do the header stats show?").
 2. **A shaping vertex** — it has coordinates but *no name* (the row shows "(shaping vertex)" in the editor). It draws no marker in the viewer or the KML, and in the editor only a small gray dot in the selected chapter, so it can be dragged or deleted; it shapes the route line so the path bends correctly (around a cape, along a coast, through a strait). Its flags are ignored.
 
 The route line connects every point in order, named or not. Shaping vertices allow a realistic track without cluttering the chart with markers for every turn. To convert a marker into a shaping vertex, clear its name; to promote a shaping vertex to a marker, give it a name.
@@ -103,7 +103,7 @@ The built-in list holds 57 names; a few territories appear under more than one s
 
 ## What do the header stats show?
 
-Both tools head the chart with the voyage's totals: distance, nations, territories, the chapter count and the named-waypoint count. **Both tools compute these from the chapters and waypoints every time a file loads** — they are not stored in the file at all, so the headline numbers always match the drawn routes, even after a hand-edit of the voyage file (add a waypoint, change a country, remove a chapter), and the two tools always agree. Any override set in Voyage Settings replaces the computed figure. The editor's header and the viewer's each add a few touches of their own (Part 2, Header stats; Part 3, The chart's panels).
+Both tools head the chart with the voyage's totals: distance, nations, territories, the chapter count and the waypoint count: named waypoints with coordinates, with a handoff point shared by two chapters (both named, the gap between them rounding to 0 nm, as the 🔗 shows) counted once. **Both tools compute these from the chapters and waypoints every time a file loads** — they are not stored in the file at all, so the headline numbers always match the drawn routes, even after a hand-edit of the voyage file (add a waypoint, change a country, remove a chapter), and the two tools always agree. Any override set in Voyage Settings replaces the computed figure. The editor's header and the viewer's each add a few touches of their own (Part 2, Header stats; Part 3, The chart's panels).
 
 ## Light and dark themes
 
@@ -272,7 +272,7 @@ In the editor's header an override of 0 still shows its tile, marked with the �
 
 ## Header stats
 
-The editor header shows the live totals as tiles: distance, Nations, Territories, Chapters, Waypoints (named) and Vertices (shaping vertices). A tile with nothing to count is left out, except Chapters and an override, which shows even at 0. These recompute on every edit, using the same logic the viewer uses (see "What do the header stats show?" in Part 1). A ⚙ marker on a tile means that figure is a manual override set in Voyage Settings rather than the computed value. On a screen 900 px wide or less the editor hides the tiles, leaving room for the title and buttons (the viewer moves its stats into the Voyage Chapters drawer); each chapter's header still shows its distance.
+The editor header shows the live totals as tiles: distance, Nations, Territories, Chapters, Waypoints (named waypoints with coordinates, a shared handoff point counted once) and Vertices (shaping vertices). A tile with nothing to count is left out, except Chapters and an override, which shows even at 0. These recompute on every edit, using the same logic the viewer uses (see "What do the header stats show?" in Part 1). A ⚙ marker on a tile means that figure is a manual override set in Voyage Settings rather than the computed value. On a screen 900 px wide or less the editor hides the tiles, leaving room for the title and buttons (the viewer moves its stats into the Voyage Chapters drawer); each chapter's header still shows its distance.
 
 The footer carries, left to right, a link to this manual, a link to the project site and the version, which links to the repository; the stats are not repeated there.
 
@@ -327,7 +327,7 @@ In either case, where the opening view would leave any of the current chapter's 
 
 ## The chart's panels
 
-The on-chart panels sit in the four corners: zoom controls top-left, **Chart & Layers** top-right, the **Chapters** list bottom-left and the chapter's **detail panel** bottom-right. Clicking the title of Chart & Layers or of the Chapters list collapses or expands that panel. (On a phone, 640 px or less, Chart & Layers runs across the top of the chart below the zoom control, starting collapsed so it does not cover the chart; the Chapters list gives way to the ☰ drawer; and the detail panel becomes a sheet along the bottom.) On a short screen, such as a phone held sideways, Chart & Layers also starts collapsed and the detail panel stays below its collapsed bar; opened, Chart & Layers shows above the detail panel.
+The on-chart panels sit in the four corners: zoom controls top-left, **Chart & Layers** top-right, the **Chapters** list bottom-left and the chapter's **detail panel** bottom-right. Clicking the title of Chart & Layers or of the Chapters list collapses or expands that panel. (On a phone, 640 px or less, Chart & Layers runs across the top of the chart below the zoom control, starting collapsed so it does not cover the chart; the Chapters list gives way to the ☰ drawer; and the detail panel becomes a sheet along the bottom.) On a short screen, such as a phone held sideways, Chart & Layers also starts collapsed and the detail panel stays below its collapsed bar; opened, Chart & Layers shows above the detail panel. On a phone held sideways the detail sheet is at most 96 px tall, showing the chapter's When, name and distance with the rest scrolling, and it opens at its top for each chapter picked.
 
 The ☰ button at the left of the header opens the **Voyage Chapters** drawer: one row per chapter with its When, name and key destinations, and a "No route" badge on a chapter with nothing to chart. On a screen 900 px wide or less the drawer also holds, top to bottom, **Chart your own voyage →**, the header stats and **Load…**; on a phone it takes the place of the Chapters list. In the header, **Chart your own voyage →** opens the editor.
 

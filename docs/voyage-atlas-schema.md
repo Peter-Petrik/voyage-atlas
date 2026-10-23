@@ -74,7 +74,7 @@ The editor writes this on **Save**; the viewer loads it. This is the canonical i
 
 | Field | Type | Written | Description |
 |-------|------|---------|-------------|
-| `title` | string | only when set | The single user voyage title, shown in both tools' headers and page titles, used as the KML document's name and edited in the editor's Voyage Settings (Voyage Title). **Omitted entirely when blank**; no default is written to the file. |
+| `title` | string | only when set | The single user voyage title, shown in both tools' headers and page titles, used as the KML document's name and edited in the editor's Voyage Settings (Voyage Title). Read with spaces trimmed from its ends, so a title of only spaces is no title. **Omitted entirely when blank**; no default is written to the file. |
 | `version` | string | always | The data-model version, `"3.0"`. It changes only when the file format changes, not with each release of the tools. |
 | `generatedAt` | ISO 8601 datetime | always | When the file was written. |
 | `settings` | object | always | Override values and the display unit (below). |
@@ -140,7 +140,7 @@ The array is hand-authored: the editor neither draws nor edits zones, but keeps 
 
 These are **recomputed on load** by both tools from the chapters and waypoints, with overrides applied on top, and are **never written to the file**:
 
-1. The header stats, in the order the header shows them: total distance, nations, territories, chapter count and named-waypoint count (shaping vertices excluded; the editor also shows a count of shaping vertices).
+1. The header stats, in the order the header shows them: total distance, nations, territories, chapter count and waypoint count: named waypoints with coordinates, with a handoff point shared by two chapters (both named, the gap rounding to 0 nm) counted once. Shaping vertices are excluded; the editor also shows a count of them.
 2. Each chapter's distance — base (the haversine sum of the legs between its waypoints that have coordinates, in file order), padded (`base × padMultiplier`) and the approach leg (raw, no pad) from the predecessor chapter's last waypoint to this chapter's first.
 3. Each chapter's effective country list and the voyage-wide nations/territories split.
 
@@ -259,7 +259,7 @@ The editor exports KML for Google Earth and similar tools, as `voyage-route.kml`
 </Document>
 ```
 
-1. **Styles.** `#waypoint` (white circle), `#major` (yellow stars), `#decision` (red diamond), `#gateway` (green stars), using Google's hosted paddle icons.
+1. **Styles.** `#waypoint` (white circle), `#major` (yellow circle), `#decision` (red diamond), `#gateway` (green stars), using Google's hosted paddle icons.
 2. **Folders.** One per chapter, named `Ch N — Chapter Name`. The document is named for the voyage title. Control characters that XML 1.0 forbids (such as a vertical tab pasted from a spreadsheet cell) are dropped from every name, so the file stays well-formed.
 3. **Route.** One `LineString` Placemark per chapter, named for the chapter, through its waypoints that have coordinates, written when there are at least two; its color is the chapter's palette color (written in KML `aabbggrr` order).
 4. **Waypoints.** A `Point` Placemark per **named** waypoint with coordinates (shaping vertices are skipped).

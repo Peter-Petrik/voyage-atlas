@@ -763,7 +763,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.18</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.19</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -2625,7 +2625,7 @@ function readVoyage(data) {
   const paz = zones.filter(z => isObject(z) && Array.isArray(z.bounds) && z.bounds.length === 4 && z.bounds.every(Number.isFinite))
     .map(z => ({ ...(z.zone != null ? { zone: toText(z.zone) } : {}), bounds: z.bounds.slice() }));
   const zonesDropped = zones.length - paz.length + (data.paz != null && !Array.isArray(data.paz) ? 1 : 0);
-  return { title: toText(meta.title), settings: normalizeSettings(meta.settings), chapters, paz, renumbered, latitudesDropped,
+  return { title: toText(meta.title).trim(), settings: normalizeSettings(meta.settings), chapters, paz, renumbered, latitudesDropped,
     unreadableNumbers, zonesDropped, unknownFields: [...unknown], newerVersion: newerDataVersion(meta.version) ? toText(meta.version).trim() : null };
 }
 
@@ -2715,6 +2715,20 @@ function chapterNm(ch, chapters) {
   return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1)) + chapterApproachNm(ch, chapters);
 }
 
+// A chapter's first waypoint when it is the named point the chapter before ended on: a handoff the data
+// holds twice, as the last row of one chapter and the first of the next. Both are named and the gap
+// rounds to 0 nm, as the 🔗 indicator shows. The header's Waypoints figure counts it once. Shared
+// between editor and viewer (identical definitions in both).
+function sharedHandoff(ch, chapters) {
+  const prev = getPredecessorChapter(ch, chapters);
+  if (!prev) return null;
+  const before = (prev.waypoints || []).filter(hasCoord), here = (ch.waypoints || []).filter(hasCoord);
+  if (!before.length || !here.length) return null;
+  const last = before[before.length - 1], first = here[0];
+  if (!(last.name && last.name.trim()) || !(first.name && first.name.trim())) return null;
+  return chapterApproachNm(ch, chapters) === 0 ? first : null;
+}
+
 /* Shared hero-stat computation — identical in the editor and viewer (the state source is the only
    difference, passed in as `chapters`). Returns the raw figures both tools display; each tool applies
    its own presentation. `settings` supplies the manual overrides. */
@@ -2724,8 +2738,9 @@ function computeHeroStats(chapters, settings) {
   const countries = new Set();
   (chapters || []).forEach(ch => {
     totalNm += chapterNm(ch, chapters);
+    const handoff = sharedHandoff(ch, chapters);
     (ch.waypoints || []).forEach(w => {
-      if (w.name && w.name.trim()) namedWaypoints++;
+      if (w.name && w.name.trim()) { if (hasCoord(w) && w !== handoff) namedWaypoints++; }
       else if (hasCoord(w)) shapingVertices++;
     });
     chapterCountries(ch).forEach(c => { if (c) countries.add(c); });
@@ -4394,7 +4409,7 @@ function exportKML() {
 
   // Define styles
   kml += `<Style id="waypoint"><IconStyle><scale>0.8</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/wht-circle.png</href></Icon></IconStyle></Style>
-<Style id="major"><IconStyle><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/ylw-stars.png</href></Icon></IconStyle></Style>
+<Style id="major"><IconStyle><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/ylw-circle.png</href></Icon></IconStyle></Style>
 <Style id="decision"><IconStyle><scale>1.0</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/red-diamond.png</href></Icon></IconStyle></Style>
 <Style id="gateway"><IconStyle><scale>1.0</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/grn-stars.png</href></Icon></IconStyle></Style>
 `;
@@ -4437,7 +4452,7 @@ function exportKML() {
 // viewer (identical definitions in both).
 function esc(s) {
   if (s === null || s === undefined) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 // Escape text for a KML document. Control characters that XML 1.0 forbids even when escaped (such as

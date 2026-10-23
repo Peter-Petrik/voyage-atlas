@@ -252,7 +252,7 @@ test(`${VIEWER}: on a short screen Chart & Layers starts collapsed, and the deta
   assert.match(css, /#info \{[^}]*max-height: min\(60vh, calc\(100% - 220px\)\);/);
   assert.match(css, /@media \(min-width: 641px\) and \(max-height: 560px\) \{\s*#info \{ max-height: calc\(100% - 100px\); \}/);
   // A phone held sideways: the sheet stops below the collapsed bar (74 px down, about 40 px tall).
-  assert.match(css, /@media \(max-width: 640px\) and \(max-height: 560px\) \{\s*#info \{ max-height: calc\(100% - 136px\); \}/);
+  assert.match(css, /@media \(max-width: 640px\) and \(max-height: 560px\) \{\s*#info \{ max-height: min\(calc\(100% - 136px\), 96px\); \}/);
   assert.match(css, /@media \(max-width: 640px\) \{\s*#filter \{ top: 74px;/);
 });
 

@@ -6,6 +6,17 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`).
 Entries from v3.9.4 on use Title Case bullet labels; earlier entries keep their original form.
 
+## [v3.9.19] - 2026-10-23
+
+### Fixed
+- **The Waypoints Figure Counts Places**: The header's Waypoints figure, in both tools, now counts named waypoints with coordinates, with a handoff point shared by two chapters counted once. A voyage holds each such handoff twice, as the last row of one chapter and the first of the next, and the figure counted both, as it counted a named row not yet placed on the chart; the sample voyage now shows 61 waypoints, where it showed 63.
+- **A Phone Held Sideways Frames the Chapter**: On a phone held sideways (640 px wide or less), the viewer's detail sheet is now at most 96 px tall, showing the chapter's When, name and distance with the rest scrolling, so on a screen 340 px tall or more the band above it is taller and frames more of the selected chapter. At 640×400 the band was 8 to 42 px, depending on the chapter, and 32 of the sample voyage's 141 points sat under a panel; it is now 78 px, with none under. A screen 320 px tall is unchanged, as its sheet was already shorter than 96 px. The sheet also opens at its top for each chapter picked, where it kept the last chapter's scroll and could hide the When and name, and its × stays in view as it scrolls.
+- **A Title of Spaces Is No Title**: A voyage title of only spaces now reads as no title in both tools, and spaces at the ends of a title are trimmed on load. Previously the viewer showed "Voyage Atlas" for it while the editor kept the spaces, in its header and in the KML.
+- **Major Has Its Own KML Icon**: In the KML export, Major waypoints now take a yellow circle, matching the larger circle on the chart; they had a yellow star that read like Gateway's green star.
+
+### Security
+- **The Escaper Covers the Apostrophe**: The escaper both tools use for voyage text now also escapes `'`. No voyage text is written into a single-quoted attribute today, so this closes the gap before one could open.
+
 ## [v3.9.18] - 2026-10-23
 
 ### Changed
@@ -828,6 +839,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.19]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.18...v3.9.19
 [v3.9.18]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.17...v3.9.18
 [v3.9.17]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.16...v3.9.17
 [v3.9.16]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.15...v3.9.16

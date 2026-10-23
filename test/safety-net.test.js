@@ -62,7 +62,7 @@ for (const tool of tools) {
     const { readVoyage, computeHeroStats, normalizeSettings } = pick(tool, ['readVoyage', 'computeHeroStats', 'normalizeSettings']);
     const v = readVoyage(copy(SAMPLE));
     const h = computeHeroStats(v.chapters, normalizeSettings(SAMPLE.meta.settings));
-    assert.deepEqual([h.totalNm, h.nations, h.territories, h.chapters, h.namedWaypoints, h.shapingVertices], [9070, 9, 3, 5, 63, 78]);
+    assert.deepEqual([h.totalNm, h.nations, h.territories, h.chapters, h.namedWaypoints, h.shapingVertices], [9070, 9, 3, 5, 61, 78]);
   });
 }
 
