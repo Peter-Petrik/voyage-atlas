@@ -16,6 +16,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voyage Atlas — Editor</title>
 <meta name="description" content="Plot a voyage on an interactive nautical chart — group waypoints into regional chapters, draw the routes, and export when ready.">
+<!-- Self-hosting: the canonical, og:url, og:image and twitter:image addresses name the published
+     site. A self-hosted copy points them at its own address; the preview image is
+     docs/voyage-atlas-preview.webp in the repository. -->
 <link rel="canonical" href="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Voyage Atlas">
@@ -281,6 +284,11 @@ html, body {
 .leaflet-control-attribution { background: var(--panel) !important; color: var(--muted) !important; font-size: 9px !important; }
 .leaflet-control-attribution a { color: var(--accent) !important; }
 /* end shared:leaflet */
+/* shared:routekey — a sample of a route line, solid or dashed as planned, identical in both tools.
+   The viewer's Chart & Layers key and the editor's era chips show it. */
+.route-sample { display: inline-block; width: 16px; height: 2px; background: currentColor; vertical-align: middle; }
+.route-sample.planned { background: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 8px); }
+/* end shared:routekey */
 
 #map-status {
   display: flex; align-items: center; gap: 10px;
@@ -345,6 +353,7 @@ html, body {
 .ch-era.current { background: linear-gradient(rgba(45,122,58,0.04), rgba(45,122,58,0.04)), var(--panel-solid); color: var(--success); }
 body.dark .ch-era.current { background: linear-gradient(rgba(76,175,106,0.15), rgba(76,175,106,0.15)), var(--panel-solid); }
 .ch-era.future { background: rgba(107,123,140,0.12); color: var(--muted); }
+.ch-era .route-sample { width: 12px; margin-right: 4px; vertical-align: 2px; }
 .ch-nm { font-size: 10px; color: var(--muted); flex-shrink: 0; white-space: nowrap; }
 .ch-sync {
   flex-shrink: 0; font-size: 11px; line-height: 1;
@@ -763,7 +772,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.19</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas/releases/tag/v3.10.0" target="_blank" rel="noopener">Voyage Atlas Editor v3.10.0</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -1044,8 +1053,18 @@ const WORLD_COPIES = [-360, 0, 360];
 // the color. Shared between editor and viewer (identical definitions in both).
 const CASING_OPACITY = 0.6;
 function casingStyle(style, color) {
-  return { color, weight: style.weight + 2, opacity: style.opacity >= 0.5 ? style.opacity * CASING_OPACITY : 0, dashArray: style.dashArray || null, interactive: false };
+  return { color, weight: style.weight + 2, opacity: style.opacity >= 0.5 ? style.opacity * CASING_OPACITY : 0, dashArray: style.dashArray || null, lineCap: style.lineCap || 'round', interactive: false };
 }
+// A planned chapter's route (era future) is dashed, as a planned track is on a paper chart; a past or
+// current chapter's is solid. Flat (butt) ends keep the gaps open on the wider selected line, where
+// round ends would close them. A dashed line answers the pointer only on its dashes, so a dashed route
+// takes its clicks and hovers on an invisible solid line drawn over it (ROUTE_HIT_STYLE), along its
+// whole length. Shared between editor and viewer (identical definitions in both).
+const PLANNED_DASH = '8 6';
+function routeDash(ch) {
+  return ch.era === 'future' ? { dashArray: PLANNED_DASH, lineCap: 'butt' } : { dashArray: null, lineCap: 'round' };
+}
+const ROUTE_HIT_STYLE = { weight: 8, opacity: 0 };
 const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlngs;
 // Canonicalize a longitude to [-180,180). Map clicks/drags near the dateline can return values
 // outside that range (e.g. +200 instead of -160), and some files hold 0-360 longitudes;
@@ -1262,27 +1281,34 @@ function updateMapChapter(chNum) {
   // continuous at any map pan/center (parity with the viewer).
   let line = null;
   if (coords.length >= 2) {
+    const dash = routeDash(ch);
     const lineOpts = {
       color: color,
       weight: isActive ? 3 : 1.5,
       opacity: isActive ? 0.9 : 0.35,
-      dashArray: isActive ? null : '4 4',
+      // Dashed for a planned chapter; an inactive chapter is told apart by its thinner, fainter line.
+      ...dash,
       // Active route stays non-interactive so it never intercepts the active chapter's marker
       // clicks (B2). Inactive routes are clickable to activate the chapter (item 5); the
-      // active-last draw order keeps every chapter's markers above any route line.
-      interactive: !isActive
+      // active-last draw order keeps every chapter's markers above any route line. An inactive dashed
+      // route takes its clicks on an invisible solid hit line over it, so its gaps answer too.
+      interactive: !isActive && !dash.dashArray
     };
     // Each route is drawn over its casing; the casings go first, so none covers this chapter's route.
-    const parts = [], under = [];
+    const parts = [], under = [], hits = [];
     splitAtDateline(coords).forEach(seg => {
       WORLD_COPIES.forEach(off => {
         under.push(L.polyline(shiftLon(seg, off), casingStyle(lineOpts, ink)));
         const pl = L.polyline(shiftLon(seg, off), lineOpts);
-        if (!isActive) pl.on('click', function(e) { L.DomEvent.stopPropagation(e); selectChapter(chNum, true); });
+        if (!isActive) {
+          const hit = dash.dashArray ? L.polyline(shiftLon(seg, off), ROUTE_HIT_STYLE) : pl;
+          if (hit !== pl) hits.push(hit);
+          hit.on('click', function(e) { L.DomEvent.stopPropagation(e); selectChapter(chNum, true); });
+        }
         parts.push(pl);
       });
     });
-    line = L.layerGroup(under.concat(parts)).addTo(map);
+    line = L.layerGroup(under.concat(parts, hits)).addTo(map);
   }
 
   // Waypoint markers (only named ones, or all for active chapter). Drawn in all three world copies
@@ -3082,7 +3108,7 @@ function createChapterElement(ch) {
       <div class="ch-title">
         <span class="ch-name" title="${esc(ch.name)}"><bdi>${esc(ch.name)}</bdi></span>
         <span class="ch-info">
-          <span class="ch-era ${ch.era}">${ch.era}</span>
+          <span class="ch-era ${ch.era}">${eraChip(ch.era)}</span>
           ${syncEl}
           <span class="ch-nm">${fmtDist(nm, distUnit())}</span>
         </span>
@@ -3202,10 +3228,12 @@ function updateMeta(chNum, field, value) {
   if (el) {
     el.querySelector('.ch-name').textContent = ch.name;
     el.querySelector('.ch-name').title = ch.name;
-    el.querySelector('.ch-era').textContent = ch.era;
+    el.querySelector('.ch-era').innerHTML = eraChip(ch.era);
     el.querySelector('.ch-era').className = `ch-era ${ch.era}`;
     el.querySelector('.ch-nm').textContent = fmtDist(chapterNm(ch, STATE.chapters), distUnit());
   }
+  // The era sets whether the route is dashed, so a change redraws the chart.
+  if (field === 'era') updateMapAll();
   updateHeroStats();
 }
 
@@ -3516,7 +3544,13 @@ function selectChapter(chNum, skipFit) {
   renderStatus();
 }
 
-// The status line for the current state: the active chapter with its number, name, waypoint count
+// The inside of a chapter header's era chip: a sample of the chapter's route line, dashed when
+// planned, then the era.
+function eraChip(era) {
+  return `<span class="route-sample${era === 'future' ? ' planned' : ''}"></span>${esc(era)}`;
+}
+
+// The status line for the current state: the active chapter with its number, name, row count
 // and distance, or the prompt to pick one. Drawn with the header stats, so it follows every rename,
 // delete, reorder and add. A lookup run writes its own progress here, so the line is left to it while
 // lookups are pending.
@@ -3526,7 +3560,7 @@ function renderStatus() {
   if (!el) return;
   const ch = activeChapterNum !== null ? getChapter(activeChapterNum) : null;
   el.innerHTML = ch
-    ? `<span class="status-active">Chapter ${ch.num}: ${esc(ch.name)}</span> · ${ch.waypoints.length} ${ch.waypoints.length === 1 ? 'waypoint' : 'waypoints'} · ${fmtDist(chapterNm(ch, STATE.chapters), distUnit())}`
+    ? `<span class="status-active">Chapter ${ch.num}: ${esc(ch.name)}</span> · ${ch.waypoints.length} ${ch.waypoints.length === 1 ? 'row' : 'rows'} · ${fmtDist(chapterNm(ch, STATE.chapters), distUnit())}`
     : idleStatus();
 }
 

@@ -16,6 +16,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voyage Atlas</title>
 <meta name="description" content="An interactive nautical chart of a voyage, charted as a sequence of regional chapters. Pan the route, click through waypoints, and follow the passage from start to landfall.">
+<!-- Self-hosting: the canonical, og:url, og:image and twitter:image addresses name the published
+     site. A self-hosted copy points them at its own address; the preview image is
+     docs/voyage-atlas-preview.webp in the repository. -->
 <link rel="canonical" href="https://sailingamazinggrace.com/resources/voyage-atlas/viewer/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Voyage Atlas">
@@ -201,6 +204,9 @@
   #filter.collapsed .panel-h { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
   .toggle { display: flex; align-items: center; gap: 8px; padding: 4px 2px; cursor: pointer; font-size: 11px; color: var(--ink); }
   .toggle input { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
+  /* The route key, under the Routes toggle: solid for past and current chapters, dashed for planned. */
+  .route-key { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 0 2px 4px 23px; font-size: 10px; color: var(--muted); }
+  .route-key .route-sample { margin-right: 5px; }
 
   #legend { bottom: 30px; left: 12px; padding: 10px 12px; width: 210px; max-height: 42vh; display: flex; flex-direction: column; }
   #legend .panel-h { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
@@ -332,6 +338,11 @@
   .leaflet-control-attribution { background: var(--panel) !important; color: var(--muted) !important; font-size: 9px !important; }
   .leaflet-control-attribution a { color: var(--accent) !important; }
   /* end shared:leaflet */
+  /* shared:routekey — a sample of a route line, solid or dashed as planned, identical in both tools.
+     The viewer's Chart & Layers key and the editor's era chips show it. */
+  .route-sample { display: inline-block; width: 16px; height: 2px; background: currentColor; vertical-align: middle; }
+  .route-sample.planned { background: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 8px); }
+  /* end shared:routekey */
   /* Viewer popup content. */
   .pop-name { font-family: 'Fraunces', serif; color: var(--accent); font-size: 13px; }
   .pop-when { color: var(--muted); font-size: 10px; margin-top: 2px; }
@@ -488,6 +499,7 @@
   </div>
   <div class="panel-body">
     <label class="toggle"><input type="checkbox" id="t-routes" checked> Routes</label>
+    <div class="route-key"><span><span class="route-sample"></span> Sailed or under way</span><span><span class="route-sample planned"></span> Planned</span></div>
     <label class="toggle"><input type="checkbox" id="t-wpts" checked> Waypoints</label>
     <label class="toggle"><input type="checkbox" id="t-paz"> Avoidance zones</label>
     <label class="toggle"><input type="checkbox" id="t-dec"> Decision points</label>
@@ -534,7 +546,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.19</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas/releases/tag/v3.10.0" target="_blank" rel="noopener">Voyage Atlas v3.10.0</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -547,6 +559,10 @@
    or sibling folder is fine) or a full address on the same host; an address on another site is
    refused. A ?data=path query parameter overrides this for a single visit, under the same rule. */
 const URL_VOYAGE_DATA = 'voyage-data.json';
+
+/* The editor that the "Chart your own voyage" links open, in the header and the Voyage Chapters
+   drawer. A self-hosted copy that offers its own editor points this at it. */
+const URL_EDITOR = 'https://sailingamazinggrace.com/resources/voyage-atlas/editor/';
 
 /* Day and night basemap tile layers (CARTO Positron and Dark Matter). If these are changed to
    another provider, update the attribution string on the tile layers below to match that
@@ -562,6 +578,10 @@ const URL_TILE_DARK = 'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x
    inline script that runs before this one) takes precedence over this value. */
 const TILE_KEY = '';
 /* ───────────────────────────────────────────────────────── */
+
+// The "Chart your own voyage" links open the editor named in the configuration block. Set here, first,
+// so they follow it even when a library fails to load and the rest of the script stops.
+document.querySelectorAll('#head-cta, .dr-of-cta').forEach(a => { a.href = URL_EDITOR; });
 
 /* Basemap tile URL with the API key appended, when one is set: the key supplied by the hosting
    server at run time (window.VOYAGE_ATLAS_CONFIG.tileKey) first, then TILE_KEY from the
@@ -762,8 +782,18 @@ const WORLD_COPIES = [-360, 0, 360];
 // the color. Shared between editor and viewer (identical definitions in both).
 const CASING_OPACITY = 0.6;
 function casingStyle(style, color) {
-  return { color, weight: style.weight + 2, opacity: style.opacity >= 0.5 ? style.opacity * CASING_OPACITY : 0, dashArray: style.dashArray || null, interactive: false };
+  return { color, weight: style.weight + 2, opacity: style.opacity >= 0.5 ? style.opacity * CASING_OPACITY : 0, dashArray: style.dashArray || null, lineCap: style.lineCap || 'round', interactive: false };
 }
+// A planned chapter's route (era future) is dashed, as a planned track is on a paper chart; a past or
+// current chapter's is solid. Flat (butt) ends keep the gaps open on the wider selected line, where
+// round ends would close them. A dashed line answers the pointer only on its dashes, so a dashed route
+// takes its clicks and hovers on an invisible solid line drawn over it (ROUTE_HIT_STYLE), along its
+// whole length. Shared between editor and viewer (identical definitions in both).
+const PLANNED_DASH = '8 6';
+function routeDash(ch) {
+  return ch.era === 'future' ? { dashArray: PLANNED_DASH, lineCap: 'butt' } : { dashArray: null, lineCap: 'round' };
+}
+const ROUTE_HIT_STYLE = { weight: 8, opacity: 0 };
 const shiftLon = (latlngs, d) => d ? latlngs.map(p => [p[0], p[1] + d]) : latlngs;
 // Canonicalize a longitude to [-180,180). Map clicks/drags near the dateline can return values
 // outside that range (e.g. +200 instead of -160), and some files hold 0-360 longitudes;
@@ -1305,6 +1335,7 @@ function chapterCountries(ch) {
 }
 let polylines = {};
 let casings = {}; // per-chapter casing lines under the routes, styled with them
+let routeHits = {}; // per-chapter invisible hit lines over dashed routes, raised with them
 let wptMarkers = {}; // per-chapter waypoint circle markers, so selection can dim non-selected dots
 let shapeMarkers = {}; // per-chapter Decision and Gateway markers, dimmed with the dots
 let activeNum = null;
@@ -1413,6 +1444,7 @@ function loadVoyageData(raw) {
   document.getElementById('drawer-body').innerHTML = '';
   polylines = {};
   casings = {};
+  routeHits = {};
   wptMarkers = {};
   shapeMarkers = {};
   activeNum = null;
@@ -1439,19 +1471,24 @@ function loadVoyageData(raw) {
   DATA.chapters.forEach(ch => {
     casings[ch.num] = [];
     (ch.routes || []).forEach(coords => splitAtDateline(coords).forEach(seg => WORLD_COPIES.forEach(off => {
-      casings[ch.num].push(L.polyline(shiftLon(seg, off), casingStyle({ weight: 3, opacity: 0.85 }, ink)).addTo(routesLayer));
+      casings[ch.num].push(L.polyline(shiftLon(seg, off), casingStyle({ weight: 3, opacity: 0.85, ...routeDash(ch) }, ink)).addTo(routesLayer));
     })));
   });
   DATA.chapters.forEach(ch => {
     const color = chapterColor(ch.num);
     polylines[ch.num] = [];
+    routeHits[ch.num] = [];
     (ch.routes || []).forEach(coords => {
       splitAtDateline(coords).forEach(seg => {
         WORLD_COPIES.forEach(off => {
-          const poly = L.polyline(shiftLon(seg, off), { color, weight: 3, opacity: 0.85, smoothFactor: 1 }).addTo(routesLayer);
-          poly.on('click', () => selectChapter(ch.num));
-          poly.on('mouseover', () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: activeNum !== null ? 2 : 5, opacity: activeNum !== null ? 0.25 : 1 }); });
-          poly.on('mouseout',  () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: activeNum !== null ? 2 : 3, opacity: activeNum !== null ? 0.25 : 0.85 }); });
+          const dash = routeDash(ch);
+          const poly = L.polyline(shiftLon(seg, off), { color, weight: 3, opacity: 0.85, smoothFactor: 1, ...dash, interactive: !dash.dashArray }).addTo(routesLayer);
+          // A dashed route takes the pointer on its invisible solid hit line, so its gaps answer too.
+          const hit = dash.dashArray ? L.polyline(shiftLon(seg, off), { ...ROUTE_HIT_STYLE, smoothFactor: 1 }).addTo(routesLayer) : poly;
+          if (hit !== poly) routeHits[ch.num].push(hit);
+          hit.on('click', () => selectChapter(ch.num));
+          hit.on('mouseover', () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: activeNum !== null ? 2 : 5, opacity: activeNum !== null ? 0.25 : 1 }); });
+          hit.on('mouseout',  () => { if (activeNum !== ch.num) setChapterStyle(ch.num, { weight: activeNum !== null ? 2 : 3, opacity: activeNum !== null ? 0.25 : 0.85 }); });
           polylines[ch.num].push(poly);
         });
       });
@@ -1953,6 +1990,7 @@ function raiseChapterMarkers(num) {
 function raiseChapterRoute(num) {
   (casings[num]||[]).forEach(c => c.bringToFront());
   (polylines[num]||[]).forEach(p => p.bringToFront());
+  (routeHits[num]||[]).forEach(h => h.bringToFront());
   raiseChapterMarkers(num);
 }
 // Turning the Routes layer back on draws the routes over every dot, in the order they were made, so

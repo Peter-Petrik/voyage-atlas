@@ -25,7 +25,7 @@ function sharedBlocks(tool) {
 
 test('the shared style blocks are identical in both tools', () => {
   const e = sharedBlocks(editor), v = sharedBlocks(viewer);
-  assert.deepEqual(Object.keys(e).sort(), ['chooser', 'footer', 'header', 'leaflet', 'notice', 'theme']);
+  assert.deepEqual(Object.keys(e).sort(), ['chooser', 'footer', 'header', 'leaflet', 'notice', 'routekey', 'theme']);
   assert.deepEqual(Object.keys(v).sort(), Object.keys(e).sort());
   for (const name of Object.keys(e)) assert.equal(e[name], v[name], `shared:${name}`);
 });
@@ -159,10 +159,10 @@ test(`${EDITOR}: Rapid click ON, a danger hover, placeholders, the CURRENT chip 
 for (const tool of tools) {
   test(`${tool.name}: a route's casing is 2 px wider, at a share of its opacity, dashed with it, and not clickable`, () => {
     const { casingStyle, CASING_OPACITY } = pick(tool, ['casingStyle', 'CASING_OPACITY']);
-    assert.deepEqual(casingStyle({ weight: 3, opacity: 0.85 }, '#1d2b3a'), { color: '#1d2b3a', weight: 5, opacity: 0.85 * CASING_OPACITY, dashArray: null, interactive: false });
-    assert.equal(casingStyle({ weight: 3, opacity: 0.9, dashArray: '4 4' }, '#eaf0f7').dashArray, '4 4');
+    assert.deepEqual(casingStyle({ weight: 3, opacity: 0.85 }, '#1d2b3a'), { color: '#1d2b3a', weight: 5, opacity: 0.85 * CASING_OPACITY, dashArray: null, lineCap: 'round', interactive: false });
+    assert.equal(casingStyle({ weight: 3, opacity: 0.9, dashArray: '8 6' }, '#eaf0f7').dashArray, '8 6');
     // A faded route (the editor's inactive chapters, the viewer's dimmed ones) gets no casing.
-    assert.equal(casingStyle({ weight: 1.5, opacity: 0.35, dashArray: '4 4' }, '#eaf0f7').opacity, 0);
+    assert.equal(casingStyle({ weight: 1.5, opacity: 0.35, dashArray: '8 6' }, '#eaf0f7').opacity, 0);
     assert.equal(casingStyle({ weight: 2, opacity: 0.25 }, '#eaf0f7').opacity, 0);
   });
 }
@@ -193,14 +193,14 @@ test(`${VIEWER}: every casing is drawn before the routes, styled with its route,
   const order = [];
   const item = (k, n) => ({ bringToFront: () => order.push(`${k}${n}`) });
   const { raiseChapterRoute } = pick(viewer, ['raiseChapterRoute'], {
-    casings: { 3: [item('casing', 3)] }, polylines: { 3: [item('route', 3)] }, raiseChapterMarkers: n => order.push(`dots${n}`) });
+    casings: { 3: [item('casing', 3)] }, polylines: { 3: [item('route', 3)] }, routeHits: { 3: [item('hit', 3)] }, raiseChapterMarkers: n => order.push(`dots${n}`) });
   raiseChapterRoute(3);
-  assert.deepEqual(order, ['casing3', 'route3', 'dots3']);
+  assert.deepEqual(order, ['casing3', 'route3', 'hit3', 'dots3']);
 });
 
 test(`${EDITOR}: each route is drawn over its casing`, () => {
   assert.match(editor.defs.updateMapChapter, /under\.push\(L\.polyline\(shiftLon\(seg, off\), casingStyle\(lineOpts, ink\)\)\);/);
-  assert.match(editor.defs.updateMapChapter, /line = L\.layerGroup\(under\.concat\(parts\)\)\.addTo\(map\);/);
+  assert.match(editor.defs.updateMapChapter, /line = L\.layerGroup\(under\.concat\(parts, hits\)\)\.addTo\(map\);/);
   assert.match(editor.defs.updateMapChapter, /const ink = getComputedStyle\(document\.body\)\.getPropertyValue\('--ink'\)\.trim\(\)/);
 });
 

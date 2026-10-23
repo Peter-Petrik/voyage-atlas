@@ -99,7 +99,7 @@ Unset overrides are **omitted** from the file (not written as `null`); the loade
 | `num` | integer | always | Chapter number (1-indexed, sequential). |
 | `name` | string | always | Display name (e.g. "Med Westward"). |
 | `when` | string | always | When (season window), as free text. The editor's When dropdowns write "Mon YYYY – Mon YYYY" with an en dash, leave out a part left blank ("May – Sep 2028") and write a season that starts and ends on the same month and year once ("May 2034"); the FAQ describes the forms read back. |
-| `era` | enum | always | One of `past`, `current`, `future`. |
+| `era` | enum | always | One of `past`, `current`, `future`. Both tools draw a `future` chapter's route dashed and the others solid. |
 | `notes` | string | always | Free-form chapter notes (routing, bail-out, summary). Empty string when blank. |
 | `countriesOverride` | string[] | only when set and non-empty | Per-chapter country override that replaces the auto-derived list. **Omitted when empty**, in which case the chapter derives its countries from its waypoints. |
 | `keyDestinations` | string[] | always | Key destinations for the chapter. |
@@ -134,7 +134,7 @@ An optional top-level `paz` array holds permanent avoidance zones, which the vie
 | `zone` | string | Zone display name. |
 | `bounds` | number[4] | `[south, west, north, east]`, decimal degrees. A zone across the dateline has a `west` greater than its `east` (`[-20, 170, -10, -170]` spans 20° across 180°). |
 
-The array is hand-authored: the editor neither draws nor edits zones, but keeps them, so a voyage loaded and saved again keeps each zone's `zone` name (when it has one) and `bounds`; any other field of a zone is named in the status bar and not kept. The array is written only when it holds a zone. Both tools read a zone only when `bounds` holds four finite numbers, written as numbers, not text; any other zone, or a `paz` that is not a list, is left out and counted in the editor's status bar. Authoring zones in the editor, as polygons, is backlog item #43.
+The array is hand-authored: the editor neither draws nor edits zones, but keeps them, so a voyage loaded and saved again keeps each zone's `zone` name (when it has one) and `bounds`; any other field of a zone is named in the status bar and not kept. The array is written only when it holds a zone. Both tools read a zone only when `bounds` holds four finite numbers, written as numbers, not text; any other zone, or a `paz` that is not a list, is left out and counted in the editor's status bar. Authoring zones in the editor, as polygons, was backlog item #43, closed in October 2026.
 
 ### Computed figures — never stored
 
@@ -181,7 +181,7 @@ These rules apply to the voyage file and to every import and export.
 
 ### Route line construction
 
-A chapter's route line connects its waypoints that have coordinates, shaping vertices included, in the order they appear in the `waypoints` array. The `order` field is not read; each save renumbers it from the array. Dateline-crossing legs are split at the ±180° antimeridian and drawn across three world copies, so a crossing route stays continuous at any chart pan. A chapter with fewer than two waypoints that have coordinates has no route line. A single named point is still drawn as a marker, and in the viewer the chapter opens framed on it; a chapter with no line and no named point shows "No route" in the viewer.
+A chapter's route line connects its waypoints that have coordinates, shaping vertices included, in the order they appear in the `waypoints` array. The `order` field is not read; each save renumbers it from the array. Dateline-crossing legs are split at the ±180° antimeridian and drawn across three world copies, so a crossing route stays continuous at any chart pan. A chapter whose `era` is `future` is drawn dashed, in both tools; a past or current chapter is solid. A chapter with fewer than two waypoints that have coordinates has no route line. A single named point is still drawn as a marker, and in the viewer the chapter opens framed on it; a chapter with no line and no named point shows "No route" in the viewer.
 
 ### Chapter endpoint convention
 
@@ -269,9 +269,9 @@ The editor exports KML for Google Earth and similar tools, as `voyage-route.kml`
 
 ---
 
-## Future: `zones.csv` (not yet implemented)
+## `zones.csv` (not implemented)
 
-Planned for permanent avoidance zones, restricted areas or user-defined regions. Avoidance zones are read today from the voyage file's hand-authored `paz` array (see above). The columns below predate backlog item #43, which moves zone authoring to polygons, so this layout is provisional.
+A proposed layout for permanent avoidance zones, restricted areas or user-defined regions, kept with backlog item #43, which was closed in October 2026. Avoidance zones are read today from the voyage file's hand-authored `paz` array (see above). The columns below predate #43's move of zone authoring to polygons, so this layout is provisional.
 
 | Column | Type | Description |
 |--------|------|-------------|

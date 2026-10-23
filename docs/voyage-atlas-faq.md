@@ -169,7 +169,7 @@ Each chapter header holds, left to right, the ≡ drag handle, the chapter numbe
 Open a chapter's metadata panel (the 📋 toggle, or double-click the chapter header, which also selects the chapter) to edit, in the order the form shows them:
 
 1. **Name** — the chapter's display name.
-2. **Era** — Past, Current or Future (a new chapter starts as Future). The era shows as a chip in the chapter header; in the viewer a past chapter is dimmed in the Chapters list and the Voyage Chapters drawer, and the opening view keeps the current chapter in sight (see Loading data, Part 3).
+2. **Era** — Past, Current or Future (a new chapter starts as Future). The era shows as a chip in the chapter header, with a sample of the route line. On the chart, in both tools, a future chapter's route is dashed and a past or current chapter's is solid. In the viewer a past chapter is dimmed in the Chapters list and the Voyage Chapters drawer, and the opening view keeps the current chapter in sight (see Loading data, Part 3).
 3. **When** — the season window, set with four dropdowns: start month and year, then end month and year. Choosing an end month with no end year fills the year in: the start's, or the next one when the end month comes before the start month. It is written as a range with an en dash ("May 2028 – Sep 2028", or "May – Sep 2028" when the start year is left blank); a season that starts and ends on the same month and year, or the same year with no months, is written once ("May 2034", "2034"). The years offered run from ten years before the current year to fifteen after it, widened to any year from 1900 to 2199 the voyage's chapters already use, so an earlier chapter keeps its year.
 4. **Pad Multiplier** — the distance multiplier for this chapter (see distance calculation, Part 1). It is 1 or more, since padding adds sailing distance; a smaller value is refused with a note in the status bar, and a blank field resets it to 1.2. A value below 1 in a voyage file or CSV reads as 1.2.
 5. **Blog URL** — an optional link to the blog posts covering this chapter, shown in the viewer's detail panel as "Read the posts →". Only a full `http` or `https` address is shown as a link; an address typed without one ("www.example.com/blog") gets `https://` added when the field is left.
@@ -274,7 +274,7 @@ In the editor's header an override of 0 still shows its tile, marked with the �
 
 The editor header shows the live totals as tiles: distance, Nations, Territories, Chapters, Waypoints (named waypoints with coordinates, a shared handoff point counted once) and Vertices (shaping vertices). A tile with nothing to count is left out, except Chapters and an override, which shows even at 0. These recompute on every edit, using the same logic the viewer uses (see "What do the header stats show?" in Part 1). A ⚙ marker on a tile means that figure is a manual override set in Voyage Settings rather than the computed value. On a screen 900 px wide or less the editor hides the tiles, leaving room for the title and buttons (the viewer moves its stats into the Voyage Chapters drawer); each chapter's header still shows its distance.
 
-The footer carries, left to right, a link to this manual, a link to the project site and the version, which links to the repository; the stats are not repeated there.
+The footer carries, left to right, a link to this manual, a link to the project site and the version, which links to that version's release notes on GitHub; the stats are not repeated there.
 
 ## Saving and exporting
 
@@ -353,7 +353,7 @@ Clearing the selection — with the detail panel's ×, Escape or a click on empt
 
 Five layers can be switched on and off:
 
-1. **Routes** — the chapter route lines (on by default).
+1. **Routes** — the chapter route lines (on by default): solid for past and current chapters, dashed for planned ones, as the key under the toggle shows.
 2. **Waypoints** — the waypoint markers (on by default).
 3. **Avoidance zones** — piracy/avoidance-zone rectangles, if present (off by default).
 4. **Decision points** — diamonds at decision waypoints (off by default).
@@ -364,6 +364,10 @@ The Decision and Gateway layers add their shapes *on top of* the normal waypoint
 ## Self-hosting
 
 Put `voyage-atlas.html` and `voyage-data.json` (and `voyage-atlas-editor.html`, when the editor is offered too) in the same directory on any static web host, or serve the folder locally over HTTP, and the chart loads automatically — no build step, no server code, no database. (Opened straight from disk as a `file://` page, the viewer cannot read the voyage file beside it, so it opens to its chooser, with a note saying why, where a voyage file can be picked instead.) To update the published chart, replace `voyage-data.json` with a fresh export. The repository also ships optional icon assets and `site.webmanifest` for the favicon and home-screen icons; they sit alongside the HTML when wanted and can be omitted without affecting how the tool runs.
+
+### Pointing the links at a self-hosted copy
+
+The viewer's "Chart your own voyage" links, in the header and the Voyage Chapters drawer, take their address from `URL_EDITOR` in the viewer's configuration block, the published editor by default; a copy that offers its own editor points it there. The canonical, `og:url`, `og:image` and `twitter:image` tags at the top of each page also name the published site, under a comment that marks them; a self-hosted copy points them at its own address, serving the preview image from its copy of `docs/voyage-atlas-preview.webp`.
 
 ### Changing the basemap or the geocoder
 
@@ -408,4 +412,4 @@ It's the framework atlas: the charted intentions to navigate by, kept deliberate
 
 ---
 
-*Companion documents: [`voyage-atlas-schema.md`](voyage-atlas-schema.md) (the data format), [`voyage-atlas-enhancements.md`](voyage-atlas-enhancements.md) (planned features) and the [changelog](../CHANGELOG.md) (version history).*
+*Companion documents: [`voyage-atlas-schema.md`](voyage-atlas-schema.md) (the data format), [`voyage-atlas-enhancements.md`](voyage-atlas-enhancements.md) (planned features, and closed ideas with the reason for each) and the [changelog](../CHANGELOG.md) (version history).*

@@ -6,6 +6,18 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`).
 Entries from v3.9.4 on use Title Case bullet labels; earlier entries keep their original form.
 
+## [v3.10.0] - 2026-10-23
+
+### Added
+- **Planned Chapters Are Dashed on the Chart**: In both tools, a future chapter's route is now drawn dashed, as a planned track is on a paper chart, and a past or current chapter's stays solid; every chapter keeps its palette color. The viewer's Chart & Layers panel carries a key under Routes, and each era chip in the editor's chapter headers shows the matching line. The dashes have flat ends, so the gaps stay open on the wider line of a selected chapter, and a planned route still answers a click or hover along its whole length, gaps included.
+- **The Footer Version Links to Its Release**: The version in each tool's footer now opens that version's GitHub Release, with its notes, where it opened the repository's front page.
+- **A Self-Hosting Setting for the Editor Link**: The viewer's "Chart your own voyage" links, in the header and the Voyage Chapters drawer, now take their address from `URL_EDITOR` in the configuration block, so a self-hosted copy can point them at its own editor; the default is still the published editor. The canonical, `og:url`, `og:image` and `twitter:image` tags in each page's head carry a comment marking them for self-hosters.
+
+### Changed
+- **Inactive Chapters Are Faded, Not Dashed, in the Editor**: A chapter other than the selected one is now told apart by its thinner, fainter line alone, so a dash means a planned chapter in both tools.
+- **The Status Line Counts Rows**: The editor's status line now gives the selected chapter's rows ("8 rows · 1,991 nm"), as the waypoint table counts them, where it called them waypoints; the header's Waypoints figure counts places.
+- **The Backlog Is Settled**: The enhancement backlog now holds two open items, GPX import and export (#17, #18), planned for the next release. Every other open item is closed, keeping its number and description with the reason, and #48, #72 and #75 shipped in this release.
+
 ## [v3.9.19] - 2026-10-23
 
 ### Fixed
@@ -839,6 +851,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.10.0]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.19...v3.10.0
 [v3.9.19]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.18...v3.9.19
 [v3.9.18]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.17...v3.9.18
 [v3.9.17]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.16...v3.9.17

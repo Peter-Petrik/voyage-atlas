@@ -250,7 +250,7 @@ function pick(tool, names, globals = {}, opts = {}) {
     const src = withoutComments(typeof next === 'string' ? tool.defs[next] : next.src);
     for (const other of all) {
       if (wanted.has(other) || other in globals) continue;
-      if (new RegExp(`(?<![.\\w$])${other}(?![\\w$])`).test(src)) { wanted.add(other); queue.push(other); }
+      if (new RegExp(`(?<![\\w$])(?<!(?<!\\.\\.)\\.)${other}(?![\\w$])`).test(src)) { wanted.add(other); queue.push(other); }
     }
   }
   const sources = all.filter(n => wanted.has(n)).map(n => tool.defs[n]);

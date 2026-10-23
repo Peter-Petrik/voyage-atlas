@@ -11,7 +11,7 @@ Stable and actively maintained. Each release is recorded in the [CHANGELOG](CHAN
 1. **Editor** (`voyage-atlas-editor.html`) — creates and maintains a voyage: chapters, waypoints, route geometry and voyage metadata, with chart and table editing, geocoding and drag-to-reorder, and JSON, CSV and KML export. The published editor is at [sailingamazinggrace.com/resources/voyage-atlas/editor](https://sailingamazinggrace.com/resources/voyage-atlas/editor).
 2. **Viewer** (`voyage-atlas.html`) — a read-only interactive chart of a voyage, which is what gets published or shared. A full voyage is charted at [sailingamazinggrace.com/resources/voyage-atlas/viewer](https://sailingamazinggrace.com/resources/voyage-atlas/viewer).
 3. **Single files** — both are single HTML files, with no build step, no framework and no server code. They run from any static host or a local HTTP server; opened straight from disk, each opens to its chooser, where a voyage file is loaded by hand.
-4. **Chapters** group waypoints by region and season. Each is drawn in its own palette color and carries an era (past, current or future), a When (season window), a pad multiplier, an optional blog link, notes, countries and key destinations.
+4. **Chapters** group waypoints by region and season. Each is drawn in its own palette color, solid when past or current and dashed when planned, and carries an era (past, current or future), a When (season window), a pad multiplier, an optional blog link, notes, countries and key destinations.
 5. **Unified waypoint model** — one ordered list per chapter; named rows render as markers, and rows with no name (empty or only spaces) act as shaping vertices that bend the route line without cluttering the chart.
 6. **Three independent emphasis flags** per waypoint — Major (M), Gateway (G) and Decision (D) — each with its own marker on the chart.
 7. **Distance with a pad multiplier** per chapter (accounting for tacking and cruising-ground exploration a straight-line track undercounts), plus an inter-chapter approach leg attributed to the destination chapter. All distances can display in nautical miles, kilometers or miles (stored as nautical miles).
@@ -25,7 +25,7 @@ Stable and actively maintained. Each release is recorded in the [CHANGELOG](CHAN
 
 ## Configuration
 
-Both tools keep their self-hosting settings in a labeled configuration block at the top of the script — for the viewer, immediately after the opening `<script>` tag; for the editor, at the top of the `CONSTANTS` section. Editing the values there points a copy at different data, basemaps, a basemap key or a different geocoder; the rest of the script is untouched. An unedited copy uses the defaults shown.
+Both tools keep their self-hosting settings in a labeled configuration block at the top of the script — for the viewer, immediately after the opening `<script>` tag; for the editor, at the top of the `CONSTANTS` section. Editing the values there points a copy at different data, basemaps, a basemap key, a different geocoder or its own editor; the rest of the script is untouched. An unedited copy uses the defaults shown.
 
 | Constant | Tool | Default | Purpose |
 |----------|------|---------|---------|
@@ -33,13 +33,14 @@ Both tools keep their self-hosting settings in a labeled configuration block at 
 | `URL_TILE_LIGHT` | both | CARTO Positron | The day basemap tile layer. |
 | `URL_TILE_DARK` | both | CARTO Dark Matter | The night basemap tile layer. |
 | `TILE_KEY` | both | empty | The basemap API key, added to every tile request when set. A key supplied by the hosting server at run time as `window.VOYAGE_ATLAS_CONFIG.tileKey` takes precedence. |
+| `URL_EDITOR` | viewer | the published editor | The editor that the "Chart your own voyage" links open, in the header and the Voyage Chapters drawer. |
 | `URL_GEOCODE` | editor | `https://nominatim.openstreetmap.org` | The geocoder base URL, used for name-to-coordinate search and reverse country lookup. Any Nominatim-compatible instance can be used. |
 
 CARTO serves its basemap tiles only with an API key. A key is free for most sites and is requested at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/); each site needs its own. Without a key the chart still works, but every tile carries an "API key required" watermark. A hosting server can supply the key at run time instead of editing the file, by defining `window.VOYAGE_ATLAS_CONFIG = { tileKey: "…" }` in a plain inline script (not `async`, `defer` or a module) placed before the tool's own script, for example at the end of the page head, since each tool reads the key once, as its chart is set up; the published site does this, so its key stays out of the repository.
 
 If the tile URLs are changed to another provider, the attribution string on the tile layers (the configuration block's comment points to them) is changed to match that provider's terms. The editor's geocoding requests are paced at one per second to comply with the public Nominatim usage policy; that pacing is fixed in the request queue and is intentionally not a configurable value.
 
-The viewer's "Chart your own voyage" link, in its header and Voyage Chapters drawer, points to the published editor and is not part of the configuration block. A self-hosted copy that should link to its own editor changes the two `href` values; making the link configurable is backlog item #75.
+The canonical, `og:url`, `og:image` and `twitter:image` tags in each page's head name the published site, under a comment that marks them for self-hosters; a self-hosted copy points them at its own address, serving the preview image from its copy of `docs/voyage-atlas-preview.webp`.
 
 ## Prerequisites
 
@@ -86,7 +87,7 @@ The design rationale (why chapters, the distance model, the self-contained files
 
 ## Future enhancements
 
-Planned and considered features, none of them present yet, are kept in the [enhancements backlog](docs/voyage-atlas-enhancements.md). Item numbers there are stable and are cited from the CHANGELOG and the other documents.
+Planned features, none of them present yet, and closed ideas with the reason for each are kept in the [enhancements backlog](docs/voyage-atlas-enhancements.md). Item numbers there are stable and are cited from the CHANGELOG and the other documents.
 
 ## Support
 
