@@ -5,7 +5,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { EDITOR, loadTool } = require('./support.js');
+const { EDITOR, loadTool, pick } = require('./support.js');
 
 const SPACING = 120;
 const TIMEOUT = 400;
@@ -13,15 +13,14 @@ const TIMEOUT = 400;
 // A fresh queue per test, with its own stubbed fetch. URLs containing "empty" answer [], URLs in
 // `fail` reject once, URLs in `status` answer with that HTTP status, and URLs in `hang` never
 // answer until the request's abort signal fires.
+const editor = loadTool(EDITOR);
+
+test('the queue sends at most one request every 1.1 s and abandons one after 20 s', () => {
+  assert.match(editor.js, /^const GEO_SPACING_MS = 1100;$/m);
+  assert.match(editor.js, /^const GEO_TIMEOUT_MS = 20000;$/m);
+});
+
 function freshQueue() {
-  const { js } = loadTool(EDITOR);
-  const start = js.indexOf('GEOCODER REQUESTS');
-  const end = js.indexOf('REVERSE GEOCODING (country auto-populate)');
-  assert.ok(start >= 0 && end > start, 'geocoder queue section not found');
-  const spacing = 'const GEO_SPACING_MS = 1100;', timeout = 'const GEO_TIMEOUT_MS = 20000;';
-  let block = js.slice(js.lastIndexOf('/*', start), js.lastIndexOf('/*', end));
-  assert.ok(block.includes(spacing) && block.includes(timeout), 'queue constants not found');
-  block = block.replace(spacing, `const GEO_SPACING_MS = ${SPACING};`).replace(timeout, `const GEO_TIMEOUT_MS = ${TIMEOUT};`);
   const net = { sent: [], fail: new Set(), status: {}, hang: new Set() };
   const fetch = (url, opts) => {
     net.sent.push({ url, t: performance.now() });
@@ -32,7 +31,8 @@ function freshQueue() {
     const status = net.status[url] || 200;
     return Promise.resolve({ ok: status === 200, status, json: () => Promise.resolve(url.includes('empty') ? [] : { url }) });
   };
-  const api = new Function('fetch', block + '\nreturn { geoRequest, geoCache, get jobs() { return geoJobs; } };')(fetch);
+  const api = pick(editor, ['geoRequest'], { fetch, GEO_SPACING_MS: SPACING, GEO_TIMEOUT_MS: TIMEOUT },
+    { lets: true, expose: 'geoCache, get jobs() { return geoJobs; }' });
   return { api, net, urls: () => net.sent.map(s => s.url) };
 }
 
@@ -47,7 +47,8 @@ test('requests go out in order, at least the spacing apart', async () => {
   await Promise.all(['a1', 'a2', 'a3', 'a4', 'a5'].map(u => api.geoRequest(u)));
   assert.deepEqual(urls(), ['a1', 'a2', 'a3', 'a4', 'a5']);
   const gaps = net.sent.slice(1).map((s, i) => s.t - net.sent[i].t);
-  assert.ok(gaps.every(g => g >= SPACING - 5), `gaps ${JSON.stringify(gaps)}`);
+  // Timers may fire a few milliseconds early against performance.now() on a busy machine.
+  assert.ok(gaps.every(g => g >= SPACING - 20), `gaps ${JSON.stringify(gaps)}`);
 });
 
 test('a place search goes ahead of queued lookups', async () => {
@@ -76,7 +77,7 @@ test('duplicate requests waiting together send once', async () => {
 test('a network failure rejects, is not cached, and is sent again next time', async () => {
   const { api, net } = freshQueue();
   net.fail.add('flaky');
-  await assert.rejects(api.geoRequest('flaky'));
+  await assert.rejects(api.geoRequest('flaky'), /network/);
   assert.deepEqual(await api.geoRequest('flaky'), { url: 'flaky' });
   assert.equal(net.sent.length, 2);
 });
@@ -84,7 +85,7 @@ test('a network failure rejects, is not cached, and is sent again next time', as
 test('a refused request rejects and is not cached', async () => {
   const { api, net } = freshQueue();
   net.status.refused = 429;
-  await assert.rejects(api.geoRequest('refused'));
+  await assert.rejects(api.geoRequest('refused'), /HTTP 429/);
   assert.ok(!api.geoCache.has('refused'));
 });
 

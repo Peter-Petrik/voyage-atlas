@@ -496,7 +496,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.14</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.15</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -713,8 +713,8 @@ let DATA = null;
 const NM_TO = { nm: 1, km: 1.852, mi: 1.150779 };
 const UNIT_LABEL = { nm: 'Nautical Miles', km: 'Kilometers', mi: 'Miles' };
 function viewerUnit() { return (DATA && DATA.meta && DATA.meta.settings && DATA.meta.settings.distanceUnit) || 'nm'; }
-function fmtDist(nm) {
-  const u = viewerUnit();
+// A distance in nautical miles as shown in the given unit (nm, km or mi), rounded to whole units.
+function fmtDist(nm, u) {
   return Math.round((nm || 0) * NM_TO[u]).toLocaleString() + ' ' + u;
 }
 
@@ -992,9 +992,9 @@ function haversineNm(lat1, lon1, lat2, lon2) {
   const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
   return 2 * R * Math.asin(Math.sqrt(a));
 }
-function getPredecessorChapter(ch) {
-  if (!ch || !DATA) return null;
-  const sorted = [...(DATA.chapters || [])].sort((a, b) => a.num - b.num);
+function getPredecessorChapter(ch, chapters) {
+  if (!ch) return null;
+  const sorted = [...(chapters || [])].sort((a, b) => a.num - b.num);
   const i = sorted.findIndex(c => c.num === ch.num);
   // The nearest earlier chapter with coordinates: an empty chapter in between (one still being
   // planned) has no endpoint, so the approach leg and the pull are taken from the chapter before it.
@@ -1003,8 +1003,8 @@ function getPredecessorChapter(ch) {
   }
   return null;
 }
-function chapterApproachNm(ch) {
-  const prev = getPredecessorChapter(ch);
+function chapterApproachNm(ch, chapters) {
+  const prev = getPredecessorChapter(ch, chapters);
   if (!prev) return 0;
   const prevPts = (prev.waypoints || []).filter(hasCoord);
   const thisPts = (ch.waypoints || []).filter(hasCoord);
@@ -1021,9 +1021,9 @@ function chapterNmBase(ch) {
   }
   return Math.round(total);
 }
-function chapterNm(ch) {
+function chapterNm(ch, chapters) {
   // Padded within-chapter sailing distance + raw approach leg from the predecessor chapter.
-  return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1)) + chapterApproachNm(ch);
+  return Math.round(chapterNmBase(ch) * (ch.padMultiplier || 1)) + chapterApproachNm(ch, chapters);
 }
 
 /* Shared hero-stat computation — identical in the editor and viewer (the state source is the only
@@ -1034,7 +1034,7 @@ function computeHeroStats(chapters, settings) {
   let totalNm = 0, namedWaypoints = 0, shapingVertices = 0;
   const countries = new Set();
   (chapters || []).forEach(ch => {
-    totalNm += chapterNm(ch);
+    totalNm += chapterNm(ch, chapters);
     (ch.waypoints || []).forEach(w => {
       if (w.name && w.name.trim()) namedWaypoints++;
       else if (hasCoord(w)) shapingVertices++;
@@ -1592,7 +1592,7 @@ function selectChapter(num) {
   document.getElementById('info-when').textContent = ch.when || '';
   document.getElementById('info-name').textContent = ch.name;
   document.getElementById('info-meta').innerHTML =
-    `<span class="info-chip">${fmtDist(chapterNm(ch))}</span>`;
+    `<span class="info-chip">${fmtDist(chapterNm(ch, DATA.chapters), viewerUnit())}</span>`;
 
   // Notes
   const notes = ch.notes || '';

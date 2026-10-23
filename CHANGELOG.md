@@ -6,6 +6,14 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.15] - 2026-10-23
+
+### Changed
+- **Tests That Run the Data Paths**: The test suite now runs the paths where a change could lose data or draw a wrong chart with every test still passing, as the full review of v3.9.14 found by changing the code on purpose: of 820 such changes, the suite noticed 418. The sample voyage now goes through both tools' reader and the editor's JSON save, which must write it back character for character; a voyage with a value in every field goes through the JSON save, the CSV export and import, and the KML export; the dateline split is checked against exact segments and 400 random routes; and a name lookup, a country lookup and a paste are run through to the values they fill in. Of a new sample of 820 changes, the suite now notices 466, and of the 429 changes the two samples share it notices 258, including every one it noticed before.
+- **Source Checks Read Code, Not Comments**: Tests that look for a call in the source now read the code with its comments taken out, so a call that was removed but is still named in a comment no longer passes; a test checks that the scripts read this way still compile with the same lines and definitions, and the parity test still compares the shared code with its comments. Tests that expect an error now name the error, and the geocoder tests no longer depend on the wording of a section comment. The pacing test allows for timers that fire a few milliseconds early on a busy machine.
+- **Release Only From a Tested Tag**: The release workflow now runs the test suite on the tagged commit and checks that the tag names the version in both footers and the newest CHANGELOG entry, in a job with read access only; the GitHub Release is created in a second job, only after those pass. The Release is created with the GitHub CLI instead of a third-party action, which held a write token and was pinned by a tag its owner could move, and a re-run updates an existing Release instead of failing. Neither job leaves the token in the checked-out repository, and both workflows stop after 10 minutes. The suite runs as `node --test test/*.test.js`, so the shared test helpers are no longer counted as a test.
+- **One Distance Code for Both Tools**: The distance formatting and the chain that finds a chapter's predecessor now take the unit and the chapters as arguments, so they are byte-identical in both tools and checked by the parity test, which leaves five known differences; a test checks that every call passes the page's unit and chapters. The header figures are computed from the chapters they are given; before, the approach legs were taken from the page's own state. No figure changes.
+
 ## [v3.9.14] - 2026-10-20
 
 ### Changed
@@ -785,6 +793,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.15]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.14...v3.9.15
 [v3.9.14]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.13...v3.9.14
 [v3.9.13]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.12...v3.9.13
 [v3.9.12]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.11...v3.9.12

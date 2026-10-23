@@ -1,7 +1,8 @@
 // Shared helpers for the test suite. The tools are single self-contained HTML files with no modules,
 // so the tests read the files as text, take the inline scripts out of them, and pick named top-level
-// definitions out of those scripts to run in isolation. This file defines no tests; Node's test
-// runner loads it as a test file because it sits under test/, and it reports nothing.
+// definitions out of those scripts to run in isolation. This file defines no tests. The suite runs as
+// `node --test test/*.test.js`; a bare `node --test` also loads this file, because it sits under
+// test/, and counts it as one passing test.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -62,11 +63,99 @@ function topLevelDefinitions(js) {
   return defs;
 }
 
-// The joined inline script and its top-level definitions for one tool.
+// The script with its comments taken out, newlines kept so line numbers stay the same. Strings,
+// template literals (with their ${} expressions) and regular expression literals are copied as they
+// are, so a `//` inside an address or a pattern is not taken for a comment. A `/` starts a regular
+// expression where an expression may begin: at the start, after an operator or opening bracket, or
+// after a keyword such as `return`. A `/` after `)` is taken for division, as in `(a) / b`; a regular
+// expression placed there would be misread, and the tests in safety-net.test.js that compile the
+// stripped scripts and count their lines and definitions fail if one ever is.
+function stripComments(js) {
+  const KEYWORDS = new Set(['return', 'typeof', 'case', 'do', 'else', 'in', 'of', 'new', 'delete', 'void', 'throw', 'instanceof', 'yield', 'await']);
+  let out = '', i = 0, last = '';         // last: the previous significant character of code
+  const braces = [];                      // for each open ${, the brace depth at which it closes
+  let depth = 0;
+  const n = js.length;
+  const lastWord = () => { const m = out.match(/([A-Za-z_$][\w$]*)\s*$/); return m ? m[1] : ''; };
+  const regexAllowed = () => last === '' || '(,=:[!&|?{};+-*%<>~^'.includes(last) || KEYWORDS.has(lastWord());
+  function copyQuoted(q) {               // a ' or " string, from i at the opening quote
+    out += js[i++];
+    while (i < n && js[i] !== q) {
+      if (js[i] === '\\') out += js[i++];
+      out += js[i++];
+    }
+    out += js[i++] || '';
+  }
+  function copyTemplate() {              // from i at the opening backtick or after a closing }
+    while (i < n) {
+      const c = js[i];
+      if (c === '\\') { out += js[i] + (js[i + 1] || ''); i += 2; continue; }
+      if (c === '`') { out += c; i++; return false; }
+      if (c === '$' && js[i + 1] === '{') { out += '${'; i += 2; braces.push(depth); depth++; return true; }
+      out += c; i++;
+    }
+    return false;
+  }
+  while (i < n) {
+    const c = js[i], d = js[i + 1];
+    if (c === '/' && d === '/') { while (i < n && js[i] !== '\n') i++; continue; }
+    if (c === '/' && d === '*') {
+      const end = js.indexOf('*/', i + 2);
+      const body = js.slice(i, end < 0 ? n : end + 2);
+      out += body.includes('\n') ? body.replace(/[^\n]/g, '').replace(/^/, ' ') : ' ';
+      i += body.length; continue;
+    }
+    if (c === '\'' || c === '"') { copyQuoted(c); last = c; continue; }
+    if (c === '`') { out += c; i++; copyTemplate(); last = '`'; continue; }
+    if (c === '/' && regexAllowed()) {
+      out += js[i++]; let inClass = false;
+      while (i < n) {
+        const r = js[i];
+        if (r === '\\') { out += r + js[i + 1]; i += 2; continue; }
+        if (r === '[') inClass = true; else if (r === ']') inClass = false;
+        else if (r === '/' && !inClass) { out += r; i++; break; }
+        out += r; i++;
+      }
+      while (i < n && /[a-z]/i.test(js[i])) out += js[i++];
+      last = '/'; continue;
+    }
+    if (c === '{') depth++;
+    if (c === '}') {
+      depth--;
+      if (braces.length && braces[braces.length - 1] === depth) {
+        braces.pop(); out += c; i++;
+        copyTemplate(); last = '`'; continue;
+      }
+    }
+    out += c; i++;
+    if (!/\s/.test(c)) last = c;
+  }
+  return out;
+}
+
+// The source of the `document.addEventListener(type, ...)` call whose text includes `marker`, so a
+// test finds a listener by what it handles rather than by a comment near it.
+function findListener(js, type, marker) {
+  const call = `document.addEventListener('${type}'`;
+  for (let at = js.indexOf(call); at >= 0; at = js.indexOf(call, at + 1)) {
+    let depth = 0, stop = -1;
+    for (let i = js.indexOf('{', at); i < js.length; i++) {
+      if (js[i] === '{') depth++;
+      else if (js[i] === '}' && --depth === 0) { stop = js.indexOf(';', i) + 1; break; }
+    }
+    if (stop > at && js.slice(at, stop).includes(marker)) return js.slice(at, stop);
+  }
+  return null;
+}
+
+// The joined inline script and its top-level definitions for one tool. `js` and `defs` are the code
+// with its comments taken out, so a test that matches the source sees only code: a call that was
+// removed but is still named in a comment no longer passes. `rawJs` keeps the comments.
 function loadTool(name) {
   const html = readRepoFile(name);
-  const js = inlineScripts(html).join('\n');
-  return { name, html, js, defs: topLevelDefinitions(js) };
+  const rawJs = inlineScripts(html).join('\n');
+  const js = stripComments(rawJs);
+  return { name, html, rawJs, js, defs: topLevelDefinitions(js) };
 }
 
 // The tool's module-level `let` declarations: each line that starts with `let `, which is how the
@@ -137,4 +226,4 @@ function pick(tool, names, globals = {}, opts = {}) {
   return new Function(...params, body)(...params.map(p => globals[p]));
 }
 
-module.exports = { ROOT, EDITOR, VIEWER, readRepoFile, inlineScripts, topLevelDefinitions, moduleLets, loadTool, pick };
+module.exports = { ROOT, EDITOR, VIEWER, readRepoFile, inlineScripts, stripComments, topLevelDefinitions, moduleLets, loadTool, pick, findListener };

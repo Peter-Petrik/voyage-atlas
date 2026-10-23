@@ -76,10 +76,10 @@ for (const tool of tools) {
       { num: 2, padMultiplier: 1, waypoints: [] },
       { num: 3, padMultiplier: 1, waypoints: [{ name: 'C', lat: 0, lon: 2 }] },
     ] };
-    const { getPredecessorChapter, chapterApproachNm } = pick(tool, ['getPredecessorChapter', 'chapterApproachNm'], { STATE: v, DATA: v });
-    assert.equal(getPredecessorChapter(v.chapters[2]).num, 1);
-    assert.equal(chapterApproachNm(v.chapters[2]), 60);
-    assert.equal(getPredecessorChapter(v.chapters[0]), null);
+    const { getPredecessorChapter, chapterApproachNm } = pick(tool, ['getPredecessorChapter', 'chapterApproachNm']);
+    assert.equal(getPredecessorChapter(v.chapters[2], v.chapters).num, 1);
+    assert.equal(chapterApproachNm(v.chapters[2], v.chapters), 60);
+    assert.equal(getPredecessorChapter(v.chapters[0], v.chapters), null);
   });
 }
 

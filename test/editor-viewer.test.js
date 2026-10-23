@@ -4,7 +4,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { EDITOR, VIEWER, loadTool, pick } = require('./support.js');
+const { EDITOR, VIEWER, loadTool, pick, findListener } = require('./support.js');
 
 const editor = loadTool(EDITOR);
 const viewer = loadTool(VIEWER);
@@ -255,14 +255,9 @@ test(`${EDITOR}: deleting an earlier chapter keeps the active chapter and the se
 
 // The editor's global keydown listener, taken from the page and run against a stub document.
 function editorKeydown(open, overrides = {}) {
-  const start = editor.js.indexOf("/* Global modal keyboard");
-  assert.ok(start >= 0, 'keydown listener found');
-  const from = editor.js.indexOf("document.addEventListener('keydown'", start);
-  let depth = 0, end = from;
-  for (let i = editor.js.indexOf('{', from); i < editor.js.length; i++) {
-    if (editor.js[i] === '{') depth++;
-    else if (editor.js[i] === '}' && --depth === 0) { end = editor.js.indexOf(';', i) + 1; break; }
-  }
+  // The listener is the keydown handler that knows the Look Up Countries dialog.
+  const listener = findListener(editor.js, 'keydown', "'lookup-confirm-modal'");
+  assert.ok(listener, 'keydown listener found');
   const calls = [];
   let handler;
   const el = id => ({ classList: { contains: c => (c === 'hidden' ? id === 'landing' : open.includes(id)) } });
@@ -270,7 +265,7 @@ function editorKeydown(open, overrides = {}) {
   const names = ['closeChooser', 'closeBulkModal', 'closePasteModal', 'closeCSVStep2', 'closeDeleteWptModal', 'closeConfirmModal',
     'closeLookupConfirm', 'proceedLookupConfirm', 'closeDropdowns', 'deselectWaypoint', 'doBulkAdd', 'doDeleteWpt', 'proceedConfirmModal'];
   const stubs = Object.fromEntries(names.map(n => [n, () => calls.push(n)]));
-  new Function('document', 'selectedWpt', 'confirmSafeDefault', ...names, editor.js.slice(from, end))(doc, overrides.selectedWpt ?? {}, false, ...names.map(n => stubs[n]));
+  new Function('document', 'selectedWpt', 'confirmSafeDefault', ...names, listener)(doc, overrides.selectedWpt ?? {}, false, ...names.map(n => stubs[n]));
   return { calls, press: (key, target) => handler({ key, shiftKey: false, target, preventDefault() {} }) };
 }
 

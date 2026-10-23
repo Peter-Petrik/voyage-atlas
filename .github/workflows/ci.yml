@@ -1,11 +1,12 @@
 # Test suite on every push and pull request to main.
 #
 # The project has no package and no dependencies, so the job checks out the
-# repository, sets up Node and runs Node's built-in test runner. `node --test`
-# with no arguments runs every file under test/: syntax, markup structure,
-# shared-core parity between the editor and the viewer, the CHANGELOG header
-# chain, and the behavior of the geocoder queue and the checks applied to
-# voyage files. Nothing is installed and no secrets are used.
+# repository, sets up Node and runs Node's built-in test runner over the test
+# files (test/*.test.js; test/support.js holds the shared helpers and is not a
+# test): syntax, markup structure, shared-core parity between the editor and
+# the viewer, the CHANGELOG header chain, the voyage reader and the editor's
+# exports, the dateline split, and the geocoder queue. Nothing is installed and
+# no secrets are used.
 
 name: CI
 
@@ -20,6 +21,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # The suite takes seconds; a hung timer must not hold a runner for hours.
+    timeout-minutes: 10
 
     # Read access is enough to check out and test; the job writes nothing.
     permissions:
@@ -35,4 +38,4 @@ jobs:
           node-version: '24'
 
       - name: Run tests
-        run: node --test
+        run: node --test test/*.test.js

@@ -37,7 +37,7 @@ for (const tool of [editor, viewer]) {
     // 0°N 25°W to 10°N 25°W is 600 nm; 10°N 25°W to 10°N 0° is about 1,477 nm.
     assert.ok(Math.abs(fns.chapterNmBase(v.chapters[1]) - 2077) <= 3, `chapter ${fns.chapterNmBase(v.chapters[1])} nm`);
     // The approach runs from the previous chapter's last point (5°S 25°W) to this chapter's first (0°).
-    assert.equal(fns.chapterApproachNm(v.chapters[1]), 300);
+    assert.equal(fns.chapterApproachNm(v.chapters[1], v.chapters), 300);
   });
 
   test(`${tool.name}: an unnamed point at 0° counts as a shaping vertex`, () => {
@@ -326,7 +326,7 @@ test(`${EDITOR}: lookups made after a voyage change still run`, async () => {
 
 test(`${EDITOR}: a voyage file that fails to read leaves the current voyage untouched`, () => {
   const fns = pick(editor, ['loadVoyage'], uiStubs(), { lets: true, prelude: DIRTY_SESSION, expose: SESSION_STATE });
-  assert.throws(() => fns.loadVoyage({ chapters: [null] }));
+  assert.throws(() => fns.loadVoyage({ chapters: [null] }), /chapter 1 is not a chapter/);
   const s = fns.session();
   assert.equal(s.metaTitle, 'Old voyage');
   assert.equal(s.settings.distanceOverride, 99999);

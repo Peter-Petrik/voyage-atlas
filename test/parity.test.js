@@ -5,12 +5,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { EDITOR, VIEWER, loadTool } = require('./support.js');
+const { EDITOR, VIEWER, loadTool, topLevelDefinitions } = require('./support.js');
 
 const KNOWN_DIFFERENCES = [
   'closeChooser',
-  'fmtDist',
-  'getPredecessorChapter',
   'loadSampleFromChooser',
   'openChooser',
   'selectChapter',
@@ -19,8 +17,11 @@ const KNOWN_DIFFERENCES = [
 
 const editor = loadTool(EDITOR);
 const viewer = loadTool(VIEWER);
-const shared = Object.keys(editor.defs).filter(n => n in viewer.defs).sort();
-const differing = shared.filter(n => editor.defs[n] !== viewer.defs[n]);
+// Compared with their comments: a comment inside a shared definition is part of the shared core.
+const editorSource = topLevelDefinitions(editor.rawJs);
+const viewerSource = topLevelDefinitions(viewer.rawJs);
+const shared = Object.keys(editorSource).filter(n => n in viewerSource).sort();
+const differing = shared.filter(n => editorSource[n] !== viewerSource[n]);
 
 test('shared definitions are found in both tools', () => {
   // A sanity floor: a broken extraction that finds almost nothing would otherwise pass.

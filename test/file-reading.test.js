@@ -4,7 +4,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { EDITOR, VIEWER, loadTool, pick } = require('./support.js');
+const { EDITOR, VIEWER, loadTool, pick, findListener } = require('./support.js');
 
 const editor = loadTool(EDITOR);
 const viewer = loadTool(VIEWER);
@@ -63,9 +63,13 @@ for (const tool of tools) {
 
   test(`${tool.name}: readVoyage refuses a file that is not a voyage and never changes the file`, () => {
     const { readVoyage } = pick(tool, ['readVoyage']);
-    for (const bad of [null, [], 7, {}, { chapters: {} }, { chapters: [null] }, { chapters: [{ waypoints: {} }] }, { chapters: [{ waypoints: ['x'] }] }]) {
-      assert.throws(() => readVoyage(bad), JSON.stringify(bad));
-    }
+    const cases = [
+      [null, /no "chapters" list/], [[], /no "chapters" list/], [7, /no "chapters" list/], [{}, /no "chapters" list/],
+      [{ chapters: {} }, /no "chapters" list/], [{ chapters: [null] }, /chapter 1 is not a chapter/],
+      [{ chapters: [{ waypoints: {} }] }, /the waypoints of chapter 1 are not a list/],
+      [{ chapters: [{ waypoints: ['x'] }] }, /waypoint 1 of chapter 1 is not a waypoint/],
+    ];
+    for (const [bad, message] of cases) assert.throws(() => readVoyage(bad), message, JSON.stringify(bad));
     const file = handEdited();
     const copy = JSON.stringify(file);
     readVoyage(file);
@@ -116,9 +120,9 @@ test('the editor load and the viewer load give the same chapters and distances f
   const strip = chs => chs.map(({ routes, ...c }) => c);
   assert.deepEqual(strip(w.chapters), e.chapters);
   assert.deepEqual([w.meta.title, w.meta.settings], [e.metaTitle, e.settings]);
-  const en = pick(editor, ['chapterNm'], { STATE: e });
-  const vn = pick(viewer, ['chapterNm'], { DATA: w });
-  assert.deepEqual(w.chapters.map(vn.chapterNm), e.chapters.map(en.chapterNm));
+  const en = pick(editor, ['chapterNm']);
+  const vn = pick(viewer, ['chapterNm']);
+  assert.deepEqual(w.chapters.map(ch => vn.chapterNm(ch, w.chapters)), e.chapters.map(ch => en.chapterNm(ch, e.chapters)));
 });
 
 for (const tool of tools) {
@@ -167,7 +171,7 @@ test(`${EDITOR}: a voyage whose drawing fails puts the previous voyage back`, ()
 test(`${EDITOR}: a file that is not a voyage changes nothing and keeps the chooser open`, () => {
   let hidden = 0;
   const fns = pick(editor, ['loadFromJSON'], uiStubs({ hideLanding: () => { hidden++; } }), { lets: true, prelude: OLD, expose: EXPOSE });
-  assert.throws(() => fns.loadFromJSON({ chapters: [{ name: 'A', waypoints: [{ name: 'x' }, 'y'] }] }));
+  assert.throws(() => fns.loadFromJSON({ chapters: [{ name: 'A', waypoints: [{ name: 'x' }, 'y'] }] }), /waypoint 2 of chapter 1 is not a waypoint/);
   assert.equal(hidden, 0);
   assert.equal(fns.state().chapters[0].name, 'Old');
 });
@@ -348,13 +352,8 @@ test(`${EDITOR}: the latitude note gives way to what the status line said before
 
 // The editor's global keydown listener, taken from the page and run against a stub document.
 function keydown(open, safeDefault = false) {
-  const start = editor.js.indexOf('/* Global modal keyboard');
-  const from = editor.js.indexOf("document.addEventListener('keydown'", start);
-  let depth = 0, end = from;
-  for (let i = editor.js.indexOf('{', from); i < editor.js.length; i++) {
-    if (editor.js[i] === '{') depth++;
-    else if (editor.js[i] === '}' && --depth === 0) { end = editor.js.indexOf(';', i) + 1; break; }
-  }
+  const listener = findListener(editor.js, 'keydown', "'lookup-confirm-modal'");
+  assert.ok(listener, 'keydown listener found');
   const calls = [];
   let handler;
   const el = id => ({ classList: { contains: c => (c === 'hidden' ? id === 'landing' : open.includes(id)) }, click: () => calls.push('pick-file') });
@@ -362,7 +361,7 @@ function keydown(open, safeDefault = false) {
   const names = ['closeChooser', 'closeBulkModal', 'closePasteModal', 'closeCSVStep2', 'closeDeleteWptModal', 'closeConfirmModal',
     'closeLookupConfirm', 'proceedLookupConfirm', 'closeDropdowns', 'deselectWaypoint', 'doBulkAdd', 'doDeleteWpt', 'proceedConfirmModal'];
   const stubs = Object.fromEntries(names.map(n => [n, () => calls.push(n)]));
-  new Function('document', 'selectedWpt', 'confirmSafeDefault', ...names, editor.js.slice(from, end))(doc, null, safeDefault, ...names.map(n => stubs[n]));
+  new Function('document', 'selectedWpt', 'confirmSafeDefault', ...names, listener)(doc, null, safeDefault, ...names.map(n => stubs[n]));
   const target = modal => ({ closest: sel => (modal && sel === `#${modal} button` ? {} : null) });
   return { calls, enterOn: modal => handler({ key: 'Enter', shiftKey: false, target: target(modal), preventDefault() {} }) };
 }
@@ -493,7 +492,7 @@ test(`${VIEWER}: a file that fails to load leaves the chart drawn`, () => {
     decisionLayer: layer, gatewayLayer: layer, closeInfo() {}, polylines: {}, wptMarkers: {}, DATA: { chapters: [] }, activeNum: null,
     L: {}, map: {},
   }, { prelude: '' });
-  assert.throws(() => loadVoyageData({ type: 'FeatureCollection', features: [] }));
+  assert.throws(() => loadVoyageData({ type: 'FeatureCollection', features: [] }), /no "chapters" list/);
   assert.equal(cleared, 0);
 });
 

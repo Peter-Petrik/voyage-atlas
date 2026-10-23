@@ -1,14 +1,21 @@
 # Automated GitHub Release creation triggered by version tags.
 #
-# When a tag matching v* (e.g. v3.5.1) is pushed, this workflow extracts the
-# matching version's section from CHANGELOG.md and creates a GitHub Release
-# populated with those notes. There is no build, test, or publish step: the
-# project is two self-contained HTML files with no package and no dependencies,
-# so the only automated artifact is the Release entry itself.
+# When a tag matching v* (e.g. v3.5.1) is pushed, this workflow first runs the
+# test suite on the tagged commit and checks that the tag names the version both
+# footers carry and the newest CHANGELOG entry, so a release cannot go out from
+# an untested commit or with a version that does not match. Those checks run in
+# their own job with read-only access. Only when they pass does a second job
+# extract the matching version's section from CHANGELOG.md and create the GitHub
+# Release with those notes. There is no build or publish step: the project is
+# two self-contained HTML files with no package and no dependencies, so the only
+# automated artifact is the Release entry itself.
 #
-# Authentication uses the default GITHUB_TOKEN that Actions provides. No stored
-# secrets or tokens are required, and the workflow contains nothing
-# installation-specific, so a self-hosting fork runs it unchanged.
+# The Release is created with the GitHub CLI, which is preinstalled on
+# GitHub-hosted runners, so no third-party action receives the write token, and
+# neither job leaves the token in the checked-out repository. Authentication
+# uses the default GITHUB_TOKEN that Actions provides. No stored secrets or
+# tokens are required, and the workflow contains nothing installation-specific,
+# so a self-hosting fork runs it unchanged.
 
 name: Create Release
 
@@ -18,8 +25,50 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # The repository's test code runs here, with read access only.
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Run tests
+        run: node --test test/*.test.js
+
+      # The tag must name the version in both footers and the newest CHANGELOG
+      # entry; a tag on the wrong commit or with a typo stops here. The footer
+      # is matched as a fixed string, so the dots in the tag are only dots.
+      - name: Check the tag against the version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          for f in voyage-atlas.html voyage-atlas-editor.html; do
+            if ! grep -qF " ${TAG}</a>" "$f"; then
+              echo "The footer of $f does not carry ${TAG}" >&2
+              exit 1
+            fi
+          done
+          NEWEST="$(grep -m1 -o '^## \[v[^]]*\]' CHANGELOG.md || true)"
+          if [ "$NEWEST" != "## [${TAG}]" ]; then
+            echo "The newest CHANGELOG entry is '${NEWEST}', not ${TAG}" >&2
+            exit 1
+          fi
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     # contents: write is required to create a GitHub Release. No other
     # permission is needed; the default token grants the rest read-only.
@@ -34,6 +83,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       # Extract the release notes for the tagged version from CHANGELOG.md.
       #
@@ -73,8 +123,14 @@ jobs:
             echo "**Full changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREVIOUS}...${TAG}" >> release_notes.md
           fi
 
+      # A Release that already exists for the tag (a re-run, or a tag moved
+      # onto another commit) gets its title and notes updated instead.
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          body_path: release_notes.md
-          name: ${{ github.ref_name }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            gh release edit "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes-file release_notes.md
+          else
+            gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes-file release_notes.md --verify-tag
+          fi
