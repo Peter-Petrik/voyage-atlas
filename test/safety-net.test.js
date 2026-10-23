@@ -173,12 +173,15 @@ for (const tool of tools) {
   const { splitAtDateline, unwrap } = pick(tool, ['splitAtDateline', 'unwrap']);
 
   test(`${tool.name}: a route is split at the dateline into exact segments`, () => {
-    // Eastbound and westbound across the seam, at its midpoint and off it, and twice in a row.
-    assert.deepEqual(splitAtDateline([[0, 170], [10, -170]]), [[[0, 170], [5, 180]], [[5, -180], [10, -170]]]);
-    assert.deepEqual(splitAtDateline([[10, -170], [0, 170]]), [[[10, -170], [5, -180]], [[5, 180], [0, 170]]]);
-    assert.deepEqual(splitAtDateline([[0, 175], [12, -165]]), [[[0, 175], [3, 180]], [[3, -180], [12, -165]]]);
-    assert.deepEqual(splitAtDateline([[0, 170], [10, -170], [20, 170]]),
-      [[[0, 170], [5, 180]], [[5, -180], [10, -170], [15, -180]], [[15, 180], [20, 170]]]);
+    // Eastbound and westbound across the seam, at its midpoint and off it, and twice in a row. The
+    // seam latitude lies on the straight Mercator line, so it is a little poleward of the plain
+    // midpoint (5.0191 rather than 5); compared at nine decimals.
+    const r9 = segs => JSON.parse(JSON.stringify(segs, (k, v) => (typeof v === 'number' ? Math.round(v * 1e9) / 1e9 : v)));
+    assert.deepEqual(r9(splitAtDateline([[0, 170], [10, -170]])), [[[0, 170], [5.019148099, 180]], [[5.019148099, -180], [10, -170]]]);
+    assert.deepEqual(r9(splitAtDateline([[10, -170], [0, 170]])), [[[10, -170], [5.019148099, -180]], [[5.019148099, 180], [0, 170]]]);
+    assert.deepEqual(r9(splitAtDateline([[0, 175], [12, -165]])), [[[0, 175], [3.02077565, 180]], [[3.02077565, -180], [12, -165]]]);
+    assert.deepEqual(r9(splitAtDateline([[0, 170], [10, -170], [20, 170]])),
+      [[[0, 170], [5.019148099, 180]], [[5.019148099, -180], [10, -170], [15.058651567, -180]], [[15.058651567, 180], [20, 170]]]);
     assert.deepEqual(splitAtDateline([[1, 2], [3, 4]]), [[[1, 2], [3, 4]]]);
     // A leg that runs along the seam itself, from 180 to -180, then on to the west.
     assert.deepEqual(splitAtDateline([[10, 180], [11, -180], [12, -179]]), [[[10, 180], [11, 180]], [[11, -180], [12, -179]]]);

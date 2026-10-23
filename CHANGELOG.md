@@ -6,6 +6,18 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.17] - 2026-10-23
+
+### Fixed
+- **A Library That Did Not Load Says So**: When Leaflet, its style sheet, SortableJS or PapaParse does not arrive from cdnjs (a marina network, a captive portal, a content blocker, or a file refused by its integrity check), a notice across the top of the page now names it and says what cannot work without it; without Leaflet the page's controls are turned off. Previously the viewer showed an empty page and the editor's chooser never opened, with no message. Without SortableJS the editor now runs without drag-reordering, where it had failed to start; without PapaParse, Paste and the CSV import and export say so instead of failing silently.
+- **Ghost Midpoints That Can Be Grabbed**: A ghost midpoint now sits above the waypoints' invisible click areas, and shows only where its leg is at least 32 px long on screen, so it clears the dots at both ends; zooming in brings back the ghosts of shorter legs. Previously most ghosts at the zoom a chapter opens at lay under a neighbor's click area, and pressing one dragged that waypoint instead, with no undo.
+- **The Opening View Keeps the Current Chapter in Sight**: When the viewer's opening view of a voyage that spans the globe leaves any of the current chapter's points off the screen or under a panel, it now frames the current chapter instead. On a phone, some chapters had been entirely off screen.
+- **Short Screens Frame a Chapter Clear of the Panels**: On a screen 560 px tall or less, such as a phone held sideways or a laptop at 200%, the viewer now frames the selected chapter between Chart & Layers and the taller of the chapter list and the detail panel. Previously that was done only at 640 px wide or less, and points sat under the corner panels.
+- **A Chapter of One Point Opens**: A chapter of a single named point, such as a season at one marina, now opens in the viewer, framed on that point, with its notes, figure and blog link; only a chapter with nothing on the chart, no route and no named point, shows "No route". Previously a chapter needed two points.
+- **Search and Arrival Feedback**: A place search that finds nothing now says "No places found" in its results box, and one that fails says "Search failed — check the connection"; before, both said nothing. A tool opened from this computer's disk now says on its chooser why it cannot read the voyage file beside it. The distance tile reads "1 Nautical Mile" (or Kilometer, Mile) for a total of 1.
+- **The Dateline Seam on the Drawn Line**: Where a route meets the dateline, the crossing latitude is now taken along the straight line the Mercator chart draws, instead of along a straight line in degrees, which put a kink in the route at the seam (about 14 nm on a passage from Tonga to New Zealand). Extending a track across the dateline now corrects by as many turns as it takes, so a voyage that circles the globe twice frames without a 360° jump; tracks within one turn are unchanged.
+- **High Contrast, Print and Mixed Scripts**: In a forced-colors mode such as Windows high contrast, the viewer's legend and drawer swatches now keep their route colors and the selected row is outlined, where the swatches had disappeared; the CSS property this needs is not supported in every browser. Printing the viewer now frames the chart for the paper, on the selected chapter or as on load, and puts back the reader's view afterwards, and the header figures print at any page width; a portrait page had cropped the chart and dropped them. Names and lists mixing right-to-left and left-to-right text keep their order in the viewer, and the editor's text fields take the direction of the text typed into them.
+
 ## [v3.9.16] - 2026-10-23
 
 ### Fixed
@@ -804,6 +816,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.17]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.16...v3.9.17
 [v3.9.16]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.15...v3.9.16
 [v3.9.15]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.14...v3.9.15
 [v3.9.14]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.13...v3.9.14

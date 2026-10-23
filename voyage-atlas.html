@@ -138,6 +138,10 @@
     .head-sub, .head-stats { display: none; }
     #header h1 { font-size: 15px; }
   }
+  /* A print lays the page out at the width of the paper, often under 900 px; the figures still print. */
+  @media print {
+    .head-stats { display: flex; }
+  }
   /* end shared:header */
   /* Viewer-only header controls: the drawer button and the editor link. */
   #drawer-btn {
@@ -265,6 +269,12 @@
   .dr-row.no-geo { cursor: default; }
   .dr-row.no-geo:hover { background: none; }
   .dr-sw { width: 5px; border-radius: 3px; flex-shrink: 0; align-self: stretch; box-shadow: 0 0 0 1px var(--muted); }
+  /* In a forced-colors mode (Windows high contrast) the swatches keep the route colors that match a
+     chapter to its route, and the selected row is outlined instead of tinted. */
+  @media (forced-colors: active) {
+    .leg-sw, .dr-sw { forced-color-adjust: none; }
+    .leg-row.active, .dr-row.active { outline: 2px solid Highlight; outline-offset: -2px; }
+  }
   .dr-when { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; margin-bottom: 2px; }
   .dr-name { font-family: 'Fraunces', serif; font-size: 14px; color: var(--ink); margin-bottom: 3px; line-height: 1.2; }
   .dr-dest { font-size: 9.5px; color: var(--muted); line-height: 1.45; }
@@ -376,6 +386,14 @@
   .landing-btn-ghost:hover .lb-title { color: var(--accent-ink); }
   .landing-btn-ghost:hover .lb-desc { color: var(--muted); }
   /* end shared:chooser */
+  /* shared:notice — the notice that a library from the CDN did not load, identical in both tools. */
+  .lib-notice {
+    position: relative; z-index: 5000;
+    padding: 8px 16px; font-size: 12px; line-height: 1.4;
+    background: var(--advisory-soft); color: var(--advisory-ink);
+    border-bottom: 1px solid var(--advisory);
+  }
+  /* end shared:notice */
 
   /* Header collapse: below 900px the full header row (5 stats + CTA + Load) no longer fits, so the
      stats, CTA, and Load relocate into the chapter drawer (theme toggle stays). Set wider than the
@@ -496,7 +514,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.16</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.17</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -537,6 +555,45 @@ function tileUrl(template) {
   return template + (template.indexOf('?') === -1 ? '?' : '&') + 'key=' + encodeURIComponent(key);
 }
 
+// A notice across the top of the page that a library the tool loads from cdnjs did not arrive (a
+// marina network, a captive portal or a content blocker, or a file refused by its integrity check):
+// `lib` names it and `effect` says what cannot work without it. A second notice joins the first.
+// Shared between editor and viewer (identical definitions in both).
+function libraryNotice(lib, effect) {
+  const text = `${lib} could not load from cdnjs.cloudflare.com, so ${effect}. Check the connection, then reload the page.`;
+  let el = document.querySelector('.lib-notice');
+  if (el && el.textContent.includes(text)) return;
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'lib-notice';
+    el.setAttribute('role', 'alert');
+    document.body.prepend(el);
+  }
+  el.textContent = (el.textContent ? el.textContent + ' ' : '') + text;
+}
+
+// True when Leaflet's style sheet has loaded: it places the chart's panes absolutely, and without it
+// the tiles and routes stack as loose images. The style sheets in the head load before this script
+// runs. Shared between editor and viewer (identical definitions in both).
+function leafletStylesLoaded() {
+  const probe = document.createElement('div');
+  probe.className = 'leaflet-pane';
+  document.body.appendChild(probe);
+  const loaded = getComputedStyle(probe).position === 'absolute';
+  probe.remove();
+  return loaded;
+}
+
+// Without Leaflet there is no chart to draw: the page says so, its controls are turned off rather
+// than left to fail, and the script stops here. Without Leaflet's style sheet the chart draws badly,
+// and the page says so.
+if (typeof L === 'undefined') {
+  libraryNotice('The chart library (Leaflet)', 'the chart cannot be drawn');
+  document.querySelectorAll('button, input, select, textarea').forEach(el => { el.disabled = true; });
+  throw new Error('Leaflet did not load');
+}
+if (!leafletStylesLoaded()) libraryNotice('The chart styles (Leaflet)', 'the chart cannot be drawn properly');
+
 /* ========================= Palette ========================= */
 const TOL_PALETTE = ['#332288','#88CCEE','#44AA99','#117733','#999933','#DDCC77','#CC6677','#882255','#AA4499'];
 const COLOR_ASSIGN = [0,0,1,2,3,4,5,6,7,8,1,5,3,6,0,4,7,2,8,5];
@@ -550,11 +607,25 @@ function unwrap(coords) {
   const out = [[coords[0][0], coords[0][1]]];
   for (let i = 1; i < coords.length; i++) {
     let prev = out[i-1][1], cur = coords[i][1];
-    if (cur - prev > 180) cur -= 360;
-    if (cur - prev < -180) cur += 360;
+    // As many turns as it takes: a voyage that has circled the globe once already is a full turn or
+    // more from the native frame, and a single correction left a jump of 360° in its track.
+    while (cur - prev > 180) cur -= 360;
+    while (cur - prev < -180) cur += 360;
     out.push([coords[i][0], cur]);
   }
   return out;
+}
+
+// The latitude at which the straight line the chart draws between two points meets the dateline, a
+// fraction t of the way across in longitude. The chart is a Mercator projection, so that line is
+// straight in Mercator y, not in latitude: interpolating the latitude itself put the seam off the
+// drawn line, about 14 nm on a passage from Tonga to New Zealand. Latitudes are held inside the band the
+// chart draws (±85.0511°). Shared between editor and viewer (identical definitions in both).
+function seamLat(la0, la1, t) {
+  if (la0 === la1) return la0;
+  const MAX = 85.0511287798, rad = Math.PI / 180;
+  const y = la => Math.log(Math.tan(Math.PI / 4 + Math.max(-MAX, Math.min(MAX, la)) * rad / 2));
+  return (2 * Math.atan(Math.exp(y(la0) + (y(la1) - y(la0)) * t)) - Math.PI / 2) / rad;
 }
 
 function splitAtDateline(coords) {
@@ -573,9 +644,10 @@ function splitAtDateline(coords) {
       }
       const seam = lo1c > lo0 ? 180 : -180;
       const t = (seam - lo0) / (lo1c - lo0);
-      seg.push([la0 + (la1 - la0) * t, seam]);
+      const la = seamLat(la0, la1, t);
+      seg.push([la, seam]);
       segs.push(seg);
-      seg = [[la0 + (la1 - la0) * t, -seam], [la1, lo1]];
+      seg = [[la, -seam], [la1, lo1]];
     } else {
       seg.push([la1, lo1]);
     }
@@ -712,6 +784,7 @@ let DATA = null;
 // this only changes what's shown. Mirrors the editor's conversion (1 nm = 1.852 km = 1.150779 mi).
 const NM_TO = { nm: 1, km: 1.852, mi: 1.150779 };
 const UNIT_LABEL = { nm: 'Nautical Miles', km: 'Kilometers', mi: 'Miles' };
+const UNIT_LABEL_ONE = { nm: 'Nautical Mile', km: 'Kilometer', mi: 'Mile' }; // the distance tile for a total of 1
 function viewerUnit() { return (DATA && DATA.meta && DATA.meta.settings && DATA.meta.settings.distanceUnit) || 'nm'; }
 // A distance in nautical miles as shown in the given unit (nm, km or mi), rounded to whole units.
 function fmtDist(nm, u) {
@@ -1069,7 +1142,8 @@ function readVoyage(data) {
 const DATA_NOTES = {
   offSite: 'Voyage files must be on this site.',
   notFound: 'The voyage file named in the address was not found.',
-  unreadable: "The voyage file couldn't be read. It may be malformed or not a Voyage Atlas file."
+  unreadable: "The voyage file couldn't be read. It may be malformed or not a Voyage Atlas file.",
+  fromDisk: 'Opened from this computer, the page cannot read the voyage file beside it on its own. Load it here, or open the page through a web server.'
 };
 function haversineNm(lat1, lon1, lat2, lon2) {
   const R = 3440.065;
@@ -1159,7 +1233,8 @@ function heroTilesHTML(items) {
 function heroItems(h, unit, author) {
   const items = [];
   const label = (n, one, many) => n === 1 ? one : many;
-  if (h.displayNm) items.push([Math.round(h.displayNm * NM_TO[unit]).toLocaleString(), UNIT_LABEL[unit], author && h.nmOverridden]);
+  const shown = Math.round(h.displayNm * NM_TO[unit]);
+  if (h.displayNm) items.push([shown.toLocaleString(), label(shown, UNIT_LABEL_ONE[unit], UNIT_LABEL[unit]), author && h.nmOverridden]);
   if (h.nations || (author && h.nationsOverridden)) items.push([h.nations, label(h.nations, 'Nation', 'Nations'), author && h.nationsOverridden]);
   if (h.territories || (author && h.territoriesOverridden)) items.push([h.territories, label(h.territories, 'Territory', 'Territories'), author && h.territoriesOverridden]);
   if (h.chapters || author) items.push([h.chapters, label(h.chapters, 'Chapter', 'Chapters')]);
@@ -1302,7 +1377,7 @@ function loadVoyageData(raw) {
   // Title — v3.0: the user title lives at meta.title; fall back to the app name when absent.
   const settings = (DATA.meta && DATA.meta.settings) || {};
   const title = (DATA.meta && DATA.meta.title && DATA.meta.title.trim()) || 'Voyage Atlas';
-  document.getElementById('page-title').textContent = title;
+  document.getElementById('page-title').innerHTML = `<bdi>${esc(title)}</bdi>`;
   document.title = title;
   document.querySelector('.head-sub').textContent = 'Click any route, waypoint, or chapter to explore';
 
@@ -1345,7 +1420,7 @@ function loadVoyageData(raw) {
       const hasName = w.name && w.name.trim();
       if (!hasName) return; // skip shaping vertices in viewer
       const major = !!w.major;
-      const popup = `<div class="pop-name">${esc(w.name)}</div><div class="pop-when">${esc(ch.when)}</div>` +
+      const popup = `<div class="pop-name"><bdi>${esc(w.name)}</bdi></div><div class="pop-when">${esc(ch.when)}</div>` +
                     (major ? '<div class="pop-major">Major port</div>' : '');
       WORLD_COPIES.forEach(off => {
         // The dot's outline is drawn in the theme's ink, as the route casing is, so a dot in a palette
@@ -1404,17 +1479,17 @@ function loadVoyageData(raw) {
 
   DATA.chapters.forEach(ch => {
     const color = chapterColor(ch.num);
-    const hasRoutes = ch.routes && ch.routes.length && ch.routes[0].length >= 2;
-    // A past chapter is dimmed but opens like any other; only a chapter with no route to frame (fewer
-    // than two points) is marked "No route" and cannot be selected.
+    // A past chapter is dimmed but opens like any other, and so does a chapter of one named point (a
+    // season at one marina), framed on that point; only a chapter with nothing to show, no route and
+    // no named point with coordinates, is marked "No route" and cannot be selected.
     const isPast = ch.era === 'past';
-    const noGeometry = !hasRoutes;
+    const noGeometry = !chapterShown(ch);
     const rowClass = (isPast ? ' past' : '') + (noGeometry ? ' no-geo' : '');
 
     const lr = document.createElement('div');
     lr.className = 'leg-row' + rowClass;
     lr.id = `leg-${ch.num}`;
-    lr.innerHTML = `<div class="leg-sw" style="background:${color}"></div><div class="leg-name">${esc(ch.name)}</div>`;
+    lr.innerHTML = `<div class="leg-sw" style="background:${color}"></div><div class="leg-name"><bdi>${esc(ch.name)}</bdi></div>`;
     if (!noGeometry) lr.addEventListener('click', () => selectChapter(ch.num));
     legendBody.appendChild(lr);
 
@@ -1428,8 +1503,8 @@ function loadVoyageData(raw) {
          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
            <span class="dr-when">${esc(ch.when)}</span>${badge}
          </div>
-         <div class="dr-name">${esc(ch.name)}</div>
-         <div class="dr-dest">${esc((ch.keyDestinations||[]).join(' · '))}</div>
+         <div class="dr-name"><bdi>${esc(ch.name)}</bdi></div>
+         <div class="dr-dest">${bidiList(ch.keyDestinations)}</div>
        </div>`;
     // At 900 px and below the drawer is the main navigation and covers the chart it has just framed,
     // so picking a chapter closes it.
@@ -1446,7 +1521,8 @@ function loadVoyageData(raw) {
 
   // P1: size the map to its final layout BEFORE fitting (getBoundsZoom measures against current
   // pixel size). invalidateSize first, then fit, in the same tick.
-  setTimeout(() => { map.invalidateSize(); fitVoyageOnLoad(DATA.chapters); }, 100); // #58: frame the voyage on load (fit-whole or focus-current-and-shift)
+  // #58: frame the voyage on load (fit-whole or focus-current-and-shift), set at once (withoutAnimation).
+  setTimeout(() => { map.invalidateSize(); withoutAnimation(() => fitVoyageOnLoad(DATA.chapters)); }, 100);
 }
 
 // Shared fit routine — the single place every "frame these points" operation goes through, so the
@@ -1571,13 +1647,13 @@ function fitVoyageOnLoad(chapters) {
   const nrMin = noRepeatMinZoom();
   // The fit cannot open wider than the zoom that fills the chart's height, so on a phone held upright
   // a voyage too wide for that zoom takes the anchored view below, on its current chapter.
-  if (natural >= Math.max(nrMin, fillMinZoom())) { fitToCoords(allCoords); return; }
-
-  // --- Circumnav / globe-spanning case: focus the current chapter, shift toward the route ahead. ---
   // Focus chapter: current → first future → last (past) → first.
   const focus = list.find(ch => ch.era === 'current')
              || list.find(ch => ch.era === 'future')
              || list[list.length - 1];
+  if (natural >= Math.max(nrMin, fillMinZoom())) { fitToCoords(allCoords); keepChapterInView(focus); return; }
+
+  // --- Circumnav / globe-spanning case: shift from the focus chapter toward the route ahead. ---
   const focusIdx = list.indexOf(focus);
 
   // Travel direction in unwrapped longitude: where the bulk of the remaining route lies relative to
@@ -1627,6 +1703,25 @@ function fitVoyageOnLoad(chapters) {
   // trailing should be at targetX; trailing.ulon = centerLon + (targetX - screenCenterX) * degPerPx
   const centerLon = normLon(trailing.ulon - (targetX - screenCenterX) * degPerPx);
   map.setView([chartCenterLat(focusLatMean, z), centerLon], z);
+  keepChapterInView(focus);
+}
+
+// After the opening view, the current chapter framed on its own when any of its points is off the
+// screen or under a panel: on a narrow screen the departure point at one edge can leave it off the
+// other side, and a whole voyage fitted at the zoom the chart's width allows can clip its ends.
+function keepChapterInView(ch) {
+  const pts = ch.waypoints.filter(hasCoord).map(w => [w.lat, w.lon]), insets = chartInsets();
+  if (!pts.every(p => pointInView(p[0], p[1], insets))) fitToCoords(pts, true, insets);
+}
+
+// True when a point is on the chart, in any of the three world copies, and clear of the panels
+// given as insets ({ top, bottom } in px).
+function pointInView(lat, lon, insets) {
+  const size = map.getSize(), top = (insets && insets.top) || 0, bottom = (insets && insets.bottom) || 0;
+  return WORLD_COPIES.some(off => {
+    const p = map.latLngToContainerPoint([lat, lon + off]);
+    return p.x >= 0 && p.x <= size.x && p.y >= top && p.y <= size.y - bottom;
+  });
 }
 
 /* ======================== Interaction ======================== */
@@ -1657,10 +1752,44 @@ map.on('click', e => {
 });
 map.on('dblclick zoomstart', () => clearTimeout(clearSelectionTimer));
 
+// A print lays the page out at the width of the paper: the chart is resized to it and framed on the
+// selected chapter or as on load, and when printing ends it goes back to the view the reader had.
+// The print media query changes once the page has its print layout; beforeprint fires before it, at
+// the screen's width, when there is nothing yet to resize to.
+let screenView = null;
+function reframeChart(e) {
+  map.invalidateSize({ animate: false });
+  if (e && !e.matches) {
+    if (screenView) map.setView(screenView.center, screenView.zoom, { animate: false });
+    screenView = null;
+    return;
+  }
+  screenView = { center: map.getCenter(), zoom: map.getZoom() };
+  if (!DATA) return;
+  // The page is laid out for the paper only while it prints, so the view is set at once: an animated
+  // zoom or pan would be caught partway.
+  withoutAnimation(() => { if (activeNum !== null) selectChapter(activeNum); else fitVoyageOnLoad(DATA.chapters); });
+}
+window.matchMedia('print').addEventListener('change', reframeChart);
+
+// Runs fn with every view it sets applied at once, without Leaflet's zoom and pan animation. A view
+// set while an animated zoom is still running is overridden when that zoom ends, so the opening view,
+// which may set a second view after looking at the first, sets both this way, as a print does; and
+// when a zoom is running already, fn waits for it to end.
+let zooming = false;
+map.on('zoomstart', () => { zooming = true; });
+map.on('zoomend', () => { zooming = false; });
+function withoutAnimation(fn) {
+  if (zooming) { map.once('zoomend', () => withoutAnimation(fn)); return; }
+  const setView = map.setView;
+  map.setView = (center, zoom) => setView.call(map, center, zoom, { animate: false });
+  try { fn(); } finally { map.setView = setView; }
+}
+
 function selectChapter(num) {
   if (!DATA) return;
   const ch = DATA.chapters.find(c => c.num === num);
-  if (!ch || !ch.routes || !ch.routes.length) return;
+  if (!ch || !chapterShown(ch)) return;
   activeNum = num;
 
   Object.keys(polylines).forEach(k => {
@@ -1676,7 +1805,7 @@ function selectChapter(num) {
 
   // Info panel
   document.getElementById('info-when').textContent = ch.when || '';
-  document.getElementById('info-name').textContent = ch.name;
+  document.getElementById('info-name').innerHTML = `<bdi>${esc(ch.name)}</bdi>`;
   document.getElementById('info-meta').innerHTML =
     `<span class="info-chip">${fmtDist(chapterNm(ch, DATA.chapters), viewerUnit())}</span>`;
 
@@ -1690,7 +1819,7 @@ function selectChapter(num) {
     notesBlock.style.display = 'none';
   }
 
-  document.getElementById('info-countries').textContent = chapterCountries(ch).join(' · ');
+  document.getElementById('info-countries').innerHTML = bidiList(chapterCountries(ch));
 
   // Blog link — shown only when the chapter carries a blogUrl (#16).
   const blogBlock = document.getElementById('info-blog-block');
@@ -1706,21 +1835,40 @@ function selectChapter(num) {
 
   // Fit to chapter extent via the shared routine (fill the frame, ease one level out; dateline-safe),
   // after the detail panel is drawn, so that on a phone the chapter is framed above it.
-  const coords = [];
-  (ch.routes||[]).forEach(c => c.forEach(p => coords.push(p)));
+  const coords = ch.waypoints.filter(hasCoord).map(w => [w.lat, w.lon]);
   fitToCoords(coords, true, chartInsets());
 }
 
-// The part of the chart covered by panels on a phone (640 px and below): the Chart & Layers panel
-// across the top and the chapter's detail sheet across the bottom. On a wider screen the panels sit
-// in the corners, and the one-step ease of the chapter fit clears them, so nothing is returned.
+// The part of the chart covered by panels, which a fit keeps the points clear of. On a phone (640 px
+// and below) the Chart & Layers panel runs across the top and the chapter's detail sheet across the
+// bottom. On a short screen (560 px tall or less: a phone held sideways, a laptop at 200%) the corner
+// panels cover most of the chart's height, so the band between Chart & Layers and the taller of the
+// two bottom panels, the chapter list and the detail panel, is kept clear. On a larger screen the
+// panels sit in the corners, and the one-step ease of the chapter fit clears them, so nothing is
+// returned.
 function chartInsets() {
-  if (window.innerWidth > 640) return null;
+  const phone = window.innerWidth <= 640, short = window.innerHeight <= 560;
+  if (!phone && !short) return null;
   const chart = map.getContainer().getBoundingClientRect();
-  const filter = document.getElementById('filter'), info = document.getElementById('info');
+  const filter = document.getElementById('filter'), info = document.getElementById('info'), legend = document.getElementById('legend');
   const top = filter.offsetParent ? filter.getBoundingClientRect().bottom - chart.top : 0;
-  const bottom = info.classList.contains('show') ? chart.bottom - info.getBoundingClientRect().top : 0;
+  const covers = el => chart.bottom - el.getBoundingClientRect().top;
+  let bottom = info.classList.contains('show') ? covers(info) : 0;
+  if (!phone && legend.offsetParent) bottom = Math.max(bottom, covers(legend));
   return { top: Math.max(0, top), bottom: Math.max(0, bottom) };
+}
+
+// True when a chapter has something on the chart to frame: a route of two points or more, or a
+// named point with coordinates (a lone unnamed point, a shaping vertex, is not drawn).
+function chapterShown(ch) {
+  const pts = (ch.waypoints || []).filter(hasCoord);
+  return pts.length >= 2 || pts.some(w => w.name && w.name.trim());
+}
+
+// A list of names for display, each entry isolated from its neighbors (<bdi>), so a list mixing
+// right-to-left and left-to-right names ("ישראל · Cyprus") keeps its order.
+function bidiList(list) {
+  return (Array.isArray(list) ? list : []).map(s => `<bdi>${esc(s)}</bdi>`).join(' · ');
 }
 
 // Scroll a list just far enough to show one of its rows, so a chapter picked on the chart is visible
@@ -1896,7 +2044,7 @@ document.addEventListener('keydown', function(e) {
   }).catch(() => {
     // No file at the resolved path (including from disk, where the fetch is blocked): show the
     // chooser with the sample option hidden, and a note when the file was named for this visit.
-    dataNote = dataPath === null ? DATA_NOTES.offSite : (named ? DATA_NOTES.notFound : '');
+    dataNote = dataPath === null ? DATA_NOTES.offSite : location.protocol === 'file:' ? DATA_NOTES.fromDisk : (named ? DATA_NOTES.notFound : '');
     openChooser();
   });
 })();

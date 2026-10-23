@@ -25,7 +25,7 @@ function sharedBlocks(tool) {
 
 test('the shared style blocks are identical in both tools', () => {
   const e = sharedBlocks(editor), v = sharedBlocks(viewer);
-  assert.deepEqual(Object.keys(e).sort(), ['chooser', 'footer', 'header', 'leaflet', 'theme']);
+  assert.deepEqual(Object.keys(e).sort(), ['chooser', 'footer', 'header', 'leaflet', 'notice', 'theme']);
   assert.deepEqual(Object.keys(v).sort(), Object.keys(e).sort());
   for (const name of Object.keys(e)) assert.equal(e[name], v[name], `shared:${name}`);
 });
@@ -250,7 +250,7 @@ for (const tool of tools) {
 test(`${VIEWER}: the opening view of a globe-spanning voyage fills a phone's chart from top to bottom`, () => {
   const views = [], lons = [];
   const map = { ...mercator(743, 390), setView: (c, z) => { views.push(z); lons.push(c[1]); }, getBoundsZoom: () => 0 };
-  const { fitVoyageOnLoad } = pick(viewer, ['fitVoyageOnLoad'], { map, L: { latLngBounds: boundsOf }, window: { innerWidth: 390 } });
+  const { fitVoyageOnLoad } = pick(viewer, ['fitVoyageOnLoad'], { map, L: { latLngBounds: boundsOf }, window: { innerWidth: 390 }, chartInsets: () => null, pointInView: () => true });
   const w = (lat, lon) => ({ name: 'P', lat, lon });
   fitVoyageOnLoad([
     { num: 1, era: 'past', waypoints: [w(36, 5), w(20, -60), w(-10, -140)] },
@@ -325,7 +325,7 @@ test(`${VIEWER}: the detail and drawer close buttons carry a title`, () => {
 // ---------------------------------------------------------------------------------------------
 
 test(`${EDITOR}: a chapter name keeps the header's width on a narrow panel, with the full name as its title`, () => {
-  assert.match(editor.defs.createChapterElement, /<div class="ch-title">\s*<span class="ch-name" title="\$\{esc\(ch\.name\)\}">\$\{esc\(ch\.name\)\}<\/span>\s*<span class="ch-info">\s*<span class="ch-era/);
+  assert.match(editor.defs.createChapterElement, /<div class="ch-title">\s*<span class="ch-name" title="\$\{esc\(ch\.name\)\}"><bdi>\$\{esc\(ch\.name\)\}<\/bdi><\/span>\s*<span class="ch-info">\s*<span class="ch-era/);
   assert.match(styleOf(editor), /\.ch-title \{[^}]*flex-wrap: wrap;/);
   assert.match(editor.defs.updateMeta, /el\.querySelector\('\.ch-name'\)\.title = ch\.name;/);
 });

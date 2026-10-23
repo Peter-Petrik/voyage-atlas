@@ -511,7 +511,7 @@ for (const tool of tools) {
   test(`${tool.name}: the arrival chooser names why the voyage file named for the visit was not used`, () => {
     assert.match(tool.html, /<span id="landing-data-note-text">Voyage files must be on this site\.<\/span>/);
     assert.match(tool.defs.openChooser, /getElementById\('landing-data-note-text'\)\.textContent = dataNote/);
-    assert.match(tool.js, /dataNote = dataPath === null \? DATA_NOTES\.offSite : \(named \? DATA_NOTES\.notFound : ''\)/);
+    assert.match(tool.js, /dataNote = dataPath === null \? DATA_NOTES\.offSite : location\.protocol === 'file:' \? DATA_NOTES\.fromDisk : \(named \? DATA_NOTES\.notFound : ''\)/);
     assert.match(tool.js, /dataNote = DATA_NOTES\.unreadable/);
   });
 }

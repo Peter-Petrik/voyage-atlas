@@ -141,10 +141,10 @@ test(`${VIEWER}: no CSS is left for the removed theme control, and the footer cr
   assert.equal((viewer.html.match(/\.footer-credit\s*\{/g) || []).length, 1);
 });
 
-test(`${VIEWER}: a past chapter with a route is selectable; only a chapter without one is marked No geometry`, () => {
+test(`${VIEWER}: a past chapter is selectable; only a chapter without coordinates is marked No route`, () => {
   const src = viewer.js;
-  assert.ok(!/ch\.era === 'past' \|\| !hasRoutes/.test(src), 'past still treated as no geometry');
-  assert.match(src, /const noGeometry = !hasRoutes;/);
+  assert.ok(!/ch\.era === 'past' \|\|/.test(src), 'past still treated as no geometry');
+  assert.match(src, /const noGeometry = !chapterShown\(ch\);/);
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -333,7 +333,7 @@ test(`${VIEWER}: the theme switch rebuilds Decision and Gateway icons with the n
   icons.forEach(i => assert.match(i.html, /stroke="#0b1622"/));
 });
 
-test(`${VIEWER}: past chapters with a route open from the legend and the drawer; a chapter without one does not`, () => {
+test(`${VIEWER}: past chapters and one-point chapters open from the legend and the drawer; a chapter without coordinates does not`, () => {
   const rows = [];
   const element = () => {
     const e = chain();
@@ -354,15 +354,17 @@ test(`${VIEWER}: past chapters with a route open from the legend and the drawer;
   }, { prelude: '' });
   loadVoyageData({ meta: {}, chapters: [
     { num: 1, name: 'Sailed', era: 'past', waypoints: [wpt('A', 36, 28), wpt('B', 36.5, 27)] },
-    { num: 2, name: 'Stub', era: 'future', waypoints: [wpt('C', 37, 26)] },
+    { num: 2, name: 'Marina', era: 'future', waypoints: [wpt('C', 37, 26)] },
+    { num: 3, name: 'Stub', era: 'future', waypoints: [wpt('D', null, null)] },
   ] });
   const legend = rows.filter(r => r.id && String(r.id).startsWith('leg-'));
   const drawer = rows.filter(r => r.id && String(r.id).startsWith('dr-'));
-  assert.equal(legend.length, 2);
+  assert.equal(legend.length, 3);
   assert.equal(legend[0].listeners.length, 1, 'the past chapter opens from the legend');
   assert.equal(drawer[0].listeners.length, 1, 'the past chapter opens from the drawer');
-  assert.equal(legend[1].listeners.length, 0, 'a chapter without a route does not open');
-  assert.ok(!/No route/.test(drawer[0].innerHTML) && /No route/.test(drawer[1].innerHTML));
+  assert.equal(legend[1].listeners.length, 1, 'a chapter of one point opens');
+  assert.equal(legend[2].listeners.length, 0, 'a chapter without coordinates does not open');
+  assert.ok(!/No route/.test(drawer[0].innerHTML) && !/No route/.test(drawer[1].innerHTML) && /No route/.test(drawer[2].innerHTML));
   legend[0].listeners[0]();
   assert.deepEqual(selected, [1]);
 });

@@ -18,14 +18,14 @@ const pt = (x, y) => ({ x, y, subtract: o => pt(x - o.x, y - o.y), distanceTo: o
 // Editor editing
 // ---------------------------------------------------------------------------------------------
 
-test(`${EDITOR}: every visible marker is raised above every click area, and the active chapter stays on top`, () => {
+test(`${EDITOR}: every visible marker is raised above every click area and ghost, and the active chapter stays on top`, () => {
   const order = [];
   const layer = name => ({ bringToFront: () => order.push(name) });
   const hit = name => Object.assign(layer(name), { _hit: true });
   const mapLayers = { 2: { line: { eachLayer: cb => [layer('route')].forEach(cb) }, ghosts: [layer('ghost')],
     markers: [hit('hit1'), layer('dot1'), hit('hit2'), layer('dot2')] } };
   pick(editor, ['raiseChapterLayers'], { mapLayers }).raiseChapterLayers(2);
-  assert.deepEqual(order, ['route', 'ghost', 'hit1', 'hit2', 'dot1', 'dot2']);
+  assert.deepEqual(order, ['route', 'hit1', 'hit2', 'ghost', 'dot1', 'dot2']);
   assert.match(editor.defs.updateMapChapter, /raiseChapterLayers\(chNum\);\s*[\s\S]*if \(chNum !== activeChapterNum && activeChapterNum !== null\) raiseChapterLayers\(activeChapterNum\);\s*\}$/);
   assert.match(editor.defs.updateMapChapter, /hitMarker\._hit = true;/);
 });
@@ -232,7 +232,8 @@ test(`${VIEWER}: a voyage too wide for the zoom that fills a phone's chart opens
   let fitAll = 0;
   const views = [];
   const map = { ...mercator(743, 390), setView: (c, z) => views.push(z), getBoundsZoom: () => 1 };
-  pick(viewer, ['fitVoyageOnLoad'], { map, L: { latLngBounds: boundsOf }, window: { innerWidth: 390 }, fitToCoords: () => { fitAll++; } })
+  pick(viewer, ['fitVoyageOnLoad'], { map, L: { latLngBounds: boundsOf }, window: { innerWidth: 390 }, fitToCoords: () => { fitAll++; },
+    chartInsets: () => null, pointInView: () => true })
     .fitVoyageOnLoad([{ num: 1, era: 'current', waypoints: [wpt('a', 37, 25), wpt('b', 39, 20)] },
                       { num: 2, era: 'future', waypoints: [wpt('c', 36, -6), wpt('d', -9, -140)] }]);
   assert.equal(fitAll, 0, 'the whole-voyage fit was not used');

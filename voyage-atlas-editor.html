@@ -152,6 +152,10 @@ html, body {
   .head-sub, .head-stats { display: none; }
   #header h1 { font-size: 15px; }
 }
+/* A print lays the page out at the width of the paper, often under 900 px; the figures still print. */
+@media print {
+  .head-stats { display: flex; }
+}
 /* end shared:header */
 .btn {
   font-family: inherit; font-size: 11px;
@@ -245,6 +249,7 @@ html, body {
 #search-results .sr-item.sel { background: var(--accent-soft); }
 #search-results .sr-item .sr-name { font-weight: 600; }
 #search-results .sr-item .sr-detail { color: var(--muted); font-size: 10px; }
+#search-results .sr-empty { padding: 6px 10px; color: var(--muted); font-size: 11px; }
 #map-container { flex: 1; position: relative; }
 #map { width: 100%; height: 100%; }
 /* shared:leaflet — the chart's own controls, popups and tooltips in the theme's colors, identical in
@@ -625,6 +630,14 @@ th .hi { margin-left: 2px; }
 .landing-btn-ghost:hover .lb-title { color: var(--accent-ink); }
 .landing-btn-ghost:hover .lb-desc { color: var(--muted); }
 /* end shared:chooser */
+/* shared:notice — the notice that a library from the CDN did not load, identical in both tools. */
+.lib-notice {
+  position: relative; z-index: 5000;
+  padding: 8px 16px; font-size: 12px; line-height: 1.4;
+  background: var(--advisory-soft); color: var(--advisory-ink);
+  border-bottom: 1px solid var(--advisory);
+}
+/* end shared:notice */
 </style>
 </head>
 <body>
@@ -672,7 +685,7 @@ th .hi { margin-left: 2px; }
         <div class="settings-grid">
           <div class="meta-field full">
             <label for="set-title">Voyage Title <span class="hi" data-tip="The title for this voyage — a vessel, a vehicle, or anything else. Shown in page titles, the viewer header, and exports. If blank, defaults to “Voyage Atlas”.">i</span></label>
-            <input type="text" id="set-title" value="" placeholder="(defaults to “Voyage Atlas”)" onchange="updateSettings()">
+            <input type="text" id="set-title" dir="auto" value="" placeholder="(defaults to “Voyage Atlas”)" onchange="updateSettings()">
           </div>
           <div class="meta-field">
             <label for="set-unit">Distance Units <span class="hi" data-tip="Display unit for all distances. The data, CSV and KML always store nautical miles — this only changes what is shown on screen and in the Distance Override field.">i</span></label>
@@ -735,7 +748,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.16</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.17</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -895,6 +908,48 @@ function tileUrl(template) {
   return template + (template.indexOf('?') === -1 ? '?' : '&') + 'key=' + encodeURIComponent(key);
 }
 
+// A notice across the top of the page that a library the tool loads from cdnjs did not arrive (a
+// marina network, a captive portal or a content blocker, or a file refused by its integrity check):
+// `lib` names it and `effect` says what cannot work without it. A second notice joins the first.
+// Shared between editor and viewer (identical definitions in both).
+function libraryNotice(lib, effect) {
+  const text = `${lib} could not load from cdnjs.cloudflare.com, so ${effect}. Check the connection, then reload the page.`;
+  let el = document.querySelector('.lib-notice');
+  if (el && el.textContent.includes(text)) return;
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'lib-notice';
+    el.setAttribute('role', 'alert');
+    document.body.prepend(el);
+  }
+  el.textContent = (el.textContent ? el.textContent + ' ' : '') + text;
+}
+
+// True when Leaflet's style sheet has loaded: it places the chart's panes absolutely, and without it
+// the tiles and routes stack as loose images. The style sheets in the head load before this script
+// runs. Shared between editor and viewer (identical definitions in both).
+function leafletStylesLoaded() {
+  const probe = document.createElement('div');
+  probe.className = 'leaflet-pane';
+  document.body.appendChild(probe);
+  const loaded = getComputedStyle(probe).position === 'absolute';
+  probe.remove();
+  return loaded;
+}
+
+// Without Leaflet there is no chart to draw: the page says so, its controls are turned off rather
+// than left to fail, and the script stops here. Without Leaflet's style sheet the chart draws badly,
+// and the page says so. Without SortableJS or PapaParse the editor runs, without the reordering or
+// the CSV and paste they serve.
+if (typeof L === 'undefined') {
+  libraryNotice('The chart library (Leaflet)', 'the chart cannot be drawn');
+  document.querySelectorAll('button, input, select, textarea').forEach(el => { el.disabled = true; });
+  throw new Error('Leaflet did not load');
+}
+if (!leafletStylesLoaded()) libraryNotice('The chart styles (Leaflet)', 'the chart cannot be drawn properly');
+if (typeof Sortable === 'undefined') libraryNotice('The reordering library (SortableJS)', 'rows and chapters cannot be dragged into a new order');
+if (typeof Papa === 'undefined') libraryNotice('The CSV library (PapaParse)', 'Paste, Import CSVs and Export CSVs are off');
+
 const TOL_PALETTE = ['#332288','#88CCEE','#44AA99','#117733','#999933','#DDCC77','#CC6677','#882255','#AA4499'];
 const COLOR_ASSIGN = [0,0,1,2,3,4,5,6,7,8,1,5,3,6,0,4,7,2,8,5];
 
@@ -904,6 +959,18 @@ function chapterColor(num) {
 }
 
 // Split a polyline at the ±180° antimeridian so dateline-crossing legs don't draw "the long way".
+// The latitude at which the straight line the chart draws between two points meets the dateline, a
+// fraction t of the way across in longitude. The chart is a Mercator projection, so that line is
+// straight in Mercator y, not in latitude: interpolating the latitude itself put the seam off the
+// drawn line, about 14 nm on a passage from Tonga to New Zealand. Latitudes are held inside the band the
+// chart draws (±85.0511°). Shared between editor and viewer (identical definitions in both).
+function seamLat(la0, la1, t) {
+  if (la0 === la1) return la0;
+  const MAX = 85.0511287798, rad = Math.PI / 180;
+  const y = la => Math.log(Math.tan(Math.PI / 4 + Math.max(-MAX, Math.min(MAX, la)) * rad / 2));
+  return (2 * Math.atan(Math.exp(y(la0) + (y(la1) - y(la0)) * t)) - Math.PI / 2) / rad;
+}
+
 function splitAtDateline(coords) {
   const segs = []; let seg = [coords[0]];
   for (let i = 1; i < coords.length; i++) {
@@ -920,9 +987,10 @@ function splitAtDateline(coords) {
       }
       const seam = lo1c > lo0 ? 180 : -180;
       const t = (seam - lo0) / (lo1c - lo0);
-      seg.push([la0 + (la1 - la0) * t, seam]);
+      const la = seamLat(la0, la1, t);
+      seg.push([la, seam]);
       segs.push(seg);
-      seg = [[la0 + (la1 - la0) * t, -seam], [la1, lo1]];
+      seg = [[la, -seam], [la1, lo1]];
     } else {
       seg.push([la1, lo1]);
     }
@@ -937,8 +1005,10 @@ function unwrap(coords) {
   const out = [[coords[0][0], coords[0][1]]];
   for (let i = 1; i < coords.length; i++) {
     let prev = out[i-1][1], cur = coords[i][1];
-    if (cur - prev > 180) cur -= 360;
-    if (cur - prev < -180) cur += 360;
+    // As many turns as it takes: a voyage that has circled the globe once already is a full turn or
+    // more from the native frame, and a single correction left a jump of 360° in its track.
+    while (cur - prev > 180) cur -= 360;
+    while (cur - prev < -180) cur += 360;
     out.push([coords[i][0], cur]);
   }
   return out;
@@ -1035,6 +1105,7 @@ let STATE = { chapters: [], settings: defaultSettings(), metaTitle: '', paz: [] 
 // unit only changes what's shown on screen (and the Distance Override field's value).
 const NM_TO = { nm: 1, km: 1.852, mi: 1.150779 }; // 1 nm = 1.852 km = 1.150779 mi
 const UNIT_LABEL = { nm: 'Nautical Miles', km: 'Kilometers', mi: 'Miles' };
+const UNIT_LABEL_ONE = { nm: 'Nautical Mile', km: 'Kilometer', mi: 'Mile' }; // the distance tile for a total of 1
 function distUnit() { return STATE.settings.distanceUnit || 'nm'; }
 // A distance in nautical miles as shown in the given unit (nm, km or mi), rounded to whole units.
 function fmtDist(nm, u) {
@@ -1105,6 +1176,7 @@ function initMap() {
   tileLight.addTo(map);
 
   map.on('click', onMapClick);
+  map.on('zoomend', syncGhosts);
 }
 
 function onMapClick(e) {
@@ -1337,7 +1409,9 @@ function updateMapChapter(chNum) {
           opacity: 0.3,
           fillOpacity: 0.15,
           className: 'ghost-midpoint'
-        }).addTo(map);
+        });
+        ghost._ends = [[a.lat, aLon + off], [b.lat, bLon + off]];
+        if (ghostClear(ghost)) ghost.addTo(map);
 
         ghost.bindTooltip('Click to add waypoint', { permanent: false, direction: 'top', offset: [0, -6] });
 
@@ -1385,16 +1459,39 @@ function updateMapChapter(chNum) {
   if (chNum !== activeChapterNum && activeChapterNum !== null) raiseChapterLayers(activeChapterNum);
 }
 
-// A chapter's layers brought to the front in their stacking order: the route, the ghost midpoints,
-// the invisible click areas, then the visible markers. Every visible marker sits above every click
-// area, so a click on a marker never lands on a neighbor's wider click area drawn after it.
+// A chapter's layers brought to the front in their stacking order: the route, the invisible click
+// areas, the ghost midpoints, then the visible markers. Every visible marker sits above every click
+// area, so a click on a marker never lands on a neighbor's wider click area drawn after it, and a
+// ghost sits above the click areas, so a press on it reaches it.
 function raiseChapterLayers(chNum) {
   const ml = mapLayers[chNum];
   if (!ml) return;
   if (ml.line) ml.line.eachLayer(l => l.bringToFront());
-  ml.ghosts.forEach(g => g.bringToFront());
   ml.markers.filter(m => m._hit).forEach(m => m.bringToFront());
+  ml.ghosts.forEach(g => g.bringToFront());
   ml.markers.filter(m => !m._hit && m.bringToFront).forEach(m => m.bringToFront());
+}
+
+// A ghost midpoint is drawn only where it clears both ends of its leg: nearer than this to a waypoint,
+// it would overlap the waypoint's dot (radius 10 at most; the ghost's is 5, and 7 under the pointer),
+// and a press there could take the waypoint instead (at the zoom a chapter opens at, most ghosts
+// sat inside a neighbor's click area). Zooming in spreads the points and brings the ghost back
+// (syncGhosts).
+const GHOST_CLEAR_PX = 16;
+function ghostClear(ghost) {
+  const [p, q] = ghost._ends.map(ll => map.latLngToLayerPoint(ll));
+  return p.distanceTo(q) >= 2 * GHOST_CLEAR_PX;
+}
+// After a zoom, the active chapter's ghosts that now clear their ends are shown and the others hidden.
+function syncGhosts() {
+  const ml = activeChapterNum !== null && mapLayers[activeChapterNum];
+  if (!ml || ghostDragTarget) return;
+  ml.ghosts.forEach(g => {
+    const show = ghostClear(g);
+    if (show && !map.hasLayer(g)) g.addTo(map);
+    else if (!show && map.hasLayer(g)) map.removeLayer(g);
+  });
+  raiseChapterLayers(activeChapterNum);
 }
 
 // A marker or ghost drag ends when the mouse button is released anywhere on the page. The chart's
@@ -1703,7 +1800,7 @@ function nomSearch() {
   const stillCurrent = () => document.getElementById('nom-input').value.trim() === q;
   geoRequest(`${URL_GEOCODE}/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1`, true)
     .then(results => { if (results !== null && stillCurrent()) showSearchResults(results); })
-    .catch(() => { if (stillCurrent()) hideSearchResults(); });
+    .catch(() => { if (stillCurrent()) showSearchMessage('Search failed — check the connection'); });
 }
 
 function nomKeydown(e) {
@@ -1725,7 +1822,7 @@ function nomKeydown(e) {
     // First Escape dismisses the results dropdown; a second Escape (results already hidden) clears the
     // typed query (#57). The key stops here, so it does not also clear the waypoint selection.
     e.stopPropagation();
-    if (showing) {
+    if (el.style.display === 'block') { // results, or the line saying none were found
       hideSearchResults();
     } else if (document.getElementById('nom-input').value) {
       document.getElementById('nom-input').value = '';
@@ -1740,9 +1837,18 @@ function highlightSearchResult() {
   if (items[el._selIdx]) items[el._selIdx].scrollIntoView({ block: 'nearest' });
 }
 
+// A line in the results box in place of results: nothing found, or the search failed.
+function showSearchMessage(text) {
+  const el = document.getElementById('search-results');
+  el.innerHTML = `<div class="sr-empty">${esc(text)}</div>`;
+  el.style.display = 'block';
+  el._results = [];
+  el._selIdx = -1;
+}
+
 function showSearchResults(results) {
   const el = document.getElementById('search-results');
-  if (!results || results.length === 0) { hideSearchResults(); return; }
+  if (!results || results.length === 0) { showSearchMessage('No places found'); return; }
   el.innerHTML = results.map((r, i) =>
     `<div class="sr-item" onclick="pickSearchResult(${i})">
        <div class="sr-name">${esc(r.display_name.split(',')[0])}</div>
@@ -2498,7 +2604,8 @@ function readVoyage(data) {
 const DATA_NOTES = {
   offSite: 'Voyage files must be on this site.',
   notFound: 'The voyage file named in the address was not found.',
-  unreadable: "The voyage file couldn't be read. It may be malformed or not a Voyage Atlas file."
+  unreadable: "The voyage file couldn't be read. It may be malformed or not a Voyage Atlas file.",
+  fromDisk: 'Opened from this computer, the page cannot read the voyage file beside it on its own. Load it here, or open the page through a web server.'
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2625,7 +2732,8 @@ function heroTilesHTML(items) {
 function heroItems(h, unit, author) {
   const items = [];
   const label = (n, one, many) => n === 1 ? one : many;
-  if (h.displayNm) items.push([Math.round(h.displayNm * NM_TO[unit]).toLocaleString(), UNIT_LABEL[unit], author && h.nmOverridden]);
+  const shown = Math.round(h.displayNm * NM_TO[unit]);
+  if (h.displayNm) items.push([shown.toLocaleString(), label(shown, UNIT_LABEL_ONE[unit], UNIT_LABEL[unit]), author && h.nmOverridden]);
   if (h.nations || (author && h.nationsOverridden)) items.push([h.nations, label(h.nations, 'Nation', 'Nations'), author && h.nationsOverridden]);
   if (h.territories || (author && h.territoriesOverridden)) items.push([h.territories, label(h.territories, 'Territory', 'Territories'), author && h.territoriesOverridden]);
   if (h.chapters || author) items.push([h.chapters, label(h.chapters, 'Chapter', 'Chapters')]);
@@ -2927,7 +3035,7 @@ function createChapterElement(ch) {
       <span class="ch-drag" title="Drag to reorder">≡</span>
       <span class="ch-num">${ch.num}</span>
       <div class="ch-title">
-        <span class="ch-name" title="${esc(ch.name)}">${esc(ch.name)}</span>
+        <span class="ch-name" title="${esc(ch.name)}"><bdi>${esc(ch.name)}</bdi></span>
         <span class="ch-info">
           <span class="ch-era ${ch.era}">${ch.era}</span>
           ${syncEl}
@@ -2958,7 +3066,7 @@ function renderMetaForm(ch) {
     <div class="meta-grid">
       <div class="meta-field">
         <label for="meta-name-${ch.num}">Name <span class="hi" data-tip="Display name for this chapter. Appears in the viewer's drawer, legend and detail panel.">i</span></label>
-        <input type="text" id="meta-name-${ch.num}" value="${esc(ch.name)}" onchange="updateMeta(${ch.num},'name',this.value)">
+        <input type="text" id="meta-name-${ch.num}" dir="auto" value="${esc(ch.name)}" onchange="updateMeta(${ch.num},'name',this.value)">
       </div>
       <div class="meta-field">
         <label for="meta-era-${ch.num}">Era <span class="hi" data-tip="Past = sailed. Current = in progress. Future = planned. Controls visual styling in the viewer.">i</span></label>
@@ -2989,15 +3097,15 @@ function renderMetaForm(ch) {
       </div>
       <div class="meta-field full">
         <label for="meta-notes-${ch.num}">Notes <span class="hi" data-tip="Free-form chapter notes. Use for routing strategy, bail-out alternatives, seasonal considerations, or any planning context.">i</span></label>
-        <textarea id="meta-notes-${ch.num}" style="min-height:80px;" onchange="updateMeta(${ch.num},'notes',this.value)">${esc(ch.notes || '')}</textarea>
+        <textarea id="meta-notes-${ch.num}" dir="auto" style="min-height:80px;" onchange="updateMeta(${ch.num},'notes',this.value)">${esc(ch.notes || '')}</textarea>
       </div>
       <div class="meta-field full">
         <label for="meta-countries-${ch.num}">Countries / Territories <span class="hi" data-tip="Auto-derived from this chapter's waypoint countries (first-appearance order). Leave blank to keep it automatic; type a list, entries separated by semicolons, to override.">i</span></label>
-        <input type="text" id="meta-countries-${ch.num}" value="${esc(countriesOverride)}" placeholder="${esc(countriesAuto ? 'AUTO: ' + countriesAuto : 'auto from waypoint countries')}" onchange="updateMeta(${ch.num},'countriesOverride',this.value)">
+        <input type="text" id="meta-countries-${ch.num}" dir="auto" value="${esc(countriesOverride)}" placeholder="${esc(countriesAuto ? 'AUTO: ' + countriesAuto : 'auto from waypoint countries')}" onchange="updateMeta(${ch.num},'countriesOverride',this.value)">
       </div>
       <div class="meta-field full">
         <label for="meta-keydest-${ch.num}">Key Destinations <span class="hi" data-tip="Highlight destinations for this chapter, entries separated by semicolons. Shown under the chapter's name in the viewer's drawer.">i</span></label>
-        <input type="text" id="meta-keydest-${ch.num}" value="${esc(keyDest)}" onchange="updateMeta(${ch.num},'keyDestinations',this.value)">
+        <input type="text" id="meta-keydest-${ch.num}" dir="auto" value="${esc(keyDest)}" onchange="updateMeta(${ch.num},'keyDestinations',this.value)">
       </div>
     </div>
   `;
@@ -3098,14 +3206,14 @@ function renderWaypointRow(chNum, w, idx) {
     <tr class="${[isShaping ? 'shaping' : '', (chNum === selectedChapterNum && w === selectedWpt) ? 'wpt-row-selected' : ''].filter(Boolean).join(' ')}" data-idx="${idx}" onfocusin="onWptRowFocus(${chNum},${idx},event)">
       <td class="wpt-row-drag">≡</td>
       <td class="wpt-row-num" title="Zoom to and select this waypoint" onclick="selectWaypoint(${chNum},${idx},{zoom:true})">${idx + 1}</td>
-      <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" value="${esc(w.name)}" placeholder="(shaping vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
+      <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" dir="auto" value="${esc(w.name)}" placeholder="(shaping vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
       <td class="col-lat"><input type="text" class="coord" spellcheck="false" autocomplete="off" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="onCoordInput(this,${chNum},${idx},'lat')" onkeydown="coordKey(event,this,${chNum},${idx},'lat')"></td>
       <td class="col-lon"><input type="text" class="coord" spellcheck="false" autocomplete="off" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="onCoordInput(this,${chNum},${idx},'lon')" onkeydown="coordKey(event,this,${chNum},${idx},'lon')"></td>
       <td class="col-cb"><input type="checkbox" ${w.major?'checked':''} onchange="updateWpt(${chNum},${idx},'major',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.gateway?'checked':''} onchange="updateWpt(${chNum},${idx},'gateway',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.decision?'checked':''} onchange="updateWpt(${chNum},${idx},'decision',this.checked)"></td>
-      <td class="col-country${(w.country && w.country.trim()) ? ' country-filled' : ''}"><input type="text" id="wpt-country-${chNum}-${idx}" value="${esc(w.country || '')}" onchange="updateWpt(${chNum},${idx},'country',this.value);syncCountryFlag(this)"></td>
-      <td class="col-notes"><input type="text" value="${esc(w.notes || '')}" onchange="updateWpt(${chNum},${idx},'notes',this.value)"></td>
+      <td class="col-country${(w.country && w.country.trim()) ? ' country-filled' : ''}"><input type="text" id="wpt-country-${chNum}-${idx}" dir="auto" value="${esc(w.country || '')}" onchange="updateWpt(${chNum},${idx},'country',this.value);syncCountryFlag(this)"></td>
+      <td class="col-notes"><input type="text" dir="auto" value="${esc(w.notes || '')}" onchange="updateWpt(${chNum},${idx},'notes',this.value)"></td>
       <td><button class="wpt-del" onclick="deleteWpt(${chNum},${idx})" title="Delete row">✕</button></td>
     </tr>
   `;
@@ -3466,6 +3574,7 @@ function deleteChapter(chNum) {
    ═══════════════════════════════════════════════════════════════ */
 function initChapterSortable() {
   const list = document.getElementById('chapter-list');
+  if (typeof Sortable === 'undefined') return; // without the library, chapters keep their order
   if (list._sortable) list._sortable.destroy();
   list._sortable = Sortable.create(list, {
     handle: '.ch-drag',
@@ -3490,7 +3599,7 @@ function initChapterSortable() {
 
 function initWaypointSortable(chNum) {
   const tbody = document.getElementById(`wpt-body-${chNum}`);
-  if (!tbody) return;
+  if (!tbody || typeof Sortable === 'undefined') return; // without the library, rows keep their order
   if (tbody._sortable) tbody._sortable.destroy();
   tbody._sortable = Sortable.create(tbody, {
     handle: '.wpt-row-drag',
@@ -3558,7 +3667,15 @@ function doBulkAdd() {
   refreshChapterLinks(); // the next chapter's 🔗 / ⇄ and every distance, without rebuilding the list
 }
 
+// True when PapaParse loaded; otherwise the notice says so, and the paste or CSV action stops.
+function papaReady() {
+  if (typeof Papa !== 'undefined') return true;
+  libraryNotice('The CSV library (PapaParse)', 'Paste, Import CSVs and Export CSVs are off');
+  return false;
+}
+
 function openPasteModal(chNum) {
+  if (!papaReady()) return;
   pasteTargetChNum = chNum;
   document.getElementById('paste-area').value = '';
   document.getElementById('paste-modal').classList.add('open');
@@ -3915,6 +4032,7 @@ function loadVoyage(data, opts = {}) {
    ═══════════════════════════════════════════════════════════════ */
 function importCSV() {
   closeDropdowns();
+  if (!papaReady()) return;
   guardDirty(function() { document.getElementById('file-csv-chapters').click(); });
 }
 
@@ -4147,6 +4265,7 @@ function exportJSON() {
    ═══════════════════════════════════════════════════════════════ */
 function exportCSVs() {
   closeDropdowns();
+  if (!papaReady()) return;
   announce('export', 'csv');
   exportChaptersCSV();
   setTimeout(() => exportWaypointsCSV(), 500); // slight delay so browser doesn't block second download
@@ -4414,7 +4533,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('menu-sample').style.display = '';
   }).catch(() => {
     sampleAvailable = false;
-    dataNote = dataPath === null ? DATA_NOTES.offSite : (named ? DATA_NOTES.notFound : '');
+    dataNote = dataPath === null ? DATA_NOTES.offSite : location.protocol === 'file:' ? DATA_NOTES.fromDisk : (named ? DATA_NOTES.notFound : '');
   }).finally(() => {
     openChooser();
   });
