@@ -354,7 +354,7 @@ test(`${EDITOR}: a paste's corrections note joins the lookup summary instead of 
   pick(editor, ['renderGeoStatus'], { document: { getElementById: () => statusEl, querySelectorAll: () => [] }, geoPending: () => 0 },
     { lets: true, prelude: "geoTotal = 2; geoDone = 2; geoResolved = 2; geoNote = 'Pasted with corrections: 1 number that could not be read left unset';" })
     .renderGeoStatus();
-  assert.match(statusEl.innerHTML, /Geocoded 2\/2<\/span> · Pasted with corrections: 1 number that could not be read left unset$/);
+  assert.match(statusEl.innerHTML, /Found 2 of 2<\/span> · Pasted with corrections: 1 number that could not be read left unset$/);
   // A new voyage starts without the last paste's note.
   assert.match(editor.defs.resetSession, /geoTotal = 0; geoDone = 0; geoResolved = 0;\s*geoNote = '';/);
   assert.equal(pick(editor, ['unreadableNote']).unreadableNote(2), '2 numbers that could not be read left unset');
@@ -382,7 +382,7 @@ test('the chooser reads the same in both tools, and errors, quotes and chapter r
     assert.ok(!/Voyage Atlas JSON/.test(tool.html), `${tool.name}: errors say "file"`);
   }
   assert.ok(!/\bCh \$\{/.test(editor.js.replace(/<Folder><name>Ch \$\{ch\.num\}/, '')), 'chapter references say "chapter"');
-  assert.match(editor.defs.confirmDeleteWaypoint, /`Delete “\$\{name\}” from chapter \$\{chNum\}\?`/);
+  assert.match(editor.defs.confirmDeleteWaypoint, /`Delete “\$\{name\}” from chapter \$\{chNum\}\? This cannot be undone\.`/);
   assert.match(editor.html, /placeholder="\(defaults to “Voyage Atlas”\)"/);
   assert.match(editor.html, /Optional extra columns, in this order: major, decision, gateway, country, notes \(the table shows Gateway before Decision\)\./);
   assert.ok(!/Drives timeline ordering|summary displays/.test(editor.html));

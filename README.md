@@ -1,91 +1,102 @@
 # Voyage Atlas
 
-A pair of self-contained, dependency-light web tools for charting a long voyage as a sequence of **chapters** — strategic groupings of waypoints by region and season. Built for cruisers planning ocean passages and multi-year voyages, but generic enough for any voyage.
+Voyage Atlas is a pair of self-contained web tools for charting a long voyage as a sequence of **chapters**, groupings of waypoints by region and season. An editor creates and maintains the voyage file; a read-only viewer charts it for sharing or publishing. It is made for cruisers charting ocean passages and multi-year voyages, and is generic enough for any voyage. The project's home page, with the story behind the tool, is at [sailingamazinggrace.com/resources/voyage-atlas](https://sailingamazinggrace.com/resources/voyage-atlas).
 
-In the cruising community, *plan* is a dangerous four-letter word — *"sailors' plans are written in sand and at low tide."* This isn't a planner. An **atlas** is a collection of charts: routes to navigate *by*, not a schedule to be bound *to*.
+## Project status
 
-The project's home page, with the narrative behind the tool, is at [sailingamazinggrace.com/resources/voyage-atlas](https://sailingamazinggrace.com/resources/voyage-atlas).
-
-![Voyage Atlas viewer](docs/voyage-atlas-preview.webp)
-
-## What's in the box
-
-1. **Editor** (`voyage-atlas-editor.html`) — builds and maintains an atlas: chapters, waypoints, route geometry, and voyage metadata. Chart-based and table-based editing, geocoding, drag-to-reorder, and JSON / CSV / KML export. Try it live at [sailingamazinggrace.com/resources/voyage-atlas/editor](https://sailingamazinggrace.com/resources/voyage-atlas/editor).
-2. **Viewer** (`voyage-atlas.html`) — a read-only interactive chart of a finished atlas. This is what is published or shared. See a full voyage live at [sailingamazinggrace.com/resources/voyage-atlas/viewer](https://sailingamazinggrace.com/resources/voyage-atlas/viewer).
-
-Both are single HTML files. No build step, no framework, no server — open them in any modern browser, host them on any static server, or hand them to someone else, and they behave identically.
-
-The repository also ships a set of optional icon assets (`favicon.svg`, `favicon.ico`, the `favicon-*.png` and `apple-touch-icon.png` images, the `android-chrome-*.png` images) and `site.webmanifest`, which provide the browser-tab favicon and home-screen icons. They are purely cosmetic: a copy hosted without them still runs identically, with the browser falling back to its default tab icon.
-
-## Quick start
-
-1. Download `voyage-atlas-editor.html`, `voyage-atlas.html`, and (optionally) the sample `voyage-data.json` into the same folder. For the favicon and home-screen icons, also include the icon assets and `site.webmanifest` from the repository; they are optional and can be skipped.
-2. **To explore the sample:** serve the folder over HTTP (see the note below) and open `voyage-atlas.html`. When `voyage-data.json` sits alongside it, the chart displays automatically; otherwise the viewer opens to a chooser offering the sample (when present) or a file to load.
-3. **To build a new atlas:** open `voyage-atlas-editor.html`. It opens to a chooser — pick "Start a new voyage," add a chapter, and start placing waypoints (click the chart, search by name, or type coordinates). Click **Save** to download `voyage-data.json`.
-4. **To view a finished atlas:** put the `voyage-data.json` next to `voyage-atlas.html` and open the viewer — or load the file from the viewer's chooser, reachable any time from the header **Load…** button.
-
-The repository ships with a small sample `voyage-data.json` (a five-chapter voyage from Turkey across the Mediterranean and the Atlantic) so the tools open to a working example. See a full multi-year voyage at the live viewer linked above.
-
-### A note on the data path and `file://`
-
-Each tool resolves its voyage from a `URL_VOYAGE_DATA` constant in the configuration block at the top of its script (`voyage-data.json` by default); a `?data=path` query parameter overrides it per visit. Both accept relative paths only — a remote `http(s)` address is not supported, because a static file cannot guarantee a cross-origin fetch will succeed. A `?data=` value that points to another site (an absolute address on another host, a `//host` address, or a scheme such as `data:`) is refused, and the chooser opens with a note that voyage files must be on this site. Resolving the file requires serving over HTTP — from the published site, a static host, or a one-line local server such as `python3 -m http.server` run in the folder. Opening the HTML files directly from disk (a `file://` URL) cannot fetch a local file: browsers block it as a security measure. In that case the viewer opens to its chooser with a file picker, and the editor opens to its chooser without the sample option.
-
-## Configuration
-
-Both tools keep their self-hosting settings in a labeled configuration block at the top of the script — for the viewer, immediately after the opening `<script>` tag; for the editor, at the top of the `CONSTANTS` section. Editing the values there is all that is needed to point a copy at different data, basemaps, a basemap key, or a different geocoder; the rest of the script is untouched. An unedited copy uses the defaults shown.
-
-| Constant | Tool | Default | Purpose |
-|----------|------|---------|---------|
-| `URL_VOYAGE_DATA` | both | `voyage-data.json` | The voyage file to load, on the same site as the tool: a relative path (a subdirectory or sibling folder is fine) or a full address on the same host. A file on another site is not loaded. The `?data=path` query parameter overrides it for a single visit, under the same rule. |
-| `URL_TILE_LIGHT` | both | CARTO Positron | The day basemap tile layer. |
-| `URL_TILE_DARK` | both | CARTO Dark Matter | The night basemap tile layer. |
-| `TILE_KEY` | both | empty | The basemap API key, added to every tile request when set. A key supplied by the hosting server at run time as `window.VOYAGE_ATLAS_CONFIG.tileKey` takes precedence. |
-| `URL_GEOCODE` | editor | `https://nominatim.openstreetmap.org` | The geocoder base URL, used for name-to-coordinate search and reverse country lookup. Point it at a different Nominatim-compatible instance if needed. |
-
-CARTO serves its basemap tiles only with an API key. A key is free for most sites and is requested at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/); each site needs its own, restricted to the site's host names in the CARTO dashboard (the bare domain and `www` are separate entries). Without a key the chart still works, but every tile carries an "API key required" watermark. A hosting server can supply the key at run time instead of editing the file, by defining `window.VOYAGE_ATLAS_CONFIG = { tileKey: "…" }` in a plain inline script (not `async`, `defer` or a module) placed before the tool's own script, for example at the end of the page head, since the viewer reads the key once as its chart is set up; the published site does this, so its key stays out of the repository.
-
-If the tile URLs are changed to another provider, update the attribution string on the tile layers (just below the configuration block) to match that provider's terms. The editor's geocoding requests are paced at one per second to comply with the public Nominatim usage policy; that pacing is fixed in the request queue and is intentionally not a configurable value.
+Stable and actively maintained. Each release is recorded in the [CHANGELOG](CHANGELOG.md); bugs and suggestions go to the [issue tracker](https://github.com/Peter-Petrik/voyage-atlas/issues).
 
 ## Features
 
-1. **Chapters** group waypoints by region and season, each drawn in its own palette color and carrying a season window, era (past / current / future), countries, key destinations, notes, and an optional blog link.
-2. **Unified waypoint model** — one ordered list per chapter; named rows render as markers, unnamed rows act as shaping vertices that bend the route line without cluttering the chart.
-3. **Three independent emphasis flags** per waypoint — Major (M), Gateway (G), Decision (D) — each with distinct chart rendering.
-4. **Distance with a pad multiplier** per chapter (accounting for tacking and cruising-ground exploration a straight-line track undercounts), plus an inter-chapter "approach leg" attributed to the destination chapter. All distances can display in nautical miles, kilometers, or miles (stored canonically as nm).
-5. **Endpoint sync** — chapters connect end-to-start; a one-click pull keeps shared handoff points aligned, and an indicator shows when a real gap exists.
-6. **Geocoding** via OpenStreetMap / Nominatim (rate-limited per their usage policy) — type a name to get coordinates, or fill countries from positions.
-7. **Automatic nation / territory classification** against a built-in reference list, with manual overrides.
-8. **Exports** — JSON (the master file), CSV (chapters + waypoints, for spreadsheet editing), and KML (for Google Earth).
-9. **Self-hosting** — at minimum two HTML files in a directory; the viewer displays its data automatically when served over HTTP, with the source file configurable via a `URL_VOYAGE_DATA` constant or a `?data=` parameter (relative paths only). The optional icon assets and manifest can sit alongside for favicon and home-screen support.
-10. **Viewer niceties** — a header **Load…** button and a "Chart your own voyage" link to the editor (both fold into the chapter drawer on small screens); the chooser can be dismissed by its close button, a tap outside it, or Escape when a voyage is already shown; on load the chart frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's info panel links out to its blog post when one is set; and `?import=yes` opens the chooser for loading a different atlas.
+1. **Editor** (`voyage-atlas-editor.html`) — creates and maintains a voyage: chapters, waypoints, route geometry and voyage metadata, with chart and table editing, geocoding and drag-to-reorder, and JSON, CSV and KML export. The published editor is at [sailingamazinggrace.com/resources/voyage-atlas/editor](https://sailingamazinggrace.com/resources/voyage-atlas/editor).
+2. **Viewer** (`voyage-atlas.html`) — a read-only interactive chart of a voyage, which is what gets published or shared. A full voyage is charted at [sailingamazinggrace.com/resources/voyage-atlas/viewer](https://sailingamazinggrace.com/resources/voyage-atlas/viewer).
+3. **Single files** — both are single HTML files, with no build step, no framework and no server code. They run from any static host or a local HTTP server; opened straight from disk, each opens to its chooser, where a voyage file is loaded by hand.
+4. **Chapters** group waypoints by region and season. Each is drawn in its own palette color and carries an era (past, current or future), a When (season window), a pad multiplier, an optional blog link, notes, countries and key destinations.
+5. **Unified waypoint model** — one ordered list per chapter; named rows render as markers, and rows with no name (empty or only spaces) act as shaping vertices that bend the route line without cluttering the chart.
+6. **Three independent emphasis flags** per waypoint — Major (M), Gateway (G) and Decision (D) — each with its own marker on the chart.
+7. **Distance with a pad multiplier** per chapter (accounting for tacking and cruising-ground exploration a straight-line track undercounts), plus an inter-chapter approach leg attributed to the destination chapter. All distances can display in nautical miles, kilometers or miles (stored as nautical miles).
+8. **Endpoint sync** — chapters connect end to start. Each chapter header shows 🔗 when the chapter begins where the previous one ended, and ⇄ when there is a gap; clicking ⇄ copies the previous chapter's last waypoint in as a new first row.
+9. **Geocoding** via OpenStreetMap's Nominatim, paced to one request a second — a name typed into a row with no coordinates fills them, and countries are looked up from positions.
+10. **Automatic nation and territory classification** against a built-in reference list, with manual overrides.
+11. **Import and export** — JSON (the master file) in both directions; a chapters and waypoints CSV pair in both directions, for spreadsheet editing, without the title, settings or avoidance zones; and KML out, for Google Earth.
+12. **Self-hosting** — a published chart needs only `voyage-atlas.html` and its `voyage-data.json` in one directory on any static host; add `voyage-atlas-editor.html` to offer the editor too. The viewer shows its voyage on arrival when served over HTTP, with the source file set by the `URL_VOYAGE_DATA` constant or a `?data=` parameter (a file on the same site).
+13. **Viewer** — a header **Load…** button and a "Chart your own voyage" link to the editor (both fold into the Voyage Chapters drawer on small screens); the chooser can be dismissed by its close button, a tap outside it or Escape when a voyage is already shown; on load the chart frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's detail panel links to the blog posts covering it when a link is set; and `?import=yes` opens the chooser for loading a different voyage file.
+14. **Editor at a glance** — each chapter row opens a metadata form (📋) and a waypoint table (📍); controls above the chapter list open or close every form or table at once and look up the countries of every chapter; the waypoint table adds rows singly, in a batch or by pasting from a spreadsheet; and Rapid click, below the chart, places a waypoint with each click. The [FAQ](docs/voyage-atlas-faq.md) covers each in full.
 
-## Using the editor
+## Configuration
 
-The editor surface has two layers per chapter, opened from the chapter row:
+Both tools keep their self-hosting settings in a labeled configuration block at the top of the script — for the viewer, immediately after the opening `<script>` tag; for the editor, at the top of the `CONSTANTS` section. Editing the values there points a copy at different data, basemaps, a basemap key or a different geocoder; the rest of the script is untouched. An unedited copy uses the defaults shown.
 
-1. **Chapter metadata** — the chapter's name, season window, era, countries, key destinations, notes, and blog link. Countries auto-derive from each waypoint's country, with an optional per-chapter override.
-2. **Waypoints** — the ordered table of waypoints for the chapter. Each row carries a name, latitude, longitude, the three emphasis flags (M / G / D), a country, and notes. A row with no name is a shaping vertex: it bends the route line but draws no marker.
+| Constant | Tool | Default | Purpose |
+|----------|------|---------|---------|
+| `URL_VOYAGE_DATA` | both | `voyage-data.json` | The voyage file, on the same site as the tool: a relative path (a subdirectory or sibling folder is fine) or a full address on the same host. The viewer displays it on arrival; the editor's chooser offers it as the sample. A file on another site is not loaded. The `?data=path` query parameter overrides it for a single visit, under the same rule. |
+| `URL_TILE_LIGHT` | both | CARTO Positron | The day basemap tile layer. |
+| `URL_TILE_DARK` | both | CARTO Dark Matter | The night basemap tile layer. |
+| `TILE_KEY` | both | empty | The basemap API key, added to every tile request when set. A key supplied by the hosting server at run time as `window.VOYAGE_ATLAS_CONFIG.tileKey` takes precedence. |
+| `URL_GEOCODE` | editor | `https://nominatim.openstreetmap.org` | The geocoder base URL, used for name-to-coordinate search and reverse country lookup. Any Nominatim-compatible instance can be used. |
 
-Additional controls worth knowing:
+CARTO serves its basemap tiles only with an API key. A key is free for most sites and is requested at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/); each site needs its own. Without a key the chart still works, but every tile carries an "API key required" watermark. A hosting server can supply the key at run time instead of editing the file, by defining `window.VOYAGE_ATLAS_CONFIG = { tileKey: "…" }` in a plain inline script (not `async`, `defer` or a module) placed before the tool's own script, for example at the end of the page head, since each tool reads the key once, as its chart is set up; the published site does this, so its key stays out of the repository.
 
-1. **Emphasis flags** — Major (M) marks a provisioning hub or extended-stay port and draws a larger circle; Gateway (G) marks a customs entry or strategic staging port and draws a star; Decision (D) marks a routing fork or go/no-go point and draws a diamond. Where a waypoint carries more than one flag, Decision's diamond wins the marker shape over Gateway's star, and Major sets the size rather than the shape; the columns are shown in that ascending order, M, G, D.
-2. **Look up countries** — the per-chapter button fills empty country fields for that chapter's waypoints from their coordinates; the global button does the same across every chapter. Both are rate-limited to respect the Nominatim usage policy, so a large lookup runs as a queue rather than all at once.
-3. **Expand / collapse all** — two pairs of controls above the chapter list, 📋 ⊞ ⊟ for the metadata panels and 📍 ⊞ ⊟ for the waypoint tables, open (⊞) or close (⊟) every panel of that kind at once, for surveying the whole voyage or focusing on one chapter.
-4. **Rapid click** — when enabled, a single click on the chart drops a new waypoint into the active chapter. Standard chart navigation still works in this mode: drag to pan and scroll to zoom; only the single click is repurposed to place a waypoint.
+If the tile URLs are changed to another provider, the attribution string on the tile layers (the configuration block's comment points to them) is changed to match that provider's terms. The editor's geocoding requests are paced at one per second to comply with the public Nominatim usage policy; that pacing is fixed in the request queue and is intentionally not a configurable value.
 
-## Documentation
+The viewer's "Chart your own voyage" link, in its header and Voyage Chapters drawer, points to the published editor and is not part of the configuration block. A self-hosted copy that should link to its own editor changes the two `href` values; making the link configurable is backlog item #75.
 
-1. [FAQ & Owner's Manual](docs/voyage-atlas-faq.md) — the full reference for both tools (concepts, editor, viewer, and design principles). **Start here.**
-2. [Data schema](docs/voyage-atlas-schema.md) — the JSON / CSV / KML format contract, for hand-editing data or building on the format.
+## Prerequisites
+
+1. A current desktop or mobile browser for the viewer; for the editor, a desktop or laptop with a mouse.
+2. Network access to `cdnjs.cloudflare.com`, from which both tools load Leaflet and the editor also loads SortableJS and PapaParse; a notice across the top of the page names any library that did not arrive.
+3. For basemap tiles without a watermark, a CARTO basemap key (see Configuration).
+4. For the viewer to show a voyage file on arrival, and for the editor to offer the sample, an HTTP server: the published site, any static host or a local one such as `python3 -m http.server`.
+5. For the test suite only, Node.js (see Technical details).
+
+## Quick start
+
+1. Download `voyage-atlas-editor.html`, `voyage-atlas.html` and (optionally) the sample `voyage-data.json`, the icon assets and `site.webmanifest` into the same folder.
+2. **To explore the sample:** serve the folder over HTTP (see Prerequisites) and open `voyage-atlas.html`. When `voyage-data.json` sits alongside it, the chart displays it on arrival; otherwise the viewer opens to a chooser for loading a voyage file.
+3. **To start a new voyage:** open `voyage-atlas-editor.html`. It opens to a chooser; pick "Start a new voyage", add a chapter with **+ Add chapter**, and place waypoints by searching for a place, typing coordinates into a row or turning **Rapid click** on and clicking the chart. **Save** downloads `voyage-data.json`.
+4. **To view a voyage:** put its `voyage-data.json` next to `voyage-atlas.html` and open the viewer, or load the file from the viewer's chooser, reachable any time from the header **Load…** button.
+
+The repository ships with a small sample `voyage-data.json` (a five-chapter voyage from Turkey across the Mediterranean and the Atlantic) so the tools open to a working example. A full multi-year voyage is charted on the published viewer.
+
+## Technical details
+
+### The data path and `file://`
+
+Each tool resolves its voyage from a `URL_VOYAGE_DATA` constant in the configuration block at the top of its script (`voyage-data.json` by default); a `?data=path` query parameter overrides it for one visit. Either may be a relative path or a full address on the same site (same protocol and host); a file on another site is not loaded. A `?data=` value that points to another site (an absolute address on another host, a `//host` address or a scheme such as `data:`) is refused, and the chooser opens with a note that voyage files must be on this site. Opened straight from disk (a `file://` address), neither tool can read the voyage file beside it: each opens to its chooser with a note saying so, where a voyage file can be loaded, and the editor's chooser has no sample option.
+
+### Icon assets
+
+The repository also ships optional icon assets (`favicon.svg`, `favicon.ico`, the `favicon-*.png`, `apple-touch-icon.png` and `android-chrome-*.png` images) and `site.webmanifest`, for the tab icon and home-screen icons. A copy hosted without them runs the same.
+
+### Data correctness
+
+The atlas shows exactly what is entered and corrects nothing; accuracy of the data is the navigator's responsibility (see the FAQ, "Why is data correctness the navigator's responsibility?").
+
+### Tests
+
+The test suite runs with `node --test test/*.test.js` from the repository root, with nothing to install, on Node.js 24, the version CI runs. It runs on every push and pull request to `main` and before every release.
+
+### Documentation
+
+1. [FAQ / Owner's Manual](docs/voyage-atlas-faq.md) — the full reference for both tools (concepts, editor, viewer and design principles), and the place to start.
+2. [Data schema](docs/voyage-atlas-schema.md) — the voyage file, CSV and KML format contract, for hand-editing data or for other tools that read or write it.
 3. [Changelog](CHANGELOG.md) — version history.
 
-## A note on data correctness
+The design rationale (why chapters, the distance model, the self-contained files) is in the FAQ's Concepts and Design principles parts, and the predecessor seam is described at `getPredecessorChapter` in both tools.
 
-The atlas shows exactly what is entered. A charted backtrack, a waypoint on land, or a leg that overshoots a harbor is rendered faithfully and counted honestly — no second-guessing, no silent "corrections." Accuracy of the data is the navigator's responsibility, by design.
+## Future enhancements
 
-## Contributing
+Planned and considered features, none of them present yet, are kept in the [enhancements backlog](docs/voyage-atlas-enhancements.md). Item numbers there are stable and are cited from the CHANGELOG and the other documents.
 
-Issues and feature suggestions are welcome via the issue tracker. Contributions to the code are best raised in an issue first to discuss the change. The design rationale behind the architecture (why chapters, the predecessor seam, the distance model) is documented for maintainers; non-trivial work is worth a question in an issue before starting. The test suite runs with `node --test test/*.test.js` from the repository root, on Node 20 or later with nothing to install, and runs on every push and pull request to `main` and before every release.
+## Support
+
+Bugs and feature suggestions go to the [issue tracker](https://github.com/Peter-Petrik/voyage-atlas/issues). A code change is best raised in an issue first, to discuss it before work starts.
+
+## Screenshots
+
+![Voyage Atlas viewer](docs/voyage-atlas-preview.webp)
+
+The viewer, with a voyage charted as chapters.
 
 ## License
 

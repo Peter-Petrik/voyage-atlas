@@ -76,10 +76,10 @@ test(`${VIEWER}: the route runs through points at 0° and through coordinates wr
 
 test(`${EDITOR}: a coordinate of 0 from a CSV row or the waypoint table is kept`, () => {
   const { normalizeWaypoint } = pick(editor, ['normalizeWaypoint']);
-  const w = normalizeWaypoint({ name: 'On the line', lat: '0', lon: '-25' }, { csv: true });
+  const w = normalizeWaypoint({ name: 'On the line', lat: '0', lon: '-25' });
   assert.equal(w.lat, 0);
   assert.equal(w.lon, -25);
-  assert.equal(normalizeWaypoint({ lat: '', lon: 'x' }, { csv: true }).lat, null);
+  assert.equal(normalizeWaypoint({ lat: '', lon: 'x' }).lat, null);
   // The table's lat and lon inputs read their value through onCoordInput, which reads it through
   // readCoordText and so toCoord, so typing 0 stores 0.
   const inputs = editor.html.match(/id="wpt-(lat|lon)-\$\{chNum\}-\$\{idx\}"[^>]*>/g) || [];
@@ -324,7 +324,7 @@ test(`${EDITOR}: lookups made after a voyage change still run`, async () => {
   await new Promise(r => setImmediate(r));
   assert.deepEqual(written, ['new Portugal']);
   // The status line reports the new session's one lookup, not the old one.
-  assert.match(stubs.document.getElementById('status-text').innerHTML, /Geocoded 1\/1</);
+  assert.match(stubs.document.getElementById('status-text').innerHTML, /Found 1 of 1</);
 });
 
 test(`${EDITOR}: a voyage file that fails to read leaves the current voyage untouched`, () => {

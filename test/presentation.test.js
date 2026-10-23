@@ -360,7 +360,7 @@ test(`${EDITOR}: dialog titles are in sentence case, and Delete chapter's button
 });
 
 test('status and dialog text use an em dash, not a spaced hyphen; the notes and help read consistently', () => {
-  assert.match(editor.defs.renderGeoStatus, /` — \$\{unresolved\} couldn't be resolved`/);
+  assert.match(editor.defs.renderGeoStatus, /` — \$\{unresolved\} not found`/);
   assert.match(editor.defs.showLookupConfirm, /at about one per second — roughly/);
   assert.ok(!/<span class="adv-lead">Note:<\/span> [a-z]/.test(viewer.html), 'a note starts with a capital');
   assert.match(editor.html, /Adds a “Read the posts →” link to the viewer's detail panel\./);

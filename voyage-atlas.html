@@ -1,4 +1,15 @@
 <!DOCTYPE html>
+<!--
+  Voyage Atlas viewer — part of Voyage Atlas, https://github.com/Peter-Petrik/voyage-atlas
+  Copyright (C) 2026 Peter Petrik
+
+  This program is free software: you can redistribute it and/or modify it under the terms of the
+  GNU General Public License as published by the Free Software Foundation, either version 3 of the
+  License, or (at your option) any later version. It is distributed in the hope that it will be
+  useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details:
+  https://www.gnu.org/licenses/
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -351,7 +362,8 @@
   }
   .landing-box p.landing-intro { font-size: 11.5px; color: var(--muted); margin-bottom: 18px; line-height: 1.55; }
   /* The small-screen advisory and the data note: an amber labeled note, not a button. The advisory
-     shows at the 640 px breakpoint (CSS only); the data note is shown by script. */
+     shows at the 640 px breakpoint (CSS only), and one marked adv-touch also on a touch-only screen of
+     any width (the editor's, whose editing needs a mouse); the data note is shown by script. */
   .landing-advisory {
     display: none; font-size: 11.5px; line-height: 1.5; color: var(--advisory-ink);
     background: var(--advisory-soft); border: 1px solid var(--advisory); border-left: 3px solid var(--advisory);
@@ -368,6 +380,9 @@
   /* After the base rule, so this display wins by source order (a media query adds no specificity). */
   @media (max-width: 640px) {
     .landing-advisory { display: flex; }
+  }
+  @media (hover: none) and (pointer: coarse) {
+    .landing-advisory.adv-touch { display: flex; }
   }
   .landing-actions { display: flex; flex-direction: column; gap: 10px; }
   .landing-btn {
@@ -427,7 +442,7 @@
   <button id="drawer-btn" title="Voyage chapters" onclick="toggleDrawer()">☰</button>
   <div class="head-titles">
     <h1 id="page-title">Voyage Atlas</h1>
-    <div class="head-sub">Load a voyage atlas to explore</div>
+    <div class="head-sub">Load a voyage file to explore</div>
   </div>
   <div id="hero-stats" class="head-stats"></div>
   <div class="head-actions">
@@ -450,8 +465,8 @@
     <p class="landing-intro">Chart a multi-year voyage as a sequence of chapters — regions and seasons, not a list of waypoints.</p>
     <div class="landing-actions">
       <button id="landing-sample" class="landing-btn" onclick="loadSampleFromChooser()" style="display:none;">
-        <span class="lb-title">Explore the sample voyage</span>
-        <span class="lb-desc">Open the sample voyage and explore how the chart works.</span>
+        <span class="lb-title">Explore this voyage</span>
+        <span class="lb-desc">Open the voyage published on this site.</span>
       </button>
       <button class="landing-btn landing-btn-ghost" onclick="document.getElementById('file-input').click()">
         <span class="lb-title">Load a voyage file…</span>
@@ -514,7 +529,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.17</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.18</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -523,9 +538,9 @@
 /* ─── Configuration ─────────────────────────────────────────
    Self-hosting settings. Edit the values below; nothing else in the script needs to change.
 
-   The voyage file to load.
-   Relative paths only (a subdirectory or sibling folder is fine); a remote http(s) address is not
-   supported. A ?data=path query parameter overrides this for a single visit. */
+   The voyage file shown on arrival. An address on this site only: a relative path (a subdirectory
+   or sibling folder is fine) or a full address on the same host; an address on another site is
+   refused. A ?data=path query parameter overrides this for a single visit, under the same rule. */
 const URL_VOYAGE_DATA = 'voyage-data.json';
 
 /* Day and night basemap tile layers (CARTO Positron and Dark Matter). If these are changed to
@@ -673,10 +688,17 @@ function setBase(mode) {
   document.body.classList.toggle('dark', dark);
   if (dark) { map.removeLayer(baseLight); baseDark.addTo(map); }
   else      { map.removeLayer(baseDark); baseLight.addTo(map); }
-  document.querySelector('meta[name=theme-color]').setAttribute('content', dark ? '#0b1622' : '#f4efe4');
+  document.querySelector('meta[name=theme-color]').setAttribute('content', getComputedStyle(document.body).getPropertyValue('--bg').trim());
   refreshMarkerStrokes();
   const ink = inkColor();
   Object.keys(casings).forEach(k => casings[k].forEach(c => c.setStyle({ color: ink })));
+}
+
+// The outline of the Decision and Gateway shapes: the page background in the dark theme, the panel
+// color in the light one, read from the theme's tokens.
+function markerStroke() {
+  const css = getComputedStyle(document.body);
+  return css.getPropertyValue(document.body.classList.contains('dark') ? '--bg' : '--panel').trim();
 }
 
 // The theme's ink color, which the route casings are drawn in.
@@ -708,7 +730,7 @@ bindToggle('t-gate',   gatewayLayer);
 if (window.matchMedia('(max-width: 640px), (max-height: 560px)').matches) document.getElementById('filter').classList.add('collapsed');
 
 function refreshMarkerStrokes() {
-  const stroke = document.body.classList.contains('dark') ? '#0b1622' : '#fbf8f1';
+  const stroke = markerStroke();
   const ink = inkColor();
   wptsLayer.eachLayer(l => l.setStyle && l.setStyle({ color: ink }));
   // Decision and Gateway markers carry their stroke inside the icon, so each is rebuilt from the
@@ -780,7 +802,7 @@ function gatewayMarkerSVG(size, fill, stroke, strokeW, opacity) {
 /* ========================= State ========================= */
 let DATA = null;
 
-// Distance display units — honor the editor's saved unit. The data and KML stay in nautical miles;
+// Distance display units — honor the editor's saved unit. Stored distances stay in nautical miles;
 // this only changes what's shown. Mirrors the editor's conversion (1 nm = 1.852 km = 1.150779 mi).
 const NM_TO = { nm: 1, km: 1.852, mi: 1.150779 };
 const UNIT_LABEL = { nm: 'Nautical Miles', km: 'Kilometers', mi: 'Miles' };
@@ -793,12 +815,12 @@ function fmtDist(nm, u) {
 
 /* ======================== Derived-stat machinery (mirrors the editor) ========================
    The viewer recomputes the hero figures and every per-chapter distance from the chapters and
-   waypoints on load, applying any overrides in meta.settings on top. The stored meta.hero and the
-   per-chapter nm/nmBase/nmApproach are write-on-save snapshots only — never trusted for display —
-   so a hand-edited JSON (added waypoint, changed country, removed chapter) can never drift from
+   waypoints on load, applying any overrides in meta.settings on top. No figure is stored in the
+   file (a meta.hero or per-chapter nm/nmBase/nmApproach from an older file is ignored), so a
+   hand-edited JSON (added waypoint, changed country, removed chapter) can never drift from
    what's drawn. The functions below are part of the shared core kept byte-identical between the editor
-   and the viewer (mirror-maintained: a change to any must be applied to both); the only intended
-   per-tool difference is the state source — the editor reads STATE.chapters, the viewer DATA.chapters. */
+   and the viewer (mirror-maintained: a change to any must be applied to both); the chapters
+   they work on are passed in, STATE.chapters from the editor and DATA.chapters from the viewer. */
 const TERRITORIES = new Set([
   // UK overseas territories
   'Anguilla','Bermuda','British Indian Ocean Territory','British Virgin Islands',
@@ -1000,7 +1022,7 @@ function composeNotesFallback(raw) {
 // A waypoint as both tools hold it. Coordinates are read by toCoord, 0 included. A latitude beyond
 // ±90 is not a position, so it is left empty; a longitude outside -180 to 180 (a 0-360 file, or 190
 // for -170) is brought into that range, so the route splits at the dateline where it crosses.
-function normalizeWaypoint(w, opts = {}) {
+function normalizeWaypoint(w) {
   const lat = toCoord(w.lat), lon = toCoord(w.lon);
   return {
     name: toText(w.name),
@@ -1013,6 +1035,10 @@ function normalizeWaypoint(w, opts = {}) {
     notes: toText(w.notes)
   };
 }
+
+// The pad multiplier of a chapter that gives none. Shared between editor and viewer (identical
+// definitions in both).
+const DEFAULT_PAD = 1.2;
 
 // A chapter as both tools hold it. The csv option marks a row of chapters.csv, whose countries and
 // key destinations arrive as text lists in its countries and keyDestinations columns; a voyage file
@@ -1031,8 +1057,8 @@ function normalizeChapter(ch, opts = {}) {
     countriesOverride: csv ? csvList(ch.countries) : (fileList(ch.countriesOverride).length ? fileList(ch.countriesOverride) : null),
     keyDestinations: csv ? (csvList(ch.keyDestinations) || []) : fileList(ch.keyDestinations),
     blogUrl: toText(ch.blogUrl) || null,
-    padMultiplier: pad !== null && pad >= 1 ? pad : 1.2,
-    waypoints: (Array.isArray(ch.waypoints) ? ch.waypoints : []).map(w => normalizeWaypoint(w, opts))
+    padMultiplier: pad !== null && pad >= 1 ? pad : DEFAULT_PAD,
+    waypoints: (Array.isArray(ch.waypoints) ? ch.waypoints : []).map(w => normalizeWaypoint(w))
   };
 }
 
@@ -1318,10 +1344,10 @@ function safeHttpUrl(value) {
 }
 
 // Voyage settings from a file, reduced to the values the tools understand: distanceUnit is one of the
-// NM_TO keys (else 'nm'), and each override is a positive finite number (else null, which reads as
-// unset). The settings are written into the header stats and every distance label, so a value of
-// any other kind must never reach that markup. Shared between editor and viewer (identical
-// definitions in both).
+// NM_TO keys (else 'nm'), the distance override a number above 0 and each count a whole number of 0
+// or more (else null, which reads as unset). The settings are written into the header stats and every
+// distance label, so a value of any other kind must never reach that markup. Shared between editor
+// and viewer (identical definitions in both).
 function normalizeSettings(raw) {
   const s = (raw && typeof raw === 'object') ? raw : {};
   // Numbers are read as coordinates are (toCoord), so text such as "12abc" is not read as 12; the
@@ -1381,12 +1407,12 @@ function loadVoyageData(raw) {
   document.title = title;
   document.querySelector('.head-sub').textContent = 'Click any route, waypoint, or chapter to explore';
 
-  // Hero stats — recomputed live from chapters/waypoints; meta.hero is a snapshot, never trusted.
+  // Header stats — computed from the chapters and waypoints on every load; nothing is stored.
   const tiles = heroItems(computeHeroStats(DATA.chapters, settings), viewerUnit(), false);
   document.getElementById('hero-stats').innerHTML = heroTilesHTML(tiles);
   document.getElementById('drawer-hero').innerHTML = heroTilesHTML(tiles);
 
-  const stroke = document.body.classList.contains('dark') ? '#0b1622' : '#fbf8f1';
+  const stroke = markerStroke();
 
   // Draw routes, every casing first so that no casing covers another chapter's route.
   const ink = inkColor();
@@ -1647,7 +1673,7 @@ function fitVoyageOnLoad(chapters) {
   const nrMin = noRepeatMinZoom();
   // The fit cannot open wider than the zoom that fills the chart's height, so on a phone held upright
   // a voyage too wide for that zoom takes the anchored view below, on its current chapter.
-  // Focus chapter: current → first future → last (past) → first.
+  // Focus chapter: the current one, else the first future one, else the last.
   const focus = list.find(ch => ch.era === 'current')
              || list.find(ch => ch.era === 'future')
              || list[list.length - 1];
@@ -1686,7 +1712,7 @@ function fitVoyageOnLoad(chapters) {
   // the waypoint isn't tucked under it. Work in pixels via Leaflet's projection at zoom z.
   const size = map.getSize();
   // At 640 px and below the panel spans the top of the chart instead, leaving the full width.
-  const RIGHT_PANEL = window.innerWidth <= 640 ? 0 : 208, EDGE_PAD = 12;
+  const RIGHT_PANEL = layersInset(), EDGE_PAD = 12;
   let targetX;
   if (headingWest) {
     const usableRight = size.x - RIGHT_PANEL;            // right limit clear of the panel
@@ -1858,6 +1884,15 @@ function chartInsets() {
   return { top: Math.max(0, top), bottom: Math.max(0, bottom) };
 }
 
+// How far the Chart & Layers panel reaches in from the chart's right edge, read from the page so it
+// follows the CSS; 0 at 640 px and below, where the panel runs across the top of the chart instead.
+function layersInset() {
+  if (window.innerWidth <= 640) return 0;
+  const filter = document.getElementById('filter');
+  if (!filter || !filter.offsetParent) return 0;
+  return Math.max(0, map.getContainer().getBoundingClientRect().right - filter.getBoundingClientRect().left);
+}
+
 // True when a chapter has something on the chart to frame: a route of two points or more, or a
 // named point with coordinates (a lone unnamed point, a shaping vertex, is not drawn).
 function chapterShown(ch) {
@@ -1972,7 +2007,7 @@ function isSameSitePath(path) {
 }
 
 let sampleVoyage = null;      // parsed voyage from the resolved path, when it loaded cleanly
-let sampleAvailable = false;  // whether the chooser should offer "Explore the sample voyage"
+let sampleAvailable = false;  // whether the chooser should offer "Explore this voyage"
 let dataNote = '';            // why the voyage file named for this visit could not be used (DATA_NOTES); the arrival chooser says so
 
 function openChooser() {

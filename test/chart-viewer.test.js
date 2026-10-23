@@ -86,7 +86,7 @@ test(`${EDITOR}: without PapaParse, Paste and the CSV import and export say so i
   fns.importCSV();
   fns.exportCSVs();
   assert.deepEqual(opened, []);
-  assert.match(document.el.textContent, /^The CSV library \(PapaParse\) could not load from cdnjs\.cloudflare\.com, so Paste, Import CSVs and Export CSVs are off\./);
+  assert.match(document.el.textContent, /^The CSV library \(PapaParse\) could not load from cdnjs\.cloudflare\.com, so Paste, Import CSVs and the CSV export are off\./);
 });
 
 // ---------------------------------------------------------------------------------------------

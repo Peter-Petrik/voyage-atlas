@@ -287,10 +287,12 @@ test(`${EDITOR}: Enter proceeds with the Look Up Countries dialog, unless one of
 });
 
 test(`${EDITOR}: the theme switch sets the browser theme color and the marker accent follows the dark theme`, () => {
-  let content = null, redraws = 0;
+  let content = null, redraws = 0, dark = false;
   const { toggleTheme } = pick(editor, ['toggleTheme'], {
     map: { removeLayer() {} }, tileLight: { addTo() {} }, tileDark: { addTo() {} }, updateMapAll() { redraws++; },
-    document: { body: { classList: { toggle() {} } }, querySelector: () => ({ setAttribute: (a, v) => { content = v; } }) },
+    // The theme color is read from the page's --bg token after the class changes, as the browser would.
+    document: { body: { classList: { toggle(c, on) { dark = on; } } }, querySelector: () => ({ setAttribute: (a, v) => { content = v; } }) },
+    getComputedStyle: () => ({ getPropertyValue: n => (n === '--bg' ? (dark ? ' #0b1622' : ' #f4efe4') : '') }),
   }, { lets: true, prelude: 'let isDark = false;' });   // isDark shares its declaration line with the stubbed map and tile layers
   toggleTheme();
   assert.equal(content, '#0b1622');
@@ -324,13 +326,23 @@ test(`${VIEWER}: the theme switch rebuilds Decision and Gateway icons with the n
   const marker = (kind) => ({ _vaShape: { kind, size: 16, color: '#332288' }, setIcon: i => icons.push(i) });
   const layer = items => ({ eachLayer: cb => items.forEach(cb) });
   const { refreshMarkerStrokes } = pick(viewer, ['refreshMarkerStrokes'], {
-    document: { body: { classList: { contains: () => true } } }, getComputedStyle: () => ({ getPropertyValue: () => '#eaf0f7' }),
+    document: { body: { classList: { contains: () => true } } },
+    getComputedStyle: () => ({ getPropertyValue: n => ({ '--ink': '#eaf0f7', '--bg': ' #0b1622', '--panel': 'rgba(15,29,44,0.94)' })[n] || '' }),
     wptsLayer: layer([]), decisionLayer: layer([marker('decision')]), gatewayLayer: layer([marker('gateway')]),
     L: { divIcon: o => o },
   });
   refreshMarkerStrokes();
   assert.equal(icons.length, 2);
   icons.forEach(i => assert.match(i.html, /stroke="#0b1622"/));
+  // In the light theme the shapes are outlined in the panel color.
+  const light = [];
+  const lightMarker = kind => ({ _vaShape: { kind, size: 16, color: '#332288' }, setIcon: i => light.push(i) });
+  pick(viewer, ['refreshMarkerStrokes'], {
+    document: { body: { classList: { contains: () => false } } },
+    getComputedStyle: () => ({ getPropertyValue: n => ({ '--ink': '#1d2b3a', '--bg': '#f4efe4', '--panel': ' #fbf8f1' })[n] || '' }),
+    wptsLayer: layer([]), decisionLayer: layer([lightMarker('decision')]), gatewayLayer: layer([]), L: { divIcon: o => o },
+  }).refreshMarkerStrokes();
+  assert.match(light[0].html, /stroke="#fbf8f1"/);
 });
 
 test(`${VIEWER}: past chapters and one-point chapters open from the legend and the drawer; a chapter without coordinates does not`, () => {
@@ -398,4 +410,75 @@ test('both tools use American spelling in their source, comments included', () =
   for (const tool of [editor, viewer]) {
     assert.deepEqual(tool.html.match(british) || [], [], tool.name);
   }
+});
+
+
+// v3.9.18 -------------------------------------------------------------------------------------------
+
+test(`${EDITOR}: a shaping vertex is drawn as a gray dot whatever its flags say`, () => {
+  const made = [];
+  // Every Leaflet object the drawing touches answers any call with itself, so only the markers matter.
+  const chain = () => { const o = new Proxy(function () {}, { get: () => () => o, set: () => true }); return o; };
+  const L = {
+    polyline: chain, layerGroup: chain, point: (x, y) => ({ x, y }), divIcon: o => o, DomEvent: { stopPropagation() {} },
+    circleMarker: (ll, opts) => { made.push({ kind: 'circle', opts }); return chain(); },
+    marker: (ll, opts) => { made.push({ kind: 'shape', opts }); return chain(); },
+  };
+  const STATE = { chapters: [{ num: 1, waypoints: [
+    { name: ' ', lat: 10, lon: 10, major: true, decision: true, gateway: true },
+    { name: 'Horta', lat: 11, lon: 11, major: false, decision: true, gateway: false },
+  ] }] };
+  const { updateMapChapter } = pick(editor, ['updateMapChapter'], {
+    STATE, L, ghostClear: () => false, raiseChapterLayers() {}, document: {},
+    map: { latLngToLayerPoint: ll => ({ x: ll[1], y: ll[0] }), layerPointToLatLng: p => ({ lat: p.y, lng: p.x }), removeLayer() {} },
+    getComputedStyle: () => ({ getPropertyValue: () => '' }),
+  }, { lets: true, prelude: 'activeChapterNum = 1;' });
+  updateMapChapter(1);
+  // Three world copies each: the vertex as a 2 px gray dot of normal weight (behind its hit area), and
+  // the named Decision waypoint as a shape.
+  const dots = made.filter(m => m.kind === 'circle' && m.opts.radius === 2);
+  assert.equal(dots.length, 3);
+  dots.forEach(d => { assert.equal(d.opts.fillColor, '#888'); assert.equal(d.opts.weight, 1); });
+  assert.equal(made.filter(m => m.kind === 'shape').length, 3);
+});
+
+test('the editor\'s arrival note shows on a touch-only screen too; the viewer\'s does not', () => {
+  assert.match(editor.html, /<div class="landing-advisory adv-touch">[^]*?designed for a desktop or laptop with a mouse\.<\/span><\/div>/);
+  assert.ok(!/adv-touch"/.test(viewer.html), 'the viewer\'s small-screen note stays width-only');
+  for (const tool of [editor, viewer]) {
+    assert.match(tool.html, /@media \(hover: none\) and \(pointer: coarse\) \{\s*\.landing-advisory\.adv-touch \{ display: flex; \}/);
+  }
+});
+
+test('the viewer\'s chooser offers the voyage it publishes as this voyage; the editor\'s × says what closing does', () => {
+  assert.match(viewer.html, /<span class="lb-title">Explore this voyage<\/span>\s*<span class="lb-desc">Open the voyage published on this site\.<\/span>/);
+  assert.match(editor.html, /<span class="lb-title">Explore the sample voyage<\/span>/);
+  const el = { landing: { classList: { remove() {} } } };
+  const byId = id => (el[id] = el[id] || { style: {}, classList: { remove() {}, add() {} } });
+  for (const [sample, title] of [[true, 'Close and explore the sample voyage'], [false, 'Close and start a new voyage']]) {
+    const { openChooser } = pick(editor, ['openChooser'], { document: { getElementById: byId }, showLanding() {} },
+      { lets: true, prelude: `sampleAvailable = ${sample}; dataNote = '';` });
+    openChooser();
+    assert.equal(el['landing-close'].title, title);
+  }
+});
+
+test(`${VIEWER}: the Chart & Layers inset is read from the page, and is 0 on a phone`, () => {
+  const run = (innerWidth, filter) => pick(viewer, ['layersInset'], {
+    window: { innerWidth }, document: { getElementById: () => filter },
+    map: { getContainer: () => ({ getBoundingClientRect: () => ({ right: 1280 }) }) },
+  }).layersInset();
+  const panel = { offsetParent: {}, getBoundingClientRect: () => ({ left: 1072 }) };
+  assert.equal(run(1280, panel), 208);
+  assert.equal(run(640, panel), 0);
+  assert.equal(run(1280, { offsetParent: null, getBoundingClientRect: () => ({ left: 0 }) }), 0);
+});
+
+test(`${EDITOR}: the chapter delete dialog names the chapter, or gives its number alone when it has no name`, () => {
+  const asked = [];
+  for (const name of ['Azores', '  ']) {
+    const STATE = { chapters: [{ num: 1, name, waypoints: [] }] };
+    pick(editor, ['deleteChapter'], { STATE, confirmModal: (t, msg) => asked.push(msg) }).deleteChapter(1);
+  }
+  assert.deepEqual(asked, ['Delete chapter 1, “Azores”? This cannot be undone.', 'Delete chapter 1? This cannot be undone.']);
 });

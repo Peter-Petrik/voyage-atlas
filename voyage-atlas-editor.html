@@ -1,27 +1,38 @@
 <!DOCTYPE html>
+<!--
+  Voyage Atlas Editor — part of Voyage Atlas, https://github.com/Peter-Petrik/voyage-atlas
+  Copyright (C) 2026 Peter Petrik
+
+  This program is free software: you can redistribute it and/or modify it under the terms of the
+  GNU General Public License as published by the Free Software Foundation, either version 3 of the
+  License, or (at your option) any later version. It is distributed in the hope that it will be
+  useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details:
+  https://www.gnu.org/licenses/
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voyage Atlas — Editor</title>
-<meta name="description" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
+<meta name="description" content="Plot a voyage on an interactive nautical chart — group waypoints into regional chapters, draw the routes, and export when ready.">
 <link rel="canonical" href="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Voyage Atlas">
 <meta property="og:title" content="Voyage Atlas — Editor">
-<meta property="og:description" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
+<meta property="og:description" content="Plot a voyage on an interactive nautical chart — group waypoints into regional chapters, draw the routes, and export when ready.">
 <meta property="og:url" content="https://sailingamazinggrace.com/resources/voyage-atlas/editor/">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://sailingamazinggrace.com/resources/voyage-atlas/voyage-atlas-preview.webp">
 <meta property="og:image:type" content="image/webp">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
+<meta property="og:image:alt" content="Plot a voyage on an interactive nautical chart — group waypoints into regional chapters, draw the routes, and export when ready.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Voyage Atlas — Editor">
-<meta name="twitter:description" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
+<meta name="twitter:description" content="Plot a voyage on an interactive nautical chart — group waypoints into regional chapters, draw the routes, and export when ready.">
 <meta name="twitter:image" content="https://sailingamazinggrace.com/resources/voyage-atlas/voyage-atlas-preview.webp">
-<meta name="twitter:image:alt" content="Build an interactive nautical chart of a voyage — group waypoints into regional chapters, draw the routes, and export when ready.">
+<meta name="twitter:image:alt" content="Plot a voyage on an interactive nautical chart — group waypoints into regional chapters, draw the routes, and export when ready.">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
@@ -595,7 +606,8 @@ th .hi { margin-left: 2px; }
 }
 .landing-box p.landing-intro { font-size: 11.5px; color: var(--muted); margin-bottom: 18px; line-height: 1.55; }
 /* The small-screen advisory and the data note: an amber labeled note, not a button. The advisory
-   shows at the 640 px breakpoint (CSS only); the data note is shown by script. */
+   shows at the 640 px breakpoint (CSS only), and one marked adv-touch also on a touch-only screen of
+   any width (the editor's, whose editing needs a mouse); the data note is shown by script. */
 .landing-advisory {
   display: none; font-size: 11.5px; line-height: 1.5; color: var(--advisory-ink);
   background: var(--advisory-soft); border: 1px solid var(--advisory); border-left: 3px solid var(--advisory);
@@ -612,6 +624,9 @@ th .hi { margin-left: 2px; }
 /* After the base rule, so this display wins by source order (a media query adds no specificity). */
 @media (max-width: 640px) {
   .landing-advisory { display: flex; }
+}
+@media (hover: none) and (pointer: coarse) {
+  .landing-advisory.adv-touch { display: flex; }
 }
 .landing-actions { display: flex; flex-direction: column; gap: 10px; }
 .landing-btn {
@@ -660,7 +675,7 @@ th .hi { margin-left: 2px; }
       </div>
     </div>
     <div class="dropdown" style="display:flex;">
-      <button class="head-btn btn-accent" id="save-btn" onclick="saveDefault()" title="Save to voyage-data.json" style="border-radius:4px 0 0 4px;border-right:none;">Save</button>
+      <button class="head-btn btn-accent" id="save-btn" onclick="saveDefault()" title="Download voyage-data.json" style="border-radius:4px 0 0 4px;border-right:none;">Save</button>
       <button class="head-btn btn-accent" onclick="toggleDropdown('export-menu')" title="Export as JSON, CSV or KML" style="border-radius:0 4px 4px 0;padding:5px 6px;">▾</button>
       <div id="export-menu" class="dropdown-menu">
         <button onclick="exportJSON()">JSON (timestamped)</button>
@@ -684,11 +699,11 @@ th .hi { margin-left: 2px; }
       <div id="settings-body">
         <div class="settings-grid">
           <div class="meta-field full">
-            <label for="set-title">Voyage Title <span class="hi" data-tip="The title for this voyage — a vessel, a vehicle, or anything else. Shown in page titles, the viewer header, and exports. If blank, defaults to “Voyage Atlas”.">i</span></label>
+            <label for="set-title">Voyage Title <span class="hi" data-tip="The title for this voyage — a vessel, a vehicle or anything else. Shown in both tools’ headers and page titles and used as the KML document’s name. If blank, defaults to “Voyage Atlas”.">i</span></label>
             <input type="text" id="set-title" dir="auto" value="" placeholder="(defaults to “Voyage Atlas”)" onchange="updateSettings()">
           </div>
           <div class="meta-field">
-            <label for="set-unit">Distance Units <span class="hi" data-tip="Display unit for all distances. The data, CSV and KML always store nautical miles — this only changes what is shown on screen and in the Distance Override field.">i</span></label>
+            <label for="set-unit">Distance Units <span class="hi" data-tip="Unit for every distance shown, here and in the viewer, which reads it from the voyage file. Stored distances stay in nautical miles whatever the unit; the Distance Override field is typed in this unit.">i</span></label>
             <select id="set-unit" onchange="changeDistanceUnit()">
               <option value="nm">Nautical miles (nm)</option>
               <option value="km">Kilometers (km)</option>
@@ -696,15 +711,15 @@ th .hi { margin-left: 2px; }
             </select>
           </div>
           <div class="meta-field">
-            <label for="set-nm">Distance Override <span class="hi" data-tip="Override the auto-calculated total distance. Entered in the selected display unit but stored and exported as nautical miles. Leave blank to use the sum of all chapter distances (base × pad multiplier).">i</span></label>
+            <label for="set-nm">Distance Override <span class="hi" data-tip="Override the auto-calculated total distance. Entered in the selected display unit but stored as nautical miles. Leave blank to use the sum of all chapter distances (each chapter’s route × its pad multiplier, plus any approach leg from the chapter before).">i</span></label>
             <input type="number" id="set-nm" value="" placeholder="AUTO:" onchange="updateSettings('distance')">
           </div>
           <div class="meta-field">
-            <label for="set-nations">Nations <span class="hi" data-tip="Sovereign nations in the voyage. Auto-calculated by classifying waypoint countries against a built-in territory reference list (57 names). Override here if the auto-count is wrong.">i</span></label>
+            <label for="set-nations">Nations <span class="hi" data-tip="Sovereign nations in the voyage. Auto-calculated from each chapter’s Countries / Territories (its waypoint countries, or the list typed over them), classified against a built-in territory reference list (57 names). Override here if the auto-count is wrong.">i</span></label>
             <input type="number" id="set-nations" value="" placeholder="AUTO:" onchange="updateSettings()">
           </div>
           <div class="meta-field">
-            <label for="set-territories">Territories <span class="hi" data-tip="Overseas territories, dependencies, and autonomous regions. Auto-calculated from the same reference list (e.g., French Polynesia, Bermuda, Svalbard). Override here if needed. See FAQ for the full territory reference list.">i</span></label>
+            <label for="set-territories">Territories <span class="hi" data-tip="Overseas territories, dependencies and autonomous regions, counted from the same chapter lists against the same reference list (e.g., French Polynesia, Bermuda, Svalbard). Override here if needed. See the FAQ for the full territory reference list.">i</span></label>
             <input type="number" id="set-territories" value="" placeholder="AUTO:" onchange="updateSettings()">
           </div>
         </div>
@@ -739,7 +754,7 @@ th .hi { margin-left: 2px; }
     <div id="map-status">
       <span id="status-text">No chapter selected — click a chapter to begin</span>
       <span style="flex:1"></span>
-      <button id="rapid-click-toggle" onclick="toggleRapidClick()">Rapid click: OFF</button>
+      <button id="rapid-click-toggle" onclick="toggleRapidClick()" title="Each click on the chart adds a waypoint at the end of the selected chapter">Rapid click: OFF</button>
     </div>
   </div>
 </div>
@@ -748,7 +763,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.17</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.18</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -761,7 +776,7 @@ th .hi { margin-left: 2px; }
   <div class="landing-box">
     <button id="landing-close" onclick="closeChooser()" title="Close">×</button>
     <h2>Voyage Atlas</h2>
-    <div class="landing-advisory"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> Voyage Atlas Editor is designed for a larger screen. Charting and editing waypoints on a phone is difficult — a tablet or desktop is strongly recommended.</span></div>
+    <div class="landing-advisory adv-touch"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> Voyage Atlas Editor is designed for a desktop or laptop with a mouse.</span></div>
     <div class="landing-advisory" id="landing-data-note" style="display:none;"><span class="adv-icon" aria-hidden="true">!</span><span class="adv-body"><span class="adv-lead">Note:</span> <span id="landing-data-note-text">Voyage files must be on this site.</span></span></div>
     <p class="landing-intro">Chart a multi-year voyage as a sequence of chapters — regions and seasons, not a list of waypoints. Pick a starting point:</p>
     <div class="landing-actions">
@@ -771,7 +786,7 @@ th .hi { margin-left: 2px; }
       </button>
       <button class="landing-btn landing-btn-ghost" onclick="newVoyageFromChooser()">
         <span class="lb-title">Start a new voyage</span>
-        <span class="lb-desc">Begin with a blank chart, starting from the first chapter.</span>
+        <span class="lb-desc">Begin with a blank chart and add the first chapter.</span>
       </button>
       <button class="landing-btn landing-btn-ghost" onclick="importJSON()">
         <span class="lb-title">Load a voyage file…</span>
@@ -820,7 +835,7 @@ th .hi { margin-left: 2px; }
 <div class="modal-overlay" id="csv-step2-modal">
   <div class="modal">
     <h2>Import waypoints CSV</h2>
-    <p>Chapters loaded. Now select the waypoints CSV file.</p>
+    <p>The chapters file has been read. Now select the waypoints CSV; the current voyage is replaced only once both files are read.</p>
     <div class="modal-actions">
       <button class="btn" onclick="closeCSVStep2()">Cancel</button>
       <button class="btn btn-accent" onclick="document.getElementById('file-csv-waypoints').click()">Select waypoints.csv…</button>
@@ -871,9 +886,10 @@ th .hi { margin-left: 2px; }
 /* ─── Configuration ─────────────────────────────────────────
    Self-hosting settings. Edit the values below; nothing else in the script needs to change. */
 
-/* The voyage file the chooser offers as the sample.
-   Relative paths only (a subdirectory or sibling folder is fine); a remote http(s) address is not
-   supported. A ?data=path query parameter overrides this for a single visit. */
+/* The voyage file the chooser offers as the sample. An address on this site only: a relative path
+   (a subdirectory or sibling folder is fine) or a full address on the same host; an address on
+   another site is refused. A ?data=path query parameter overrides this for a single visit, under
+   the same rule. */
 const URL_VOYAGE_DATA = 'voyage-data.json';
 
 /* Day and night basemap tile layers (CARTO Positron and Dark Matter). If these are changed to
@@ -948,7 +964,7 @@ if (typeof L === 'undefined') {
 }
 if (!leafletStylesLoaded()) libraryNotice('The chart styles (Leaflet)', 'the chart cannot be drawn properly');
 if (typeof Sortable === 'undefined') libraryNotice('The reordering library (SortableJS)', 'rows and chapters cannot be dragged into a new order');
-if (typeof Papa === 'undefined') libraryNotice('The CSV library (PapaParse)', 'Paste, Import CSVs and Export CSVs are off');
+if (typeof Papa === 'undefined') libraryNotice('The CSV library (PapaParse)', 'Paste, Import CSVs and the CSV export are off');
 
 const TOL_PALETTE = ['#332288','#88CCEE','#44AA99','#117733','#999933','#DDCC77','#CC6677','#882255','#AA4499'];
 const COLOR_ASSIGN = [0,0,1,2,3,4,5,6,7,8,1,5,3,6,0,4,7,2,8,5];
@@ -1077,10 +1093,10 @@ function gatewayMarkerSVG(size, fill, stroke, strokeW, opacity) {
    STATE
    ═══════════════════════════════════════════════════════════════ */
 // Voyage settings from a file, reduced to the values the tools understand: distanceUnit is one of the
-// NM_TO keys (else 'nm'), and each override is a positive finite number (else null, which reads as
-// unset). The settings are written into the header stats and every distance label, so a value of
-// any other kind must never reach that markup. Shared between editor and viewer (identical
-// definitions in both).
+// NM_TO keys (else 'nm'), the distance override a number above 0 and each count a whole number of 0
+// or more (else null, which reads as unset). The settings are written into the header stats and every
+// distance label, so a value of any other kind must never reach that markup. Shared between editor
+// and viewer (identical definitions in both).
 function normalizeSettings(raw) {
   const s = (raw && typeof raw === 'object') ? raw : {};
   // Numbers are read as coordinates are (toCoord), so text such as "12abc" is not read as 12; the
@@ -1101,8 +1117,9 @@ function defaultSettings() {
 }
 let STATE = { chapters: [], settings: defaultSettings(), metaTitle: '', paz: [] };
 
-// Distance display units. Data, CSV, and KML always store canonical nautical miles; the selected
-// unit only changes what's shown on screen (and the Distance Override field's value).
+// Distance display units. The one distance a voyage file stores, the Distance Override, is in nautical
+// miles (the CSV and KML carry none); the selected unit changes what both tools show and the value in
+// the Distance Override field.
 const NM_TO = { nm: 1, km: 1.852, mi: 1.150779 }; // 1 nm = 1.852 km = 1.150779 mi
 const UNIT_LABEL = { nm: 'Nautical Miles', km: 'Kilometers', mi: 'Miles' };
 const UNIT_LABEL_ONE = { nm: 'Nautical Mile', km: 'Kilometer', mi: 'Mile' }; // the distance tile for a total of 1
@@ -1125,7 +1142,7 @@ function setDirty(v) {
   const btn = document.getElementById('save-btn');
   if (btn) {
     btn.textContent = v ? 'Save *' : 'Save';
-    btn.title = v ? 'Unsaved changes' : 'Save to voyage-data.json';
+    btn.title = v ? 'Unsaved changes' : 'Download voyage-data.json';
   }
 }
 
@@ -1281,7 +1298,8 @@ function updateMapChapter(chNum) {
 
     const lon0 = normLon(w.lon);
     const opacity = isActive ? 0.9 : 0.3;
-    const shaped = isActive && (w.decision || w.gateway);
+    // A shaping vertex is drawn as a gray dot whatever its flags say, as the viewer and the KML ignore them.
+    const shaped = isActive && hasName && (w.decision || w.gateway);
 
     // Shared appearance — computed once per waypoint, reused across the world copies.
     let circleOpts = null, shapeSvg = null, shapeSize = 0, shapeHalf = 0;
@@ -1294,13 +1312,13 @@ function updateMapChapter(chNum) {
       let strokeColor = isActive ? ink : color;
       let cOpacity = isActive ? CASING_OPACITY : opacity, cFillOpacity = isActive ? 0.85 : 0.3;
       if (isSelected) { radius += 3; fillColor = accent; strokeColor = accent; cOpacity = 1; cFillOpacity = 0.9; } // #56 selected
-      circleOpts = { radius: radius, fillColor: fillColor, color: strokeColor, weight: w.major ? 2 : 1, opacity: cOpacity, fillOpacity: cFillOpacity };
+      circleOpts = { radius: radius, fillColor: fillColor, color: strokeColor, weight: hasName && w.major ? 2 : 1, opacity: cOpacity, fillOpacity: cFillOpacity };
     } else {
-      // Shaped marker for Decision and/or Gateway (active chapter only)
+      // Shaped marker for Decision and/or Gateway (named waypoints of the active chapter only)
       shapeSize = (w.major ? 20 : 16) + (isSelected ? 4 : 0); // #56 selected shape grows
       shapeHalf = shapeSize / 2;
       const size = shapeSize;
-      const stroke = isSelected ? accent : (isActive ? '#fff' : color);
+      const stroke = isSelected ? accent : '#fff';
       const strokeW = w.major ? 2 : 1.5;
       const fill = isSelected ? accent : color;
       if (w.decision) {
@@ -1347,7 +1365,9 @@ function updateMapChapter(chNum) {
         // Drag and right-click delete stay active-chapter-only operations.
         if (isActive) {
           m.on('mousedown', function(e) {
-            if (e.originalEvent && e.originalEvent.button > 0) return; // ignore right/middle buttons; right-click is delete (touch reports button 0/undefined and still drags)
+            // Right and middle buttons are ignored; right-click is delete. A touch drag pans the chart instead
+            // of moving the marker; editing needs a mouse, as the arrival note says.
+            if (e.originalEvent && e.originalEvent.button > 0) return;
             // Where the press was, and how far it was from the marker's center, so the drag starts
             // only past DRAG_TOLERANCE and the point keeps that offset from the pointer.
             const press = pointerPoint(e);
@@ -1413,7 +1433,7 @@ function updateMapChapter(chNum) {
         ghost._ends = [[a.lat, aLon + off], [b.lat, bLon + off]];
         if (ghostClear(ghost)) ghost.addTo(map);
 
-        ghost.bindTooltip('Click to add waypoint', { permanent: false, direction: 'top', offset: [0, -6] });
+        ghost.bindTooltip('Click or drag to add a vertex here', { permanent: false, direction: 'top', offset: [0, -6] });
 
         // Hover effect
         ghost.on('mouseover', function() {
@@ -1704,6 +1724,10 @@ function fitAllChapters(chapters) {
   fitToCoords(coords); // no-op when empty — leaves the default world view
 }
 
+// The zoom a waypoint is shown at when its row number is clicked, and a place picked from the search.
+const WAYPOINT_ZOOM = 7;
+const SEARCH_RESULT_ZOOM = 10;
+
 // Map ↔ list selection sync (#56). selectWaypoint is the single seam used by marker-click, the
 // sequence-number click, add-waypoint, and row focus. It activates the chapter if needed (clearing the
 // prior selection and redrawing all chapters so the route highlight stays exclusive — B3), records the
@@ -1719,7 +1743,7 @@ function selectWaypoint(chNum, idx, opts = {}) {
   const w = ch.waypoints[idx];
   if (opts.zoom && hasCoord(w)) {
     const lon = normLon(w.lon); // normalize so a dateline-side waypoint centers correctly
-    map.setView([w.lat, lon], 7); // B4: fixed zoom level 7
+    map.setView([w.lat, lon], WAYPOINT_ZOOM);
   }
   revealWaypointRow(chNum, idx, opts.keepFocus, opts.keepPanel);
 }
@@ -1736,10 +1760,6 @@ function deselectWaypoint() {
   if (chNum != null) updateMapChapter(chNum);
 }
 
-// Row-change selection (item 9). Focusing any field in a row selects that waypoint so its map marker
-// lights up — but only when focus crosses into a DIFFERENT row than the one already selected, so
-// tabbing between fields within the same row does nothing. No zoom (the map must not jump while
-// editing) and keepFocus so the user's focused field is not yanked to the name input.
 // The selected waypoint's current row in its chapter, or null when nothing is selected or the
 // waypoint is no longer in the chapter.
 function selectedIndex() {
@@ -1749,6 +1769,10 @@ function selectedIndex() {
   return i === -1 ? null : i;
 }
 
+// Row-change selection (item 9). Focusing any field in a row selects that waypoint so its map marker
+// lights up — but only when focus crosses into a DIFFERENT row than the one already selected, so
+// tabbing between fields within the same row does nothing. No zoom (the map must not jump while
+// editing) and keepFocus so the user's focused field is not yanked to the name input.
 function onWptRowFocus(chNum, idx, event) {
   if (chNum === selectedChapterNum && idx === selectedIndex()) return; // same row — leave it alone
   // Focus on a row's ✕ is the start of deleting that row, not a choice of it: selecting it would make
@@ -1899,7 +1923,7 @@ function pickSearchResult(i) {
     const statusEl = document.getElementById('status-text');
     if (statusEl) statusEl.innerHTML = '<span class="status-active">Select a chapter to add this waypoint</span>';
   }
-  map.setView([lat, lon], 10);
+  map.setView([lat, lon], SEARCH_RESULT_ZOOM);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1994,11 +2018,11 @@ function renderGeoStatus() {
   document.querySelectorAll('.lookup-btn').forEach(b => { b.disabled = pending > 0; });
   if (pending > 0) {
     const mins = etaMinutes(geoTotal - geoDone);
-    statusEl.innerHTML = `<span class="status-active">Geocoding ${geoDone}/${geoTotal}…</span> ~${mins} min remaining`;
+    statusEl.innerHTML = `<span class="status-active">Looking up ${geoDone} of ${geoTotal}…</span> ~${mins} min remaining`;
   } else if (geoTotal > 0) {
     const unresolved = geoTotal - geoResolved;
-    const tail = unresolved > 0 ? ` — ${unresolved} couldn't be resolved` : '';
-    statusEl.innerHTML = `<span class="status-active">Geocoded ${geoResolved}/${geoTotal}${tail}</span>${geoNote ? ' · ' + esc(geoNote) : ''}`;
+    const tail = unresolved > 0 ? ` — ${unresolved} not found` : '';
+    statusEl.innerHTML = `<span class="status-active">Found ${geoResolved} of ${geoTotal}${tail}</span>${geoNote ? ' · ' + esc(geoNote) : ''}`;
     geoNote = '';
     geoTotal = 0; geoDone = 0; geoResolved = 0; // reset for the next batch
   }
@@ -2186,7 +2210,7 @@ function updateChapterCountries(chNum) {
     const input = metaPanel.querySelector('input[onchange*="countriesOverride"]');
     if (input) {
       const auto = deriveCountriesFromWaypoints(ch).join('; ');
-      input.placeholder = auto ? `AUTO: ${auto}` : 'auto from waypoint countries';
+      input.placeholder = auto ? `AUTO: ${auto}` : 'AUTO: from waypoint countries';
     }
   }
   updateHeroStats();
@@ -2258,7 +2282,9 @@ function processFwdGeoQueue() {
 
 /* ═══════════════════════════════════════════════════════════════
    TERRITORY REFERENCE LIST (for auto nation/territory classification)
-   Names match Nominatim reverse geocoding country field output.
+   Names as Nominatim's country field gives them where it names the territory itself; a few (the
+   Azores, Madeira, the Canary Islands) it usually reports as the parent country, so those count as
+   territories only when the name is typed.
    ═══════════════════════════════════════════════════════════════ */
 const TERRITORIES = new Set([
   // UK overseas territories
@@ -2462,7 +2488,7 @@ function composeNotesFallback(raw) {
 // A waypoint as both tools hold it. Coordinates are read by toCoord, 0 included. A latitude beyond
 // ±90 is not a position, so it is left empty; a longitude outside -180 to 180 (a 0-360 file, or 190
 // for -170) is brought into that range, so the route splits at the dateline where it crosses.
-function normalizeWaypoint(w, opts = {}) {
+function normalizeWaypoint(w) {
   const lat = toCoord(w.lat), lon = toCoord(w.lon);
   return {
     name: toText(w.name),
@@ -2475,6 +2501,10 @@ function normalizeWaypoint(w, opts = {}) {
     notes: toText(w.notes)
   };
 }
+
+// The pad multiplier of a chapter that gives none. Shared between editor and viewer (identical
+// definitions in both).
+const DEFAULT_PAD = 1.2;
 
 // A chapter as both tools hold it. The csv option marks a row of chapters.csv, whose countries and
 // key destinations arrive as text lists in its countries and keyDestinations columns; a voyage file
@@ -2493,8 +2523,8 @@ function normalizeChapter(ch, opts = {}) {
     countriesOverride: csv ? csvList(ch.countries) : (fileList(ch.countriesOverride).length ? fileList(ch.countriesOverride) : null),
     keyDestinations: csv ? (csvList(ch.keyDestinations) || []) : fileList(ch.keyDestinations),
     blogUrl: toText(ch.blogUrl) || null,
-    padMultiplier: pad !== null && pad >= 1 ? pad : 1.2,
-    waypoints: (Array.isArray(ch.waypoints) ? ch.waypoints : []).map(w => normalizeWaypoint(w, opts))
+    padMultiplier: pad !== null && pad >= 1 ? pad : DEFAULT_PAD,
+    waypoints: (Array.isArray(ch.waypoints) ? ch.waypoints : []).map(w => normalizeWaypoint(w))
   };
 }
 
@@ -2623,7 +2653,7 @@ function makeChapter(num) {
   return {
     num, name: 'New Chapter', when: '', era: 'future',
     notes: '', countriesOverride: null,
-    keyDestinations: [], blogUrl: '', padMultiplier: 1.20,
+    keyDestinations: [], blogUrl: '', padMultiplier: DEFAULT_PAD,
     waypoints: []
   };
 }
@@ -3065,11 +3095,11 @@ function renderMetaForm(ch) {
   return `
     <div class="meta-grid">
       <div class="meta-field">
-        <label for="meta-name-${ch.num}">Name <span class="hi" data-tip="Display name for this chapter. Appears in the viewer's drawer, legend and detail panel.">i</span></label>
+        <label for="meta-name-${ch.num}">Name <span class="hi" data-tip="Display name for this chapter. Shown in the viewer’s Chapters list, Voyage Chapters drawer and detail panel.">i</span></label>
         <input type="text" id="meta-name-${ch.num}" dir="auto" value="${esc(ch.name)}" onchange="updateMeta(${ch.num},'name',this.value)">
       </div>
       <div class="meta-field">
-        <label for="meta-era-${ch.num}">Era <span class="hi" data-tip="Past = sailed. Current = in progress. Future = planned. Controls visual styling in the viewer.">i</span></label>
+        <label for="meta-era-${ch.num}">Era <span class="hi" data-tip="Past = sailed. Current = in progress. Future = planned. In the viewer a past chapter is dimmed in the Chapters list and the Voyage Chapters drawer, and the opening view keeps the current chapter in sight (else the first future one, else the last).">i</span></label>
         <select id="meta-era-${ch.num}" onchange="updateMeta(${ch.num},'era',this.value)">
           <option value="past"${ch.era==='past'?' selected':''}>Past</option>
           <option value="current"${ch.era==='current'?' selected':''}>Current</option>
@@ -3088,7 +3118,7 @@ function renderMetaForm(ch) {
         ${parseWhen(ch.when).readable ? '' : `<div id="when-note-${ch.num}" style="font-size:10px;color:var(--muted);margin-top:4px;">Saved as “${esc(ch.when)}”. Choosing from the lists replaces it.</div>`}
       </div>
       <div class="meta-field">
-        <label for="meta-pad-${ch.num}">Pad Multiplier <span class="hi" data-tip="Distance adjustment factor. Multiplied against the great-circle base nm to account for cruising-ground exploration. Default 1.20 (20%). Range: 1.05 (ocean crossing) to 3.00 (dense cruising ground like Scottish lochs).">i</span></label>
+        <label for="meta-pad-${ch.num}">Pad Multiplier <span class="hi" data-tip="Distance adjustment factor: the chapter’s great-circle route distance is multiplied by it to allow for exploring the cruising ground. Default 1.20 (adds 20%); any value of 1 or more is accepted. Typical values run from about 1.05 for an ocean crossing to 3.00 for a dense cruising ground such as the Scottish lochs. The approach leg from the previous chapter is not padded.">i</span></label>
         <input type="number" id="meta-pad-${ch.num}" step="0.05" min="1" value="${ch.padMultiplier}" onchange="onPadInput(this,${ch.num})">
       </div>
       <div class="meta-field">
@@ -3100,8 +3130,8 @@ function renderMetaForm(ch) {
         <textarea id="meta-notes-${ch.num}" dir="auto" style="min-height:80px;" onchange="updateMeta(${ch.num},'notes',this.value)">${esc(ch.notes || '')}</textarea>
       </div>
       <div class="meta-field full">
-        <label for="meta-countries-${ch.num}">Countries / Territories <span class="hi" data-tip="Auto-derived from this chapter's waypoint countries (first-appearance order). Leave blank to keep it automatic; type a list, entries separated by semicolons, to override.">i</span></label>
-        <input type="text" id="meta-countries-${ch.num}" dir="auto" value="${esc(countriesOverride)}" placeholder="${esc(countriesAuto ? 'AUTO: ' + countriesAuto : 'auto from waypoint countries')}" onchange="updateMeta(${ch.num},'countriesOverride',this.value)">
+        <label for="meta-countries-${ch.num}">Countries / Territories <span class="hi" data-tip="Auto-derived from this chapter's waypoint countries (first-appearance order). Leave blank to keep it automatic; type a list, entries separated by semicolons, to override. Shown in the viewer’s detail panel and counted in the header’s Nations and Territories.">i</span></label>
+        <input type="text" id="meta-countries-${ch.num}" dir="auto" value="${esc(countriesOverride)}" placeholder="${esc(countriesAuto ? 'AUTO: ' + countriesAuto : 'AUTO: from waypoint countries')}" onchange="updateMeta(${ch.num},'countriesOverride',this.value)">
       </div>
       <div class="meta-field full">
         <label for="meta-keydest-${ch.num}">Key Destinations <span class="hi" data-tip="Highlight destinations for this chapter, entries separated by semicolons. Shown under the chapter's name in the viewer's drawer.">i</span></label>
@@ -3120,7 +3150,7 @@ function onPadInput(input, chNum) {
   const ch = getChapter(chNum);
   if (!ch) return;
   const status = document.getElementById('status-text');
-  const v = input.value.trim() === '' ? 1.2 : toCoord(input.value);
+  const v = input.value.trim() === '' ? DEFAULT_PAD : toCoord(input.value);
   if (v === null || v < 1) {
     input.value = ch.padMultiplier;
     status.textContent = PAD_RANGE_NOTE;
@@ -3182,14 +3212,14 @@ function renderWaypointPanel(ch) {
         <thead><tr>
           <th style="width:20px"></th>
           <th style="width:28px"># <span class="hi" data-tip="Position in route sequence. Drag ≡ to reorder.">i</span></th>
-          <th class="col-name">Name <span class="hi" data-tip="Waypoint name. Leave empty for a shaping vertex (route geometry only, no marker on chart).">i</span></th>
-          <th class="col-lat">Lat <span class="hi" data-tip="Latitude in decimal degrees (negative for south), or typed with N or S, or in degrees and minutes. Set via search, chart click, or manual entry. Drag chart markers to adjust; the arrow keys step 0.01°.">i</span></th>
-          <th class="col-lon">Lon <span class="hi" data-tip="Longitude in decimal degrees (negative for west), or typed with E or W, or in degrees and minutes.">i</span></th>
-          <th class="col-cb">M <span class="hi" data-tip="Major: provisioning hub, spares, repairs, or extended stay. Larger circle marker on chart.">i</span></th>
-          <th class="col-cb">G <span class="hi" data-tip="Gateway: customs entry or strategic staging port. Star marker on chart.">i</span></th>
-          <th class="col-cb">D <span class="hi" data-tip="Decision: routing fork or go/no-go point. Diamond marker on chart.">i</span></th>
-          <th class="col-country">Country <span class="hi" data-tip="Looked up from the waypoint's coordinates. Editable. Feeds the chapter-level countries list.">i</span></th>
-          <th class="col-notes">Notes</th>
+          <th class="col-name">Name <span class="hi" data-tip="Waypoint name. Leave empty for a shaping vertex: route geometry only, drawn as a small gray dot on the selected chapter in the editor and not shown in the viewer; its flags are ignored. A name typed into a row with no coordinates is looked up to fill them and the country.">i</span></th>
+          <th class="col-lat">Lat <span class="hi" data-tip="Latitude in decimal degrees (negative for south), with N or S, or in degrees and minutes (or degrees, minutes and seconds). Filled by a place search, a chart click in Rapid click mode, a name lookup or typing. Drag the selected chapter’s marker to adjust; the up and down arrow keys step 0.01°.">i</span></th>
+          <th class="col-lon">Lon <span class="hi" data-tip="Longitude in decimal degrees (negative for west), with E or W, or in degrees and minutes (or degrees, minutes and seconds). A value outside -180 to 180 is brought into range. The up and down arrow keys step 0.01°.">i</span></th>
+          <th class="col-cb">M <span class="hi" data-tip="Major: provisioning hub, spares, repairs or an extended stay. Larger marker on the chart.">i</span></th>
+          <th class="col-cb">G <span class="hi" data-tip="Gateway: customs entry or strategic staging port. Star marker, on the selected chapter in the editor and under Gateway ports in the viewer.">i</span></th>
+          <th class="col-cb">D <span class="hi" data-tip="Decision: routing fork or go/no-go point. Diamond marker, on the selected chapter in the editor and under Decision points in the viewer; a waypoint that is both shows the diamond.">i</span></th>
+          <th class="col-country">Country <span class="hi" data-tip="Filled by Look up countries from the coordinates, or by a place search or a name lookup; editable. Feeds the chapter’s Countries / Territories list.">i</span></th>
+          <th class="col-notes">Notes <span class="hi" data-tip="Notes for this waypoint. Saved in the voyage file and the waypoints CSV; the viewer and the KML export do not show them.">i</span></th>
           <th style="width:24px"></th>
         </tr></thead>
         <tbody id="wpt-body-${ch.num}">
@@ -3395,7 +3425,7 @@ function confirmDeleteWaypoint(chNum, idx) {
   if (!ch || !ch.waypoints[idx]) return;
   const w = ch.waypoints[idx];
   const name = w.name && w.name.trim() ? w.name : `shaping vertex #${idx + 1}`;
-  document.getElementById('delete-wpt-msg').textContent = `Delete “${name}” from chapter ${chNum}?`;
+  document.getElementById('delete-wpt-msg').textContent = `Delete “${name}” from chapter ${chNum}? This cannot be undone.`;
   pendingDeleteWpt = { chNum, idx };
   document.getElementById('delete-wpt-modal').classList.add('open');
   // Focus moves into the dialog, onto Delete, so Enter deletes as it always has and Tab reaches
@@ -3554,7 +3584,9 @@ function pullFromPrevious(chNum) {
 }
 
 function deleteChapter(chNum) {
-  confirmModal('Delete chapter', `Delete chapter ${chNum}? This cannot be undone.`, () => {
+  const doomed = getChapter(chNum);
+  const label = doomed && (doomed.name || '').trim() ? `chapter ${chNum}, “${doomed.name}”` : `chapter ${chNum}`;
+  confirmModal('Delete chapter', `Delete ${label}? This cannot be undone.`, () => {
     // The chapters after the deleted one are renumbered, so the active chapter and the selection are
     // carried by their chapter objects; either is cleared when its chapter was the one deleted.
     const activeCh = activeChapterNum !== null ? getChapter(activeChapterNum) : null;
@@ -3670,7 +3702,7 @@ function doBulkAdd() {
 // True when PapaParse loaded; otherwise the notice says so, and the paste or CSV action stops.
 function papaReady() {
   if (typeof Papa !== 'undefined') return true;
-  libraryNotice('The CSV library (PapaParse)', 'Paste, Import CSVs and Export CSVs are off');
+  libraryNotice('The CSV library (PapaParse)', 'Paste, Import CSVs and the CSV export are off');
   return false;
 }
 
@@ -3766,8 +3798,6 @@ function importJSON() {
   guardDirty(function() { document.getElementById('file-json').click(); });
 }
 
-// Landing prompt (item 5) — parity with the viewer. Shown on load when no voyage-data.json is found
-// (including from disk, where the fetch is blocked). The user can load an atlas or dismiss to start fresh.
 /* ============================ Voyage data source ============================
    The sample-voyage source (URL_VOYAGE_DATA) is set in the Configuration block at the top of this
    script; ?data=path overrides it per visit. On arrival the chooser opens; the path is fetched
@@ -3814,6 +3844,7 @@ function hideLanding() {
 // The chooser opens on arrival; the sample button shows only when the configured file resolved.
 function openChooser() {
   document.getElementById('landing-sample').style.display = sampleAvailable ? '' : 'none';
+  document.getElementById('landing-close').title = sampleAvailable ? 'Close and explore the sample voyage' : 'Close and start a new voyage';
   // The data note shows on the arrival chooser only, when the voyage file named for this visit could
   // not be used (an address off this site, a ?data= file that was not found, or a file that could not
   // be read); any later opening of the chooser (the Load button or menu) leaves it hidden. Inline
@@ -3861,9 +3892,6 @@ function newVoyageFromMenu() {
   closeDropdowns();
   startNewVoyage();
 }
-// Reset to an empty voyage. Clears chapters, settings, and title, redraws (which wipes the map
-// layers), and clears the dirty flag — the same state-replacement loadVoyage performs, with no data.
-// Guards against silent data loss: when the current voyage has unsaved changes, confirm first.
 // Single dirty-state guard for every action that abandons the current voyage (load a file, import
 // CSVs, start a new voyage, load the sample). Gated on isDirty — the same flag that drives the Save
 // asterisk — so the warning fires under exactly the conditions the unsaved marker is showing. When
@@ -3915,6 +3943,9 @@ function resetSession() {
   document.getElementById('chapter-list').innerHTML = '';
 }
 
+// Reset to an empty voyage. Clears chapters, settings, and title, redraws (which wipes the map
+// layers), and clears the dirty flag — the same state-replacement loadVoyage performs, with no data.
+// Guards against silent data loss: when the current voyage has unsaved changes, confirm first.
 function startNewVoyage() {
   guardDirty(function() {
     hideLanding();
@@ -4187,7 +4218,7 @@ function mergeCSVImport(chapRows, wptRows, info = {}) {
     const ch = chMap[toChapterNum(r.chapter)];
     if (!ch) { skipped++; return; }
     if (latOutOfRange(r)) latitudes++;
-    ch.waypoints.push(normalizeWaypoint(r, { csv: true }));
+    ch.waypoints.push(normalizeWaypoint(r));
   });
 
   const notes = [];
@@ -4213,7 +4244,7 @@ function mergeCSVImport(chapRows, wptRows, info = {}) {
 function saveDefault() {
   closeDropdowns();
   announce('export', 'json');
-  // Save as voyage-data.json with no timestamp (the overwrite pattern), via the shared downloadFile.
+  // Saved as voyage-data.json, the name the viewer looks for, with no timestamp, via the shared downloadFile.
   downloadFile('voyage-data.json', buildExportJSON(), 'application/json', false);
   setDirty(false);
 }
@@ -4455,7 +4486,7 @@ function toggleTheme() {
     tileLight.addTo(map);
   }
   // The browser bar follows the page background, as in the viewer.
-  document.querySelector('meta[name=theme-color]').setAttribute('content', isDark ? '#0b1622' : '#f4efe4');
+  document.querySelector('meta[name=theme-color]').setAttribute('content', getComputedStyle(document.body).getPropertyValue('--bg').trim());
   // Selected markers are drawn in the theme's accent color, read when a chapter is drawn.
   updateMapAll();
 }
