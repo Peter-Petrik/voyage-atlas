@@ -7,7 +7,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { EDITOR, VIEWER, loadTool, pick, readRepoFile, stripComments, topLevelDefinitions } = require('./support.js');
+const { EDITOR, VIEWER, loadTool, pick, readRepoFile, stripComments, topLevelDefinitions, miniPapa } = require('./support.js');
 
 const editor = loadTool(EDITOR);
 const viewer = loadTool(VIEWER);
@@ -15,42 +15,6 @@ const tools = [editor, viewer];
 const SAMPLE = JSON.parse(readRepoFile('voyage-data.json'));
 const copy = o => JSON.parse(JSON.stringify(o));
 const allWaypoints = v => v.chapters.flatMap(c => c.waypoints);
-
-// A small CSV writer and reader in the shape of the two PapaParse calls the editor makes, so the
-// CSV round trip runs without the library: fields quoted when they hold a comma, quote or line
-// break, and rows read back as objects keyed by the header, or as arrays without one.
-const miniPapa = {
-  unparse({ fields, data }) {
-    const cell = v => {
-      const s = v == null ? '' : String(v);
-      return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    return [fields.map(cell).join(','), ...data.map(r => fields.map(f => cell(r[f])).join(','))].join('\r\n');
-  },
-  parse(text, opts = {}) {
-    const delim = opts.delimiter || ',';
-    const rows = [];
-    let row = [], cell = '', q = false;
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i];
-      if (q) {
-        if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; }
-        else if (c === '"') q = false;
-        else cell += c;
-      } else if (c === '"') q = true;
-      else if (c === delim) { row.push(cell); cell = ''; }
-      else if (c === '\n' || c === '\r') {
-        if (c === '\r' && text[i + 1] === '\n') i++;
-        row.push(cell); rows.push(row); row = []; cell = '';
-      } else cell += c;
-    }
-    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
-    const kept = opts.skipEmptyLines ? rows.filter(r => r.some(c => c !== '')) : rows;
-    if (!opts.header) return { data: kept, meta: {} };
-    const fields = kept[0].map(h => (opts.transformHeader ? opts.transformHeader(h) : h));
-    return { data: kept.slice(1).map(r => Object.fromEntries(fields.map((f, i) => [f, r[i] ?? '']))), meta: { fields } };
-  },
-};
 
 // A voyage with a value in every field the JSON carries, including the edge values the reader
 // treats specially: a coordinate of 0, a negative longitude, a territory name with a comma, flags
@@ -98,7 +62,7 @@ for (const tool of tools) {
     const { readVoyage, computeHeroStats, normalizeSettings } = pick(tool, ['readVoyage', 'computeHeroStats', 'normalizeSettings']);
     const v = readVoyage(copy(SAMPLE));
     const h = computeHeroStats(v.chapters, normalizeSettings(SAMPLE.meta.settings));
-    assert.deepEqual([h.totalNm, h.nations, h.territories, h.chapters, h.namedWaypoints, h.shapingVertices], [9070, 11, 1, 5, 63, 78]);
+    assert.deepEqual([h.totalNm, h.nations, h.territories, h.chapters, h.namedWaypoints, h.shapingVertices], [9070, 9, 3, 5, 63, 78]);
   });
 }
 

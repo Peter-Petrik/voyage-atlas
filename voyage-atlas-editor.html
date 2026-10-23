@@ -422,7 +422,7 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 }
 .wpt-table tr:hover td { background: var(--row-hover); }
 .wpt-table tr.shaping td { background: var(--shaping-bg); }
-.wpt-table tr.shaping input[type="text"] { font-style: italic; color: var(--muted); }
+.wpt-table tr.shaping input[type="text"]:not(.coord) { font-style: italic; color: var(--muted); }
 .wpt-row-drag { cursor: grab; color: var(--faint); text-align: center; width: 20px; }
 .wpt-row-drag:active { cursor: grabbing; }
 .wpt-row-num { text-align: center; width: 28px; color: var(--muted); font-size: 10px; cursor: pointer; user-select: none; }
@@ -439,7 +439,7 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 .wpt-table input:focus {
   border-color: var(--accent); background: var(--bg);
 }
-.wpt-table input[type="number"] { width: 80px; }
+.wpt-table input[type="number"], .wpt-table input.coord { width: 80px; }
 .wpt-table input[type="checkbox"] {
   width: 14px; height: 14px; cursor: pointer;
   accent-color: var(--accent);
@@ -687,7 +687,7 @@ th .hi { margin-left: 2px; }
             <input type="number" id="set-nm" value="" placeholder="AUTO:" onchange="updateSettings('distance')">
           </div>
           <div class="meta-field">
-            <label for="set-nations">Nations <span class="hi" data-tip="Sovereign nations in the voyage. Auto-calculated by classifying waypoint countries against a built-in territory reference list (54 names). Override here if the auto-count is wrong.">i</span></label>
+            <label for="set-nations">Nations <span class="hi" data-tip="Sovereign nations in the voyage. Auto-calculated by classifying waypoint countries against a built-in territory reference list (57 names). Override here if the auto-count is wrong.">i</span></label>
             <input type="number" id="set-nations" value="" placeholder="AUTO:" onchange="updateSettings()">
           </div>
           <div class="meta-field">
@@ -735,7 +735,7 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.15</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas Editor v3.9.16</a></span>
 </div>
 
 <!-- Hidden file inputs -->
@@ -774,7 +774,7 @@ th .hi { margin-left: 2px; }
     <h2>Paste waypoints</h2>
     <p>Paste tab-separated or comma-separated rows. Columns: name, lat, lon (minimum).
        Optional extra columns, in this order: major, decision, gateway, country, notes (the table shows Gateway before Decision).</p>
-    <textarea id="paste-area" onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();doPaste();}" style="width:100%;min-height:120px;font-family:inherit;font-size:11px;
+    <textarea id="paste-area" onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();event.stopPropagation();doPaste();}" style="width:100%;min-height:120px;font-family:inherit;font-size:11px;
       padding:8px;border:1px solid var(--border-strong);border-radius:3px;
       background:var(--bg);color:var(--ink);resize:vertical;"></textarea>
     <div class="modal-actions">
@@ -842,7 +842,7 @@ th .hi { margin-left: 2px; }
 <!-- Country look-up pre-flight confirmation modal (D2) -->
 <div class="modal-overlay" id="lookup-confirm-modal">
   <div class="modal">
-    <h2>Look up countries</h2>
+    <h2 id="lookup-confirm-title">Look up countries</h2>
     <p id="lookup-confirm-msg">This will look up countries for several waypoints.</p>
     <div class="modal-actions">
       <button class="btn" id="lookup-confirm-cancel" onclick="closeLookupConfirm()">Cancel</button>
@@ -1029,7 +1029,7 @@ function normalizeSettings(raw) {
 function defaultSettings() {
   return { distanceOverride: null, nationsOverride: null, territoriesOverride: null, distanceUnit: 'nm' };
 }
-let STATE = { chapters: [], settings: defaultSettings(), metaTitle: '' };
+let STATE = { chapters: [], settings: defaultSettings(), metaTitle: '', paz: [] };
 
 // Distance display units. Data, CSV, and KML always store canonical nautical miles; the selected
 // unit only changes what's shown on screen (and the Distance Override field's value).
@@ -1436,8 +1436,8 @@ function onMarkerDrag(e) {
   // Update table inputs if visible
   const latInput = document.querySelector(`#wpt-lat-${chNum}-${wptIdx}`);
   const lonInput = document.querySelector(`#wpt-lon-${chNum}-${wptIdx}`);
-  // The value attribute (defaultValue) moves with the value: a number field's stepper steps from
-  // it, so a stale one would snap a precise coordinate onto the 0.01 grid on the next nudge.
+  // The value attribute (defaultValue) moves with the value: an entry typed into the field that is
+  // refused puts the field back to it.
   if (latInput) latInput.value = latInput.defaultValue = w.lat;
   if (lonInput) lonInput.value = lonInput.defaultValue = w.lon;
 }
@@ -1906,6 +1906,14 @@ function reverseGeocode(lat, lon, callback) {
   processRevGeoQueue();
 }
 
+// True while the cursor is in this field and it holds something not yet stored: an entry being typed.
+// A lookup answer that arrives then leaves the row's fields alone: written into the field mid-word,
+// the next keystroke would store a mix of the two ("Gre" became "Greeceece"). A field the cursor has
+// only moved into, as Tab does after a name, still takes the answer.
+function beingTyped(input, stored) {
+  return !!input && document.activeElement === input && String(input.value).trim() !== String(stored == null ? '' : stored).trim();
+}
+
 // The chapter that holds a waypoint now. A lookup answer can arrive after chapters were deleted or
 // reordered, which renumbers them, so the chapter is found from the waypoint itself, never from the
 // number it had when the lookup was queued.
@@ -1952,9 +1960,14 @@ function queueChapterCountryLookups(ch) {
         // A country typed while the lookup waited is kept, and an answer for a position the waypoint
         // has since left is dropped.
         if ((wptRef.country && wptRef.country.trim()) || wptRef.lat !== lat || wptRef.lon !== lon) return;
+        const row = `${owner.num}-${owner.waypoints.indexOf(wptRef)}`;
+        const input = document.querySelector(`#wpt-country-${row}`);
+        // A country being typed into the row wins over the answer, and a coordinate being typed is a
+        // new position, which the answer is not for.
+        if (beingTyped(input, wptRef.country) || beingTyped(document.querySelector(`#wpt-lat-${row}`), wptRef.lat) ||
+            beingTyped(document.querySelector(`#wpt-lon-${row}`), wptRef.lon)) return;
         wptRef.country = country;
         setDirty(true);
-        const input = document.querySelector(`#wpt-country-${owner.num}-${owner.waypoints.indexOf(wptRef)}`);
         if (input) { input.value = country; syncCountryFlag(input); }
         updateChapterCountries(owner.num);
       });
@@ -1972,11 +1985,14 @@ function etaMinutes(rows) { return Math.max(1, Math.ceil(rows * 1.1 / 60)); } //
 function countChapterEligible(ch) {
   return ch.waypoints.filter(w => hasCoord(w) && (!w.country || w.country.trim() === '')).length;
 }
-function showLookupConfirm(n, action) {
+// `what` names what the run looks up: countries, or coordinates for pasted names.
+function showLookupConfirm(n, action, what = 'countries') {
   pendingLookupAction = action;
   const m = etaMinutes(n);
+  const title = document.getElementById('lookup-confirm-title');
+  if (title) title.textContent = `Look up ${what}`;
   const msg = document.getElementById('lookup-confirm-msg');
-  if (msg) msg.textContent = `This will look up countries for ${n} waypoint${n === 1 ? '' : 's'} at about one per second — roughly ${m} minute${m === 1 ? '' : 's'}.`;
+  if (msg) msg.textContent = `This will look up ${what} for ${n} waypoint${n === 1 ? '' : 's'} at about one per second — roughly ${m} minute${m === 1 ? '' : 's'}.`;
   document.getElementById('lookup-confirm-modal').classList.add('open');
   // Proceed takes focus, so Enter and the visible default agree; Shift+Tab reaches Cancel.
   document.getElementById('lookup-confirm-ok').focus();
@@ -2040,11 +2056,13 @@ function lookupAllCountries() {
 // Effective country list for a chapter: an explicit per-chapter override if set, else derived on the
 // fly from the waypoints' country fields (first-appearance order). Countries are never stored.
 function deriveCountriesFromWaypoints(ch) {
-  return [...new Set(
-    (ch.waypoints || [])
-      .filter(w => w.country && w.country.trim())
-      .map(w => w.country.trim())
-  )];
+  // A place written two ways ("Greece", "greece") is listed once, as it was first written.
+  const seen = new Set(), out = [];
+  (ch.waypoints || []).forEach(w => {
+    const name = String(w.country || '').trim(), k = countryKey(name);
+    if (k && !seen.has(k)) { seen.add(k); out.push(name); }
+  });
+  return out;
 }
 function chapterCountries(ch) {
   return (ch.countriesOverride && ch.countriesOverride.length) ? ch.countriesOverride : deriveCountriesFromWaypoints(ch);
@@ -2100,20 +2118,22 @@ function processFwdGeoQueue() {
       const w = wptRef;
       if (w.lat != null || w.lon != null) return; // coords set meanwhile
       if ((w.name || '').trim() !== name.trim()) return; // renamed meanwhile; the new name has its own lookup
+      // The table inputs at the CURRENT index. A coordinate being typed into the row wins over the answer.
+      const latInput = document.querySelector(`#wpt-lat-${chNum}-${curIdx}`);
+      const lonInput = document.querySelector(`#wpt-lon-${chNum}-${curIdx}`);
+      const countryInput = document.querySelector(`#wpt-country-${chNum}-${curIdx}`);
+      if (beingTyped(latInput, w.lat) || beingTyped(lonInput, w.lon)) return;
       w.lat = round5(parseFloat(r.lat));
       w.lon = round5(parseFloat(r.lon));
       setDirty(true);
       geoResolved++; // coordinates successfully resolved
       // Country rides along free in this forward response — fill only if empty
-      // (never clobber a value typed or pasted by hand).
-      if (!w.country && r.address && r.address.country) w.country = r.address.country;
-      // Update table inputs at the CURRENT index
-      const latInput = document.querySelector(`#wpt-lat-${chNum}-${curIdx}`);
-      const lonInput = document.querySelector(`#wpt-lon-${chNum}-${curIdx}`);
-      const countryInput = document.querySelector(`#wpt-country-${chNum}-${curIdx}`);
-      if (latInput) latInput.value = latInput.defaultValue = w.lat; // the stepper steps from defaultValue
+      // (never clobber a value typed or pasted by hand, or one being typed now).
+      const typingCountry = beingTyped(countryInput, w.country);
+      if (!w.country && !typingCountry && r.address && r.address.country) w.country = r.address.country;
+      if (latInput) latInput.value = latInput.defaultValue = w.lat; // a refused entry goes back to defaultValue
       if (lonInput) lonInput.value = lonInput.defaultValue = w.lon;
-      if (countryInput && w.country) { countryInput.value = w.country; syncCountryFlag(countryInput); }
+      if (countryInput && w.country && !typingCountry) { countryInput.value = w.country; syncCountryFlag(countryInput); }
       updateMapChapter(chNum);
       updateChapterCountries(chNum);
       // Filling a first or last row moves this chapter's start or end.
@@ -2141,8 +2161,8 @@ const TERRITORIES = new Set([
   'Saint Helena, Ascension and Tristan da Cunha','South Georgia and the South Sandwich Islands',
   'Turks and Caicos Islands',
   // France overseas
-  'French Polynesia','French Southern Territories','Mayotte','New Caledonia',
-  'Réunion','Saint Barthélemy','Saint Martin','Saint Pierre and Miquelon',
+  'French Guiana','French Polynesia','French Southern Territories','Guadeloupe','Martinique',
+  'Mayotte','New Caledonia','Réunion','Saint Barthélemy','Saint Martin','Saint Pierre and Miquelon',
   'Wallis and Futuna',
   // Netherlands overseas
   'Aruba','Bonaire, Sint Eustatius and Saba','Curaçao','Sint Maarten',
@@ -2167,11 +2187,45 @@ const TERRITORIES = new Set([
   'Åland Islands','Isle of Man','Jersey','Guernsey',
 ]);
 
+// Other names in common use for a place, each read as the name the territory list or Nominatim
+// uses, as keys (countryKey). Shared between editor and viewer (identical definitions in both).
+const COUNTRY_ALIASES = {
+  'turkey': 'turkiye', 'cape verde': 'cabo verde', 'czech republic': 'czechia', 'ivory coast': "cote d'ivoire",
+  'swaziland': 'eswatini', 'burma': 'myanmar', 'east timor': 'timor leste',
+  'holland': 'netherlands', 'the netherlands': 'netherlands', 'uk': 'united kingdom', 'great britain': 'united kingdom',
+  'us': 'united states', 'usa': 'united states', 'united states of america': 'united states',
+  'the bahamas': 'bahamas', 'the gambia': 'gambia', 'macao': 'macau', 'faeroe islands': 'faroe islands',
+  'pitcairn': 'pitcairn islands', 'saint helena': 'saint helena, ascension and tristan da cunha',
+  'caribbean netherlands': 'bonaire, sint eustatius and saba',
+};
+
+// A country name reduced to what identifies it, so a name matches however it is written: case,
+// accents, periods, hyphens and runs of spaces are ignored ("Reunion" is "Réunion", "U.S. Virgin
+// Islands" is "US Virgin Islands"), a leading "St" reads as "Saint" and "&" as "and", and a name in
+// COUNTRY_ALIASES reads as the name it stands for ("Turkey" is "Türkiye"). Shared between editor and
+// viewer (identical definitions in both).
+function countryKey(name) {
+  const k = String(name == null ? '' : name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[\u2018\u2019`]/g, "'").replace(/&/g, ' and ').replace(/\./g, '').replace(/[-\u2013\u2014]/g, ' ')
+    .replace(/\s+/g, ' ').trim().replace(/^st /, 'saint ');
+  return COUNTRY_ALIASES[k] || k;
+}
+
+// The territory names as keys, and the most comma-separated parts any of them has, for
+// mergeTerritoryNames. Shared between editor and viewer (identical definitions in both).
+const TERRITORY_KEYS = new Set(Array.from(TERRITORIES, countryKey));
+const TERRITORY_PARTS = Math.max(...Array.from(TERRITORIES, t => t.split(',').length));
+
+// The voyage's countries split into nations and territories. Each place is counted once, under the
+// spelling met first, however its other mentions are written. Shared between editor and viewer
+// (identical definitions in both).
 function classifyCountries(allCountries) {
-  const nations = [], territories = [];
+  const nations = [], territories = [], seen = new Set();
   allCountries.forEach(c => {
-    if (TERRITORIES.has(c)) territories.push(c);
-    else nations.push(c);
+    const k = countryKey(c);
+    if (!k || seen.has(k)) return;
+    seen.add(k);
+    (TERRITORY_KEYS.has(k) ? territories : nations).push(c);
   });
   return { nations, territories };
 }
@@ -2219,14 +2273,15 @@ function splitList(text) {
 
 // A list's entries with any territory name that contains commas ("Bonaire, Sint Eustatius and Saba")
 // joined back up where it was split at those commas. A list split at every comma, as older files and
-// CSVs were, holds such a name as two entries, and each would then count as a nation. Shared between
-// editor and viewer (identical definitions in both).
+// CSVs were, holds such a name as two entries, and each would then count as a nation. Only as many
+// entries are joined as the longest such name has parts, so a long list is read in one pass. Shared
+// between editor and viewer (identical definitions in both).
 function mergeTerritoryNames(parts) {
   const out = [];
   for (let i = 0; i < parts.length; ) {
     let end = i + 1;
-    for (let j = parts.length; j > i + 1; j--) {
-      if (TERRITORIES.has(parts.slice(i, j).join(', '))) { end = j; break; }
+    for (let j = Math.min(parts.length, i + TERRITORY_PARTS); j > i + 1; j--) {
+      if (TERRITORY_KEYS.has(countryKey(parts.slice(i, j).join(', ')))) { end = j; break; }
     }
     out.push(parts.slice(i, end).join(', '));
     i = end;
@@ -2362,11 +2417,44 @@ function orderChapters(chapters) {
   return changed;
 }
 
-// A voyage file read into what both tools work with: its title, settings and chapters, and what was
-// corrected on the way in (chapters renumbered, latitudes left empty, numbers that could not be read:
-// a coordinate or pad multiplier present but not a number, which reads as empty or as 1.2). A file that is not shaped as
-// a voyage (no chapters list, or a chapter or waypoint that is not an object) throws, with a message
-// naming what is wrong, before anything is read. The file itself is never changed.
+// The data model these tools read and write, stamped as meta.version. Shared between editor and
+// viewer (identical definitions in both).
+const DATA_VERSION = '3.0';
+
+// The fields a voyage file may hold at each level. Fields of older files that are folded in or
+// recomputed on load (routing, bail-out and prose, folded into a chapter's notes when it has none of
+// its own; the stored totals and chapter distances; the chapter countries list from before
+// overrides) are listed too: nothing is lost when they are not saved again. Any other field is named
+// in the editor's status bar, since a save leaves it out, and so are routing, bail-out and prose in a
+// chapter whose own notes take their place.
+// Shared between editor and viewer (identical definitions in both).
+const KNOWN_FIELDS = {
+  file: ['meta', 'chapters', 'paz'],
+  meta: ['title', 'version', 'generatedAt', 'settings', 'hero'],
+  settings: ['distanceUnit', 'distanceOverride', 'nationsOverride', 'territoriesOverride'],
+  chapter: ['num', 'name', 'when', 'era', 'notes', 'countriesOverride', 'keyDestinations', 'blogUrl', 'padMultiplier',
+    'waypoints', 'routing', 'bailout', 'prose', 'nm', 'nmBase', 'nmApproach', 'countries'],
+  waypoint: ['order', 'name', 'lat', 'lon', 'major', 'decision', 'gateway', 'country', 'notes'],
+  zone: ['zone', 'bounds']
+};
+
+// True when a meta.version such as "3.1", "4" or "v3.1" names a data model newer than DATA_VERSION;
+// a version without a minor number reads as .0. Shared between editor and viewer (identical
+// definitions in both).
+function newerDataVersion(v) {
+  const m = /^v?(\d+)(?:\.(\d+))?/i.exec(toText(v).trim());
+  if (!m) return false;
+  const [major, minor] = DATA_VERSION.split('.').map(Number);
+  return +m[1] > major || (+m[1] === major && +(m[2] || 0) > minor);
+}
+
+// A voyage file read into what both tools work with: its title, settings, chapters and avoidance
+// zones, and what was corrected or left out on the way in (chapters renumbered, latitudes left empty,
+// numbers that could not be read: a coordinate or pad multiplier present but not a number, which
+// reads as empty or as 1.2; zones without four finite bounds; fields these tools do not know, and a
+// data model newer than theirs). A file that is not shaped as a voyage (no chapters list, or a
+// chapter or waypoint that is not an object) throws, with a message naming what is wrong, before
+// anything is read. The file itself is never changed.
 function readVoyage(data) {
   const isObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
   if (!isObject(data) || !Array.isArray(data.chapters)) throw new Error('the file has no "chapters" list');
@@ -2384,7 +2472,25 @@ function readVoyage(data) {
   const unreadableNumbers = data.chapters.reduce((n, ch) => n + (unreadable(ch.padMultiplier) ? 1 : 0) +
     (ch.waypoints || []).reduce((m, w) => m + (unreadable(w.lat) ? 1 : 0) + (unreadable(w.lon) ? 1 : 0), 0), 0);
   const renumbered = orderChapters(chapters);
-  return { title: toText(meta.title), settings: normalizeSettings(meta.settings), chapters, renumbered, latitudesDropped, unreadableNumbers };
+  const unknown = new Set();
+  const fieldsOf = (obj, level, label) => {
+    if (isObject(obj)) Object.keys(obj).forEach(k => { if (!KNOWN_FIELDS[level].includes(k)) unknown.add(label + k); });
+  };
+  fieldsOf(data, 'file', '');
+  fieldsOf(meta, 'meta', 'meta.');
+  fieldsOf(meta.settings, 'settings', 'meta.settings.');
+  data.chapters.forEach(ch => {
+    fieldsOf(ch, 'chapter', 'chapter ');
+    if (toText(ch.notes)) ['routing', 'bailout', 'prose'].forEach(k => { if (toText(ch[k])) unknown.add('chapter ' + k); });
+    (ch.waypoints || []).forEach(w => fieldsOf(w, 'waypoint', 'waypoint '));
+  });
+  const zones = Array.isArray(data.paz) ? data.paz : [];
+  zones.forEach(z => fieldsOf(z, 'zone', 'zone '));
+  const paz = zones.filter(z => isObject(z) && Array.isArray(z.bounds) && z.bounds.length === 4 && z.bounds.every(Number.isFinite))
+    .map(z => ({ ...(z.zone != null ? { zone: toText(z.zone) } : {}), bounds: z.bounds.slice() }));
+  const zonesDropped = zones.length - paz.length + (data.paz != null && !Array.isArray(data.paz) ? 1 : 0);
+  return { title: toText(meta.title), settings: normalizeSettings(meta.settings), chapters, paz, renumbered, latitudesDropped,
+    unreadableNumbers, zonesDropped, unknownFields: [...unknown], newerVersion: newerDataVersion(meta.version) ? toText(meta.version).trim() : null };
 }
 
 // The notes the arrival chooser shows when the voyage file named for this visit could not be used.
@@ -2624,7 +2730,9 @@ function parseWhen(when) {
   const out = { sm: '', sy: '', em: '', ey: '', readable: true };
   const text = toText(when).trim();
   if (!text) return out;
-  const parts = text.split(/\s*[–—-]\s*/);
+  // Split at the dash, then trimmed: a pattern with spaces on both sides of the dash backtracks
+  // across a long run of spaces, and a 20 KB When took seconds per call.
+  const parts = text.split(/[–—-]/).map(s => s.trim());
   if (parts.length > 2) out.readable = false;
   const side = s => {
     let m = '', y = '';
@@ -2967,8 +3075,8 @@ function renderWaypointPanel(ch) {
           <th style="width:20px"></th>
           <th style="width:28px"># <span class="hi" data-tip="Position in route sequence. Drag ≡ to reorder.">i</span></th>
           <th class="col-name">Name <span class="hi" data-tip="Waypoint name. Leave empty for a shaping vertex (route geometry only, no marker on chart).">i</span></th>
-          <th class="col-lat">Lat <span class="hi" data-tip="Latitude in decimal degrees. Set via search, chart click, or manual entry. Drag chart markers to adjust.">i</span></th>
-          <th class="col-lon">Lon <span class="hi" data-tip="Longitude in decimal degrees.">i</span></th>
+          <th class="col-lat">Lat <span class="hi" data-tip="Latitude in decimal degrees (negative for south), or typed with N or S, or in degrees and minutes. Set via search, chart click, or manual entry. Drag chart markers to adjust; the arrow keys step 0.01°.">i</span></th>
+          <th class="col-lon">Lon <span class="hi" data-tip="Longitude in decimal degrees (negative for west), or typed with E or W, or in degrees and minutes.">i</span></th>
           <th class="col-cb">M <span class="hi" data-tip="Major: provisioning hub, spares, repairs, or extended stay. Larger circle marker on chart.">i</span></th>
           <th class="col-cb">G <span class="hi" data-tip="Gateway: customs entry or strategic staging port. Star marker on chart.">i</span></th>
           <th class="col-cb">D <span class="hi" data-tip="Decision: routing fork or go/no-go point. Diamond marker on chart.">i</span></th>
@@ -2991,8 +3099,8 @@ function renderWaypointRow(chNum, w, idx) {
       <td class="wpt-row-drag">≡</td>
       <td class="wpt-row-num" title="Zoom to and select this waypoint" onclick="selectWaypoint(${chNum},${idx},{zoom:true})">${idx + 1}</td>
       <td class="col-name"><input type="text" id="wpt-name-${chNum}-${idx}" value="${esc(w.name)}" placeholder="(shaping vertex)" onchange="updateWpt(${chNum},${idx},'name',this.value)"></td>
-      <td class="col-lat"><input type="number" step="0.01" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="onCoordInput(this,${chNum},${idx},'lat')"></td>
-      <td class="col-lon"><input type="number" step="0.01" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="onCoordInput(this,${chNum},${idx},'lon')"></td>
+      <td class="col-lat"><input type="text" class="coord" spellcheck="false" autocomplete="off" id="wpt-lat-${chNum}-${idx}" value="${w.lat ?? ''}" onchange="onCoordInput(this,${chNum},${idx},'lat')" onkeydown="coordKey(event,this,${chNum},${idx},'lat')"></td>
+      <td class="col-lon"><input type="text" class="coord" spellcheck="false" autocomplete="off" id="wpt-lon-${chNum}-${idx}" value="${w.lon ?? ''}" onchange="onCoordInput(this,${chNum},${idx},'lon')" onkeydown="coordKey(event,this,${chNum},${idx},'lon')"></td>
       <td class="col-cb"><input type="checkbox" ${w.major?'checked':''} onchange="updateWpt(${chNum},${idx},'major',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.gateway?'checked':''} onchange="updateWpt(${chNum},${idx},'gateway',this.checked)"></td>
       <td class="col-cb"><input type="checkbox" ${w.decision?'checked':''} onchange="updateWpt(${chNum},${idx},'decision',this.checked)"></td>
@@ -3016,30 +3124,88 @@ function renderChapterWaypoints(chNum) {
   if (el) el.querySelector('.ch-nm').textContent = fmtDist(chapterNm(ch, STATE.chapters), distUnit());
 }
 
-// A coordinate typed into the waypoint table, read through toCoord (0 included). A latitude beyond
-// ±90 is not a position, so the field goes back to its previous value and the status line says why
-// (a valid entry, or any later edit, redraws the line); a longitude outside -180 to 180 is brought into that range (200
-// becomes -160, 180 becomes -180) and shown that way. The field's value attribute moves with the
-// value, so the stepper steps from the new value. The latitude field carries no min or max: a number
-// field with a min steps from it, which would snap every nudge onto the 0.01 grid.
+// A coordinate as typed into the waypoint table or pasted: decimal degrees, with a point or a decimal
+// comma ("38.53", "38,53"); with a hemisphere letter before or after the number in place of a sign
+// ("38.53S", "W 28.63"); or in degrees and minutes, or degrees, minutes and seconds ("38°31.8'N",
+// "28 37 48 W"). Only N or S is read in a latitude and only E or W in a longitude, and a sign with a
+// letter is refused, since one of the two would be ignored. Returns { value } (null for an empty
+// field), with converted: true when the text was not a plain number, or { error: true } when it
+// cannot be read. A converted value is kept to five decimals, as a position set on the chart is.
+function readCoordText(text, axis) {
+  let s = String(text == null ? '' : text).trim();
+  if (!s) return { value: null };
+  const plain = toCoord(s);
+  if (plain !== null) return { value: plain };
+  // A minus sign (U+2212) copied from a page reads as a hyphen, and a decimal comma as a point.
+  s = s.replace(/\u2212/g, '-').replace(/,/g, '.').replace(/\s+/g, ' ');
+  const lead = /^([NSEW])\s*/i.exec(s), trail = /\s*([NSEW])$/i.exec(s);
+  if (lead && trail) return { error: true };
+  const hemi = (lead || trail) ? (lead || trail)[1].toUpperCase() : '';
+  if (lead) s = s.slice(lead[0].length);
+  else if (trail) s = s.slice(0, s.length - trail[0].length);
+  if (hemi && !(axis === 'lat' ? 'NS' : 'EW').includes(hemi)) return { error: true };
+  // The degree sign may be °, º or ˚ (Option-K on a Mac).
+  const m = /^([+-])?\s*(\d*\.\d+|\d+\.?\d*)\s*[°º˚]?\s*(?:(\d+(?:\.\d+)?)\s*['′’]?\s*(?:(\d+(?:\.\d+)?)\s*(?:["″”]|'')?)?)?$/.exec(s);
+  if (!m) return { error: true };
+  const [, sign, deg, min, sec] = m;
+  // Minutes follow whole degrees and seconds whole minutes; a sign with a letter says the direction twice.
+  if ((sign && hemi) || (min !== undefined && !/^\d+$/.test(deg)) || (sec !== undefined && !/^\d+$/.test(min))) return { error: true };
+  const mm = min === undefined ? 0 : +min, ss = sec === undefined ? 0 : +sec;
+  if (mm >= 60 || ss >= 60) return { error: true };
+  const v = +deg + mm / 60 + ss / 3600;
+  return { value: round5(sign === '-' || hemi === 'S' || hemi === 'W' ? -v : v), converted: true };
+}
+
+// A coordinate typed into the waypoint table, read through readCoordText (0 included). Text that
+// cannot be read as a coordinate, or a latitude beyond ±90, which is not a position, puts the field
+// back to its previous value, and the status line says why (a valid entry, or any later edit,
+// redraws the line). A value typed in another form is shown and stored in decimal degrees, and the
+// status line says what it was read as; a longitude outside -180 to 180 is brought into that range
+// (200 becomes -160, 180 becomes -180) and shown that way. The field's value attribute moves with
+// the value, so a refused entry goes back to the value last stored.
 const LAT_RANGE_NOTE = 'Latitude must be between -90 and 90.';
+const COORD_TEXT_NOTE = {
+  lat: "A latitude is decimal degrees (38.53 or -38.53), or with N or S (38.53S), or in degrees and minutes (38°31.8'S).",
+  lon: "A longitude is decimal degrees (28.63 or -28.63), or with E or W (28.63W), or in degrees and minutes (28°37.8'W)."
+};
 function onCoordInput(input, chNum, idx, field) {
-  let v = toCoord(input.value);
+  const typed = String(input.value).trim();
+  const read = readCoordText(typed, field);
+  let v = read.error ? null : read.value;
   const status = document.getElementById('status-text');
-  if (field === 'lat' && v !== null && Math.abs(v) > 90) {
+  const notes = [LAT_RANGE_NOTE, COORD_TEXT_NOTE.lat, COORD_TEXT_NOTE.lon];
+  const refusal = read.error ? COORD_TEXT_NOTE[field] : (field === 'lat' && v !== null && Math.abs(v) > 90 ? LAT_RANGE_NOTE : '');
+  if (refusal) {
     input.value = input.defaultValue;
-    if (status.textContent !== LAT_RANGE_NOTE) status.dataset.before = status.textContent;
-    status.textContent = LAT_RANGE_NOTE;
+    if (!notes.includes(status.textContent)) status.dataset.before = status.textContent;
+    status.textContent = refusal;
     return;
   }
   // A valid entry puts back what the status line said before the note.
-  if (status.textContent === LAT_RANGE_NOTE) status.textContent = status.dataset.before || '';
-  let wrapped = '';
-  if (field === 'lon' && v !== null && normLon(v) !== v) { wrapped = `Longitude ${v} read as ${normLon(v)}: longitudes run from -180 to 180.`; v = normLon(v); input.value = v; }
+  if (notes.includes(status.textContent)) status.textContent = status.dataset.before || '';
+  let note = read.converted ? `${field === 'lat' ? 'Latitude' : 'Longitude'} ${typed} read as ${v}.` : '';
+  if (field === 'lon' && v !== null && normLon(v) !== v) { note = `Longitude ${v} read as ${normLon(v)}: longitudes run from -180 to 180.`; v = normLon(v); }
+  if (note) input.value = v;
   input.defaultValue = input.value;
   updateWpt(chNum, idx, field, v);
   // A typo such as 370.3 for 37.03 moves the point a long way, so the status line says what it was read as.
-  if (wrapped) status.textContent = wrapped;
+  if (note) status.textContent = note;
+}
+
+// The up and down arrow keys step a coordinate field by 0.01 of a degree from the value as it
+// stands, keeping its other digits (rounded to as many decimals as it has, five at least, so the
+// arithmetic adds no noise), and store the result as a typed value is. A latitude is not stepped
+// past ±90; a longitude stepped past 180 is brought into range by onCoordInput.
+function coordKey(e, input, chNum, idx, field) {
+  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+  const v = toCoord(input.value);
+  if (v === null) return;
+  e.preventDefault();
+  const places = Math.max(5, (String(input.value).trim().split('.')[1] || '').length);
+  const next = Number((v + (e.key === 'ArrowUp' ? 0.01 : -0.01)).toFixed(Math.min(places, 15)));
+  if (field === 'lat' && Math.abs(next) > 90) return;
+  input.value = String(next);
+  onCoordInput(input, chNum, idx, field);
 }
 
 function updateWpt(chNum, idx, field, value) {
@@ -3414,22 +3580,30 @@ function doPaste() {
   // field count, so a paste with rows of different lengths and a semicolon in its notes was split at
   // the semicolons, turning each line into one name with no coordinates.
   // Columns, from the left: name, lat, lon, major, decision, gateway, country, notes; the first three
-  // are the minimum. Each row is read as a waypoint from a file is (normalizeWaypoint), so a latitude
-  // beyond ±90 is left empty and a longitude is brought into -180 to 180. A coordinate cell never
-  // holds a list, so a decimal comma copied from a spreadsheet ("38,53", in tab-separated text or a
-  // quoted cell) reads as a point. A row whose coordinate cells hold something that cannot be read is
-  // counted for the status line and is not looked up by name, which would put it somewhere else.
+  // are the minimum. Coordinates are read as the waypoint table reads them (readCoordText), so a
+  // decimal comma copied from a spreadsheet ("38,53", in tab-separated text or a quoted cell), a
+  // hemisphere letter or degrees and minutes read as decimal degrees; then each row is read as a
+  // waypoint from a file is (normalizeWaypoint), so a latitude beyond ±90 is left empty and a
+  // longitude is brought into -180 to 180. Both are counted for the status line, and a row with a
+  // coordinate that could not be used is not looked up by name, which would put it somewhere else.
+  // A row with every cell empty is skipped.
   const tab = text.includes('\t');
   const parsed = Papa.parse(text, { header: false, skipEmptyLines: true, delimiter: tab ? '\t' : ',' });
   const typedCoords = new Set();
-  let unreadable = 0;
+  let unreadable = 0, latitudes = 0;
+  const coordCell = (v, axis) => {
+    const r = readCoordText(v, axis);
+    if (r.error) { unreadable++; return null; }
+    return r.value;
+  };
   parsed.data.forEach(row => {
-    const lat = decimalPoint(row[1]), lon = decimalPoint(row[2]);
-    [lat, lon].forEach(v => { if (typeof v === 'string' && v.trim() && toCoord(v) === null) unreadable++; });
+    if (row.every(c => !String(c == null ? '' : c).trim())) return;
+    const lat = coordCell(row[1], 'lat'), lon = coordCell(row[2], 'lon');
+    if (lat !== null && Math.abs(lat) > 90) latitudes++;
     const w = normalizeWaypoint({ name: row[0], lat, lon, major: row[3],
       decision: row[4], gateway: row[5], country: row[6], notes: row[7] });
     const wpt = Object.assign(makeWaypoint(), w, { name: w.name.trim(), country: w.country.trim(), notes: w.notes.trim() });
-    if ([lat, lon].some(v => typeof v === 'string' && v.trim())) typedCoords.add(wpt);
+    if ([row[1], row[2]].some(v => typeof v === 'string' && v.trim())) typedCoords.add(wpt);
     ch.waypoints.push(wpt);
   });
 
@@ -3447,18 +3621,24 @@ function doPaste() {
   // Forward-geocode ONLY the pasted rows that have a name but no coordinates.
   // The country rides along free in that same response, so it's filled too (only-if-empty);
   // rows pasted WITH coordinates make no call, so their country still comes from the button.
+  const chNum = pasteTargetChNum, lookups = [];
   for (let idx = startIdx; idx < ch.waypoints.length; idx++) {
     const w = ch.waypoints[idx];
-    if (w.name && w.name.trim() && w.lat == null && w.lon == null && !typedCoords.has(w)) {
-      forwardGeocodeWaypoint(pasteTargetChNum, idx, w.name.trim());
-    }
+    if (w.name && w.name.trim() && w.lat == null && w.lon == null && !typedCoords.has(w)) lookups.push(idx);
   }
+  const notes = [];
+  if (latitudes) notes.push(latitudesNote(latitudes));
+  if (unreadable) notes.push(unreadableNote(unreadable));
+  const note = notes.length ? `Pasted with corrections: ${notes.join('; ')}` : '';
+  if (note) document.getElementById('status-text').textContent = note;
   // With lookups under way the note joins their summary, which would otherwise replace it at once.
-  if (unreadable) {
-    const note = `Pasted with corrections: ${unreadableNote(unreadable)}`;
-    if (geoPending() > 0) geoNote = note;
-    else document.getElementById('status-text').textContent = note;
-  }
+  const run = () => {
+    lookups.forEach(idx => forwardGeocodeWaypoint(chNum, idx, ch.waypoints[idx].name.trim()));
+    if (note && geoPending() > 0) geoNote = note;
+  };
+  // A long run of lookups is confirmed first, as a country lookup is; Cancel keeps the rows unlooked-up.
+  if (lookups.length >= LOOKUP_CONFIRM_THRESHOLD) showLookupConfirm(lookups.length, run, 'coordinates');
+  else run();
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -3595,6 +3775,7 @@ function guardDirty(action) {
 function resetSession() {
   STATE.settings = defaultSettings();
   STATE.metaTitle = '';
+  STATE.paz = [];
   activeChapterNum = null;
   selectedChapterNum = null;
   selectedWpt = null;
@@ -3674,6 +3855,11 @@ function latitudesNote(n) {
 function unreadableNote(n) {
   return `${n} ${n === 1 ? 'number' : 'numbers'} that could not be read left unset`;
 }
+// The fields of a voyage file that the editor does not know, which a save leaves out, named up to five.
+function unknownFieldsNote(names) {
+  const shown = names.slice(0, 5).join(', ') + (names.length > 5 ? `, and ${names.length - 5} more` : '');
+  return `${names.length === 1 ? '1 field' : names.length + ' fields'} this editor does not know, not kept on save: ${shown}`;
+}
 
 // Install a voyage read from a file or a CSV pair, and draw it. The new voyage is drawn inside a
 // try: if drawing it fails, the previous voyage, its title and its settings are put back and the
@@ -3681,12 +3867,13 @@ function unreadableNote(n) {
 // are installed before the chapter list is drawn, so a km or mi voyage's chapter distances are drawn
 // in its own unit. `notes` lists what was corrected on the way in, for the status line.
 function installVoyage(voyage, notes) {
-  const previous = { chapters: STATE.chapters, settings: STATE.settings, metaTitle: STATE.metaTitle, dirty: isDirty };
+  const previous = { chapters: STATE.chapters, settings: STATE.settings, metaTitle: STATE.metaTitle, paz: STATE.paz, dirty: isDirty };
   const install = v => {
     resetSession();
     STATE.chapters = v.chapters;
     STATE.settings = v.settings;
     STATE.metaTitle = v.metaTitle;
+    STATE.paz = v.paz || [];
     renderAllChapters();
     loadSettings();
     updateHeroStats();
@@ -3716,8 +3903,11 @@ function loadVoyage(data, opts = {}) {
   if (v.renumbered) notes.push(`chapters renumbered 1–${v.chapters.length}`);
   if (v.latitudesDropped) notes.push(latitudesNote(v.latitudesDropped));
   if (v.unreadableNumbers) notes.push(unreadableNote(v.unreadableNumbers));
+  if (v.zonesDropped) notes.push(`${v.zonesDropped} avoidance ${v.zonesDropped === 1 ? 'zone' : 'zones'} without four bounds left out`);
+  if (v.newerVersion) notes.push(`made with data model ${v.newerVersion}; this editor reads ${DATA_VERSION}`);
+  if (v.unknownFields.length) notes.push(unknownFieldsNote(v.unknownFields));
   if (opts.legacy) notes.push('text read as Windows-1252');
-  installVoyage({ chapters: v.chapters, settings: v.settings, metaTitle: v.title }, notes);
+  installVoyage({ chapters: v.chapters, settings: v.settings, metaTitle: v.title, paz: v.paz }, notes);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -3761,7 +3951,10 @@ function readCSV(buffer, numberColumns, keepColumns) {
   const parsed = Papa.parse(text, { header: true, skipEmptyLines: true, transformHeader: h => h.trim() });
   let decimalCommas = false, unreadable = 0, extra = 0, trimmed = 0;
   const kept = [];
+  // A row with every cell empty, as a spreadsheet writes for a cleared row (",,,,"), is not a row.
+  const blank = r => Object.values(r).flat().every(v => !String(v == null ? '' : v).trim());
   parsed.data.forEach(r => {
+    if (blank(r)) return;
     if (!r.__parsed_extra) { kept.push(r); return; }
     if (!keepColumns) { extra++; return; }
     trimmed++;
@@ -3891,7 +4084,7 @@ function mergeCSVImport(chapRows, wptRows, info = {}) {
   if (info.unreadable) notes.push(unreadableNote(info.unreadable));
   if (info.legacy) notes.push('text read as Windows-1252');
   // A CSV pair carries no title or settings, so the voyage starts from the defaults.
-  installVoyage({ chapters, settings: defaultSettings(), metaTitle: '' }, notes);
+  installVoyage({ chapters, settings: defaultSettings(), metaTitle: '', paz: [] }, notes);
   announce('import', 'csv');
   return true;
 }
@@ -3927,7 +4120,7 @@ function buildExportJSON() {
   return JSON.stringify({
     meta: {
       ...(STATE.metaTitle ? { title: STATE.metaTitle } : {}),
-      version: '3.0',
+      version: DATA_VERSION,
       generatedAt: new Date().toISOString(),
       settings: {
         ...(s.distanceOverride ? { distanceOverride: s.distanceOverride } : {}),
@@ -3936,7 +4129,9 @@ function buildExportJSON() {
         distanceUnit: s.distanceUnit || 'nm'
       }
     },
-    chapters
+    chapters,
+    // Avoidance zones are not edited here; they are written back as they were read.
+    ...((STATE.paz || []).length ? { paz: STATE.paz } : {})
   }, null, 2);
 }
 
@@ -3959,6 +4154,10 @@ function exportCSVs() {
 
 // The CSV columns, written as the header row even when there are no rows, so a voyage whose chapters
 // have no waypoints yet exports a waypoints.csv the import accepts.
+// Both CSVs start with a UTF-8 byte-order mark, which tells a spreadsheet the text is UTF-8: without
+// one, Excel opens the file in the system's code page and an accented name ("Türkiye") comes back
+// changed when the sheet is saved and imported. The import reads the mark (decodeText).
+const CSV_BOM = '\uFEFF';
 const CHAPTER_CSV_FIELDS = ['num', 'name', 'when', 'era', 'notes', 'countries', 'keyDestinations', 'blogUrl', 'padMultiplier'];
 const WAYPOINT_CSV_FIELDS = ['chapter', 'order', 'name', 'lat', 'lon', 'major', 'decision', 'gateway', 'country', 'notes'];
 function exportChaptersCSV() {
@@ -3975,7 +4174,7 @@ function exportChaptersCSV() {
     padMultiplier: ch.padMultiplier
   }));
   const csv = Papa.unparse({ fields: CHAPTER_CSV_FIELDS, data: rows.map(csvRow) });
-  downloadFile('chapters.csv', csv, 'text/csv');
+  downloadFile('chapters.csv', CSV_BOM + csv, 'text/csv');
 }
 
 function exportWaypointsCSV() {
@@ -3998,7 +4197,7 @@ function exportWaypointsCSV() {
     });
   });
   const csv = Papa.unparse({ fields: WAYPOINT_CSV_FIELDS, data: rows.map(csvRow) });
-  downloadFile('waypoints.csv', csv, 'text/csv');
+  downloadFile('waypoints.csv', CSV_BOM + csv, 'text/csv');
 }
 
 // A CSV cell that a spreadsheet would run as a formula (text starting with =, +, -, @, a tab or a

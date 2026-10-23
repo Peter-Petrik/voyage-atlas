@@ -123,10 +123,11 @@ test(`${EDITOR}: placing a waypoint from a search result or a ghost midpoint cou
   assert.match(editor.defs.onGhostDragEnd, /noteFirstEdit\(\)/);
 });
 
-test(`${EDITOR}: the lat and lon steppers move 0.01 of a degree`, () => {
-  const inputs = editor.html.match(/<input type="number" step="[^"]*"(?: min="-90" max="90")? id="wpt-(lat|lon)-/g) || [];
+test(`${EDITOR}: the lat and lon fields step 0.01 of a degree with the arrow keys`, () => {
+  const inputs = editor.html.match(/<input type="text" class="coord"[^>]*id="wpt-(lat|lon)-[^>]*>/g) || [];
   assert.equal(inputs.length, 2);
-  inputs.forEach(i => assert.match(i, /step="0\.01"/));
+  inputs.forEach(i => assert.match(i, /onkeydown="coordKey\(event,this,/));
+  assert.match(editor.defs.coordKey, /e\.key === 'ArrowUp' \? 0\.01 : -0\.01/);
 });
 
 test('both tools use the same --shadow values', () => {
@@ -299,7 +300,7 @@ test(`${EDITOR}: the theme switch sets the browser theme color and the marker ac
   assert.match(editor.defs.updateMapChapter, /getComputedStyle\(document\.body\)\.getPropertyValue\('--accent'\)/);
 });
 
-test(`${EDITOR}: the lat and lon fields keep their stepper base with their value`, () => {
+test(`${EDITOR}: the lat and lon fields keep the value last stored, to go back to`, () => {
   const inputs = editor.html.match(/id="wpt-(lat|lon)-\$\{chNum\}-\$\{idx\}"[^>]*>/g) || [];
   assert.equal(inputs.length, 2);
   inputs.forEach(i => assert.match(i, /onCoordInput\(this,/));

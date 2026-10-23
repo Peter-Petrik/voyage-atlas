@@ -132,7 +132,7 @@ test(`${EDITOR}: Rapid click ON, a danger hover, placeholders, the CURRENT chip 
   assert.match(css, /#rapid-click-toggle\.active \{\s*background: var\(--success\); color: var\(--panel-solid\);/);
   assert.match(css, /\.btn-danger:hover \{ background: var\(--hazard\); color: var\(--panel-solid\); \}/);
   assert.match(css, /input::placeholder, textarea::placeholder \{ color: var\(--muted\); opacity: 1; \}/);
-  assert.match(css, /tr\.shaping input\[type="text"\] \{ font-style: italic; color: var\(--muted\); \}/);
+  assert.match(css, /tr\.shaping input\[type="text"\]:not\(\.coord\) \{ font-style: italic; color: var\(--muted\); \}/);
   assert.match(css, /\.ch-header:hover \.ch-num \{ color: var\(--accent-ink\); \}/);
   assert.match(css, /\.wpt-row-num:hover \{ color: var\(--accent-ink\); \}/);
   assert.match(css, /\.ch-sync\.pull:hover \{ background: linear-gradient\(var\(--accent-soft\), var\(--accent-soft\)\), var\(--panel-solid\);/);

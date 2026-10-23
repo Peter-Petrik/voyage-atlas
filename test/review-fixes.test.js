@@ -348,7 +348,7 @@ test(`${EDITOR}: the When field keeps what the lists cannot show, and a season n
 });
 
 test(`${EDITOR}: a paste's corrections note joins the lookup summary instead of being overwritten`, () => {
-  assert.match(editor.defs.doPaste, /if \(geoPending\(\) > 0\) geoNote = note;/);
+  assert.match(editor.defs.doPaste, /if \(note && geoPending\(\) > 0\) geoNote = note;/);
   const statusEl = { innerHTML: '' };
   pick(editor, ['renderGeoStatus'], { document: { getElementById: () => statusEl, querySelectorAll: () => [] }, geoPending: () => 0 },
     { lets: true, prelude: "geoTotal = 2; geoDone = 2; geoResolved = 2; geoNote = 'Pasted with corrections: 1 number that could not be read left unset';" })

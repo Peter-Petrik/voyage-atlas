@@ -496,7 +496,7 @@
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.15</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas" target="_blank" rel="noopener">Voyage Atlas v3.9.16</a></span>
 </div>
 
 <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(event)">
@@ -733,8 +733,8 @@ const TERRITORIES = new Set([
   'Saint Helena, Ascension and Tristan da Cunha','South Georgia and the South Sandwich Islands',
   'Turks and Caicos Islands',
   // France overseas
-  'French Polynesia','French Southern Territories','Mayotte','New Caledonia',
-  'Réunion','Saint Barthélemy','Saint Martin','Saint Pierre and Miquelon',
+  'French Guiana','French Polynesia','French Southern Territories','Guadeloupe','Martinique',
+  'Mayotte','New Caledonia','Réunion','Saint Barthélemy','Saint Martin','Saint Pierre and Miquelon',
   'Wallis and Futuna',
   // Netherlands overseas
   'Aruba','Bonaire, Sint Eustatius and Saba','Curaçao','Sint Maarten',
@@ -758,11 +758,45 @@ const TERRITORIES = new Set([
   // Other
   'Åland Islands','Isle of Man','Jersey','Guernsey',
 ]);
+// Other names in common use for a place, each read as the name the territory list or Nominatim
+// uses, as keys (countryKey). Shared between editor and viewer (identical definitions in both).
+const COUNTRY_ALIASES = {
+  'turkey': 'turkiye', 'cape verde': 'cabo verde', 'czech republic': 'czechia', 'ivory coast': "cote d'ivoire",
+  'swaziland': 'eswatini', 'burma': 'myanmar', 'east timor': 'timor leste',
+  'holland': 'netherlands', 'the netherlands': 'netherlands', 'uk': 'united kingdom', 'great britain': 'united kingdom',
+  'us': 'united states', 'usa': 'united states', 'united states of america': 'united states',
+  'the bahamas': 'bahamas', 'the gambia': 'gambia', 'macao': 'macau', 'faeroe islands': 'faroe islands',
+  'pitcairn': 'pitcairn islands', 'saint helena': 'saint helena, ascension and tristan da cunha',
+  'caribbean netherlands': 'bonaire, sint eustatius and saba',
+};
+
+// A country name reduced to what identifies it, so a name matches however it is written: case,
+// accents, periods, hyphens and runs of spaces are ignored ("Reunion" is "Réunion", "U.S. Virgin
+// Islands" is "US Virgin Islands"), a leading "St" reads as "Saint" and "&" as "and", and a name in
+// COUNTRY_ALIASES reads as the name it stands for ("Turkey" is "Türkiye"). Shared between editor and
+// viewer (identical definitions in both).
+function countryKey(name) {
+  const k = String(name == null ? '' : name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[\u2018\u2019`]/g, "'").replace(/&/g, ' and ').replace(/\./g, '').replace(/[-\u2013\u2014]/g, ' ')
+    .replace(/\s+/g, ' ').trim().replace(/^st /, 'saint ');
+  return COUNTRY_ALIASES[k] || k;
+}
+
+// The territory names as keys, and the most comma-separated parts any of them has, for
+// mergeTerritoryNames. Shared between editor and viewer (identical definitions in both).
+const TERRITORY_KEYS = new Set(Array.from(TERRITORIES, countryKey));
+const TERRITORY_PARTS = Math.max(...Array.from(TERRITORIES, t => t.split(',').length));
+
+// The voyage's countries split into nations and territories. Each place is counted once, under the
+// spelling met first, however its other mentions are written. Shared between editor and viewer
+// (identical definitions in both).
 function classifyCountries(allCountries) {
-  const nations = [], territories = [];
+  const nations = [], territories = [], seen = new Set();
   allCountries.forEach(c => {
-    if (TERRITORIES.has(c)) territories.push(c);
-    else nations.push(c);
+    const k = countryKey(c);
+    if (!k || seen.has(k)) return;
+    seen.add(k);
+    (TERRITORY_KEYS.has(k) ? territories : nations).push(c);
   });
   return { nations, territories };
 }
@@ -810,14 +844,15 @@ function splitList(text) {
 
 // A list's entries with any territory name that contains commas ("Bonaire, Sint Eustatius and Saba")
 // joined back up where it was split at those commas. A list split at every comma, as older files and
-// CSVs were, holds such a name as two entries, and each would then count as a nation. Shared between
-// editor and viewer (identical definitions in both).
+// CSVs were, holds such a name as two entries, and each would then count as a nation. Only as many
+// entries are joined as the longest such name has parts, so a long list is read in one pass. Shared
+// between editor and viewer (identical definitions in both).
 function mergeTerritoryNames(parts) {
   const out = [];
   for (let i = 0; i < parts.length; ) {
     let end = i + 1;
-    for (let j = parts.length; j > i + 1; j--) {
-      if (TERRITORIES.has(parts.slice(i, j).join(', '))) { end = j; break; }
+    for (let j = Math.min(parts.length, i + TERRITORY_PARTS); j > i + 1; j--) {
+      if (TERRITORY_KEYS.has(countryKey(parts.slice(i, j).join(', ')))) { end = j; break; }
     }
     out.push(parts.slice(i, end).join(', '));
     i = end;
@@ -953,11 +988,44 @@ function orderChapters(chapters) {
   return changed;
 }
 
-// A voyage file read into what both tools work with: its title, settings and chapters, and what was
-// corrected on the way in (chapters renumbered, latitudes left empty, numbers that could not be read:
-// a coordinate or pad multiplier present but not a number, which reads as empty or as 1.2). A file that is not shaped as
-// a voyage (no chapters list, or a chapter or waypoint that is not an object) throws, with a message
-// naming what is wrong, before anything is read. The file itself is never changed.
+// The data model these tools read and write, stamped as meta.version. Shared between editor and
+// viewer (identical definitions in both).
+const DATA_VERSION = '3.0';
+
+// The fields a voyage file may hold at each level. Fields of older files that are folded in or
+// recomputed on load (routing, bail-out and prose, folded into a chapter's notes when it has none of
+// its own; the stored totals and chapter distances; the chapter countries list from before
+// overrides) are listed too: nothing is lost when they are not saved again. Any other field is named
+// in the editor's status bar, since a save leaves it out, and so are routing, bail-out and prose in a
+// chapter whose own notes take their place.
+// Shared between editor and viewer (identical definitions in both).
+const KNOWN_FIELDS = {
+  file: ['meta', 'chapters', 'paz'],
+  meta: ['title', 'version', 'generatedAt', 'settings', 'hero'],
+  settings: ['distanceUnit', 'distanceOverride', 'nationsOverride', 'territoriesOverride'],
+  chapter: ['num', 'name', 'when', 'era', 'notes', 'countriesOverride', 'keyDestinations', 'blogUrl', 'padMultiplier',
+    'waypoints', 'routing', 'bailout', 'prose', 'nm', 'nmBase', 'nmApproach', 'countries'],
+  waypoint: ['order', 'name', 'lat', 'lon', 'major', 'decision', 'gateway', 'country', 'notes'],
+  zone: ['zone', 'bounds']
+};
+
+// True when a meta.version such as "3.1", "4" or "v3.1" names a data model newer than DATA_VERSION;
+// a version without a minor number reads as .0. Shared between editor and viewer (identical
+// definitions in both).
+function newerDataVersion(v) {
+  const m = /^v?(\d+)(?:\.(\d+))?/i.exec(toText(v).trim());
+  if (!m) return false;
+  const [major, minor] = DATA_VERSION.split('.').map(Number);
+  return +m[1] > major || (+m[1] === major && +(m[2] || 0) > minor);
+}
+
+// A voyage file read into what both tools work with: its title, settings, chapters and avoidance
+// zones, and what was corrected or left out on the way in (chapters renumbered, latitudes left empty,
+// numbers that could not be read: a coordinate or pad multiplier present but not a number, which
+// reads as empty or as 1.2; zones without four finite bounds; fields these tools do not know, and a
+// data model newer than theirs). A file that is not shaped as a voyage (no chapters list, or a
+// chapter or waypoint that is not an object) throws, with a message naming what is wrong, before
+// anything is read. The file itself is never changed.
 function readVoyage(data) {
   const isObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
   if (!isObject(data) || !Array.isArray(data.chapters)) throw new Error('the file has no "chapters" list');
@@ -975,7 +1043,25 @@ function readVoyage(data) {
   const unreadableNumbers = data.chapters.reduce((n, ch) => n + (unreadable(ch.padMultiplier) ? 1 : 0) +
     (ch.waypoints || []).reduce((m, w) => m + (unreadable(w.lat) ? 1 : 0) + (unreadable(w.lon) ? 1 : 0), 0), 0);
   const renumbered = orderChapters(chapters);
-  return { title: toText(meta.title), settings: normalizeSettings(meta.settings), chapters, renumbered, latitudesDropped, unreadableNumbers };
+  const unknown = new Set();
+  const fieldsOf = (obj, level, label) => {
+    if (isObject(obj)) Object.keys(obj).forEach(k => { if (!KNOWN_FIELDS[level].includes(k)) unknown.add(label + k); });
+  };
+  fieldsOf(data, 'file', '');
+  fieldsOf(meta, 'meta', 'meta.');
+  fieldsOf(meta.settings, 'settings', 'meta.settings.');
+  data.chapters.forEach(ch => {
+    fieldsOf(ch, 'chapter', 'chapter ');
+    if (toText(ch.notes)) ['routing', 'bailout', 'prose'].forEach(k => { if (toText(ch[k])) unknown.add('chapter ' + k); });
+    (ch.waypoints || []).forEach(w => fieldsOf(w, 'waypoint', 'waypoint '));
+  });
+  const zones = Array.isArray(data.paz) ? data.paz : [];
+  zones.forEach(z => fieldsOf(z, 'zone', 'zone '));
+  const paz = zones.filter(z => isObject(z) && Array.isArray(z.bounds) && z.bounds.length === 4 && z.bounds.every(Number.isFinite))
+    .map(z => ({ ...(z.zone != null ? { zone: toText(z.zone) } : {}), bounds: z.bounds.slice() }));
+  const zonesDropped = zones.length - paz.length + (data.paz != null && !Array.isArray(data.paz) ? 1 : 0);
+  return { title: toText(meta.title), settings: normalizeSettings(meta.settings), chapters, paz, renumbered, latitudesDropped,
+    unreadableNumbers, zonesDropped, unknownFields: [...unknown], newerVersion: newerDataVersion(meta.version) ? toText(meta.version).trim() : null };
 }
 
 // The notes the arrival chooser shows when the voyage file named for this visit could not be used.
@@ -1085,11 +1171,13 @@ function heroItems(h, unit, author) {
 // Effective country list for a chapter: explicit per-chapter override if set, else derived on the
 // fly from the waypoints' country fields (first-appearance order). Matches the editor.
 function deriveCountriesFromWaypoints(ch) {
-  return [...new Set(
-    (ch.waypoints || [])
-      .filter(w => w.country && w.country.trim())
-      .map(w => w.country.trim())
-  )];
+  // A place written two ways ("Greece", "greece") is listed once, as it was first written.
+  const seen = new Set(), out = [];
+  (ch.waypoints || []).forEach(w => {
+    const name = String(w.country || '').trim(), k = countryKey(name);
+    if (k && !seen.has(k)) { seen.add(k); out.push(name); }
+  });
+  return out;
 }
 function chapterCountries(ch) {
   return (ch.countriesOverride && ch.countriesOverride.length) ? ch.countriesOverride : deriveCountriesFromWaypoints(ch);
@@ -1185,10 +1273,8 @@ function normalizeData(raw) {
     const coords = ch.waypoints.filter(hasCoord).map(w => [w.lat, w.lon]);
     ch.routes = coords.length >= 2 ? [coords] : [];
   });
-  const paz = (Array.isArray(raw.paz) ? raw.paz : [])
-    .filter(z => z && Array.isArray(z.bounds) && z.bounds.length === 4 && z.bounds.every(Number.isFinite))
-    .map(z => ({ zone: toText(z.zone), bounds: z.bounds }));
-  return { meta: { title: v.title, settings: v.settings }, chapters: v.chapters, paz };
+  // Avoidance zones are read by readVoyage, as the editor reads them, so a zone it keeps is a zone drawn here.
+  return { meta: { title: v.title, settings: v.settings }, chapters: v.chapters, paz: v.paz };
 }
 
 /* ====================== Load + render ======================== */

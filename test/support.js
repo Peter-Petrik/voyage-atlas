@@ -182,6 +182,42 @@ function withoutComments(src) {
   return src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
 }
 
+// A small CSV writer and reader in the shape of the two PapaParse calls the editor makes, so the
+// CSV round trip runs without the library: fields quoted when they hold a comma, quote or line
+// break, and rows read back as objects keyed by the header, or as arrays without one.
+const miniPapa = {
+  unparse({ fields, data }) {
+    const cell = v => {
+      const s = v == null ? '' : String(v);
+      return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [fields.map(cell).join(','), ...data.map(r => fields.map(f => cell(r[f])).join(','))].join('\r\n');
+  },
+  parse(text, opts = {}) {
+    const delim = opts.delimiter || ',';
+    const rows = [];
+    let row = [], cell = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+        else if (c === '"') q = false;
+        else cell += c;
+      } else if (c === '"') q = true;
+      else if (c === delim) { row.push(cell); cell = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(cell); rows.push(row); row = []; cell = '';
+      } else cell += c;
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    const kept = opts.skipEmptyLines ? rows.filter(r => r.some(c => c !== '')) : rows;
+    if (!opts.header) return { data: kept, meta: {} };
+    const fields = kept[0].map(h => (opts.transformHeader ? opts.transformHeader(h) : h));
+    return { data: kept.slice(1).map(r => Object.fromEntries(fields.map((f, i) => [f, r[i] ?? '']))), meta: { fields } };
+  },
+};
+
 // Run the named definitions of a tool in a fresh function scope and return them.
 //
 // The top-level definitions they refer to are included too, followed transitively, so a test names
@@ -226,4 +262,4 @@ function pick(tool, names, globals = {}, opts = {}) {
   return new Function(...params, body)(...params.map(p => globals[p]));
 }
 
-module.exports = { ROOT, EDITOR, VIEWER, readRepoFile, inlineScripts, stripComments, topLevelDefinitions, moduleLets, loadTool, pick, findListener };
+module.exports = { ROOT, EDITOR, VIEWER, readRepoFile, inlineScripts, stripComments, topLevelDefinitions, moduleLets, loadTool, pick, findListener, miniPapa };

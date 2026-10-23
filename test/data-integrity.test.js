@@ -81,11 +81,12 @@ test(`${EDITOR}: a coordinate of 0 from a CSV row or the waypoint table is kept`
   assert.equal(w.lon, -25);
   assert.equal(normalizeWaypoint({ lat: '', lon: 'x' }, { csv: true }).lat, null);
   // The table's lat and lon inputs read their value through onCoordInput, which reads it through
-  // toCoord, so typing 0 stores 0.
+  // readCoordText and so toCoord, so typing 0 stores 0.
   const inputs = editor.html.match(/id="wpt-(lat|lon)-\$\{chNum\}-\$\{idx\}"[^>]*>/g) || [];
   assert.equal(inputs.length, 2, 'lat and lon inputs found');
   inputs.forEach(i => assert.ok(i.includes("onCoordInput(this,${chNum},${idx},'lat')") || i.includes("onCoordInput(this,${chNum},${idx},'lon')"), i));
-  assert.match(editor.defs.onCoordInput, /toCoord\(input\.value\)/);
+  assert.match(editor.defs.onCoordInput, /readCoordText\(typed, field\)/);
+  assert.match(editor.defs.readCoordText, /const plain = toCoord\(s\);/);
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -227,6 +228,8 @@ test(`${VIEWER}: lists held as text in a hand-edited file split the same way`, (
 // The unsaved marker
 // ---------------------------------------------------------------------------------------------
 
+// The rows a CSV export handed the stub writer, read back past the byte-order mark the export adds.
+const csvBody = body => (typeof body === 'string' && body.startsWith('\uFEFF') ? JSON.parse(body.slice(1)) : body);
 function exportRun(name) {
   const marks = [], files = [];
   const STATE = {
@@ -236,8 +239,8 @@ function exportRun(name) {
       waypoints: [{ name: 'A', lat: 0, lon: -25, country: '' }, { name: 'B', lat: 1, lon: -25, country: '' }] }],
   };
   const fns = pick(editor, [name], {
-    STATE, setDirty: v => marks.push(v), downloadFile: (n, body) => files.push({ n, body }),
-    closeDropdowns() {}, announce() {}, setTimeout: fn => fn(), Papa: { unparse: o => o.data },
+    STATE, setDirty: v => marks.push(v), downloadFile: (n, body) => files.push({ n, body: csvBody(body) }),
+    closeDropdowns() {}, announce() {}, setTimeout: fn => fn(), Papa: { unparse: o => JSON.stringify(o.data) },
   });
   fns[name]();
   return { marks, files };

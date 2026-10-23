@@ -154,6 +154,13 @@ the file itself is not changed until it is saved again, and the editor's status 
    spaces and commas trimmed from the ends of each entry.
 6. **Encoding.** A file is read as UTF-8 (or UTF-16 with a byte-order mark); one that is not valid UTF-8 is read
    as Windows-1252, as a CSV file is, and the editor's status bar says so.
+7. **Version and fields not known.** A file whose `meta.version` names a data model newer than 3.0 is read as far
+   as these fields go, and the editor's status bar says so. A field not listed in this schema, at any level, is
+   named in the status bar, since a save leaves it out. Fields of older files that are folded in or recomputed
+   (`routing`, `bailout` and `prose`, folded into a chapter's `notes` when it has none; `meta.hero` and the chapter
+   `nm`, `nmBase` and `nmApproach`; the chapter `countries` list from before overrides) are not named, except
+   `routing`, `bailout` and `prose` in a chapter whose own `notes` take their place. A version is read as a major
+   and an optional minor number, with or without a leading `v`.
 
 ### Country handling
 
@@ -165,7 +172,10 @@ the final totals.
 
 **Nation vs territory classification:** the editor and viewer share a built-in reference list of overseas
 territories (the FAQ has the full list). Each distinct country name is checked against it — a match counts
-as a territory, no match as a nation. Overrides take precedence over the auto-count.
+as a territory, no match as a nation. Names are compared ignoring case, accents, periods, hyphens and spacing,
+with a leading "St" read as "Saint" and a few other names in common use read as the listed one ("Turkey" as
+"Türkiye"), so a place written two ways is one place, in a chapter's derived list and in the totals, under the
+spelling met first. The stored `country` values are not changed. Overrides take precedence over the auto-count.
 
 ### `paz` (avoidance zones)
 
@@ -176,7 +186,7 @@ An optional top-level `paz` array holds permanent avoidance zones, which the vie
 | `zone` | string | Zone display name. |
 | `bounds` | number[4] | `[south, west, north, east]`, decimal degrees. A zone across the dateline has a `west` greater than its `east` (`[-20, 170, -10, -170]` spans 20° across 180°). |
 
-The array is hand-authored: the editor neither reads nor writes it, so a voyage loaded into the editor and saved again loses its zones. Authoring zones in the editor, as polygons, is backlog item #43.
+The array is hand-authored: the editor does not edit zones, but keeps them, so a voyage loaded into the editor and saved again keeps each zone's `zone` name (when it has one) and `bounds`; any other field of a zone is named in the status bar and not kept. Both tools read a zone only when `bounds` holds four finite numbers; another zone is left out, and the editor's status bar counts it. Authoring zones in the editor, as polygons, is backlog item #43.
 
 ---
 
@@ -199,13 +209,16 @@ included (they are recomputed on load). Import is two-step: `chapters.csv` then 
    `chapter`, `order`, `lat`, `lon`) read a decimal comma as a point, whatever the delimiter; a number that
    still cannot be read is left unset (an empty coordinate, or a pad multiplier of 1.2) and counted in the
    status bar.
-3. **Encoding.** UTF-8 (with or without a byte-order mark) and UTF-16 with a byte-order mark are read; a file
-   with no byte-order mark that is not valid UTF-8 is read as Windows-1252.
-4. **Formula guard.** A text cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return is written with
+3. **Encoding.** Both files are written as UTF-8 with a byte-order mark, which tells a spreadsheet the text is
+   UTF-8. UTF-8 (with or without a byte-order mark) and UTF-16 with a byte-order mark are read; a file with no
+   byte-order mark that is not valid UTF-8 is read as Windows-1252.
+4. **Blank rows.** A row with every cell empty, as a spreadsheet writes for a cleared row, is skipped in both
+   files.
+5. **Formula guard.** A text cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return is written with
    a leading `'`, so a spreadsheet shows it as text, and so is text that starts with apostrophes before one of
    those characters; on import one leading `'` is removed from such a cell. Number cells, including negative
    coordinates, are written as they are.
-5. Chapters are renumbered 1 to n on import, as a voyage file is (above).
+6. Chapters are renumbered 1 to n on import, as a voyage file is (above).
 
 ### `chapters.csv`
 

@@ -274,12 +274,14 @@ test(`${EDITOR}: decodeText reads UTF-8, UTF-16 and Windows-1252 files`, () => {
 // Exports
 // ---------------------------------------------------------------------------------------------
 
+// The rows a CSV export handed the stub writer, read back past the byte-order mark the export adds.
+const csvBody = body => (typeof body === 'string' && body.startsWith('\uFEFF') ? JSON.parse(body.slice(1)) : body);
 function exportRun(name, chapters, metaTitle = 'T') {
   const files = [];
   const STATE = { metaTitle, settings: { distanceUnit: 'nm' }, chapters };
   const fns = pick(editor, [name], {
-    STATE, setDirty() {}, downloadFile: (n, body) => files.push({ n, body }),
-    closeDropdowns() {}, announce() {}, setTimeout: fn => fn(), Papa: { unparse: o => o.data },
+    STATE, setDirty() {}, downloadFile: (n, body) => files.push({ n, body: csvBody(body) }),
+    closeDropdowns() {}, announce() {}, setTimeout: fn => fn(), Papa: { unparse: o => JSON.stringify(o.data) },
   });
   fns[name]();
   return files;
@@ -415,8 +417,8 @@ test(`${EDITOR}: longitudes from the chart are stored at five decimals and insid
   }
 });
 
-test(`${EDITOR}: the latitude field has no min, so its stepper keeps the value's other digits`, () => {
-  const input = (editor.html.match(/<input type="number"[^>]*id="wpt-lat-[^>]*>/) || [''])[0];
+test(`${EDITOR}: the latitude field has no min or max, so a step keeps the value's other digits`, () => {
+  const input = (editor.html.match(/<input type="text" class="coord"[^>]*id="wpt-lat-[^>]*>/) || [''])[0];
   assert.ok(input, 'latitude input found');
   assert.ok(!/\bmin=|\bmax=/.test(input), input);
 });
@@ -446,9 +448,9 @@ test(`${EDITOR}: a pasted coordinate that cannot be read is left empty, noted, a
     updateChapterCountries() {}, refreshChapterLinks() {}, forwardGeocodeWaypoint: (c, i, name) => looked.push(name),
   }, { lets: true, prelude: 'pasteTargetChNum = 1;' });
   doPaste();
-  assert.deepEqual(STATE.chapters[0].waypoints.map(w => [w.name, w.lat, w.lon]), [['A', 38.5, -9], ['B', null, null], ['C', null, null]]);
+  assert.deepEqual(STATE.chapters[0].waypoints.map(w => [w.name, w.lat, w.lon]), [['A', 38.5, -9], ['B', 38.5, null], ['C', null, null]]);
   assert.deepEqual(looked, ['C']);
-  assert.equal(doc.getElementById('status-text').textContent, 'Pasted with corrections: 2 numbers that could not be read left unset');
+  assert.equal(doc.getElementById('status-text').textContent, 'Pasted with corrections: 1 number that could not be read left unset');
 });
 
 // ---------------------------------------------------------------------------------------------

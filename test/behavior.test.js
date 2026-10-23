@@ -187,7 +187,7 @@ test(`${EDITOR}: a country lookup answered after a chapter delete lands on the w
   fns.state().chapters.shift();
   ch2.num = 1;
   callbacks[1]('Testland');
-  assert.deepEqual(queried, ['#wpt-country-1-1']);
+  assert.deepEqual(queried, ['#wpt-country-1-1', '#wpt-lat-1-1', '#wpt-lon-1-1']);
   assert.deepEqual(refreshed, [1]);
   assert.equal(ch2.waypoints[1].country, 'Testland');
 });

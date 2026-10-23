@@ -6,6 +6,17 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`). The
 framework document (`global-voyage-framework.md`) carries its own separate version line.
 
+## [v3.9.16] - 2026-10-23
+
+### Fixed
+- **Lookups Leave a Field Being Typed In Alone**: A name or country lookup that answers while an entry is being typed into that row's latitude, longitude or country field now leaves that field as it is being typed, and a country lookup that answers while a coordinate of the row is being typed is dropped, since it is for the old position. A field the cursor has only moved into, as Tab does after a name, still takes the answer. Previously the answer was written into the field mid-word, so typing "Gre" in Country during a lookup stored "Greeceece", a new nation, and a latitude being typed took in the looked-up digits.
+- **Coordinates Read as Written**: The waypoint table's latitude and longitude fields, and Paste, now read a hemisphere letter ("38.5S", "W 16.5"), degrees and minutes or degrees, minutes and seconds ("16°30'W", "28 37 48 W") and a decimal comma ("21,3"), and store decimal degrees, with the status line saying what a value was read as. Previously the fields were number fields, which in Chromium dropped what a number cannot hold without a word: "38.5S" was stored as +38.5 and "16.5W" as +16.5, "16°30'W" became -170, "21,3" became -147, and "21.3E" erased the longitude. Text that cannot be read as a coordinate is refused and the field goes back to its value, as are N or S in a longitude, E or W in a latitude, and a sign with a letter. The arrow keys still step a field by 0.01 of a degree; the small spinner arrows are gone.
+- **Country Names Match However Written**: Country and territory names now match ignoring case, accents, periods, hyphens and spacing, with a short list of other names in common use ("Turkey" is "Türkiye", "Cape Verde" is "Cabo Verde"). "Reunion" and "Curacao" now count as territories, and a place written two ways counts once, in a chapter's list and in the totals; previously each spelling counted, and a name without its accent counted as a nation. French Guiana, Guadeloupe and Martinique, overseas departments like Réunion and Mayotte, now count as territories, and the list has 57 names. The sample voyage's "Guadalupe" is now "Guadeloupe", so the sample shows 9 nations and 3 territories, where it showed 11 and 1.
+- **Spreadsheet Round Trips**: Both CSV exports now start with a UTF-8 byte-order mark, with which Excel opens a UTF-8 CSV as written; without it an accented name ("Türkiye") could come back changed after the sheet was saved and imported. A row with every cell empty, which spreadsheets write for a cleared row, is now skipped on import; previously such rows became nameless chapters, or were reported as waypoint rows for chapters not in chapters.csv.
+- **Files From a Newer Version, and Fields Not Known**: Loading a voyage file whose data model is newer than 3.0, or that holds fields these tools do not know, now says so in the editor's status bar, naming the fields a save would leave out; previously they were dropped without a word. Avoidance zones (`paz`), which the editor does not edit, are now kept and saved back with their names and bounds; previously a voyage loaded into the editor and saved lost its zones. A zone without four bounds is left out and counted, in both tools. A chapter's `routing`, `bailout` and `prose` fields from early files, which fold into its notes only when it has none of its own, are named too when its own notes take their place.
+- **Long Lists and a Long When Read at Once**: A country or key-destination list written with commas is now read in one pass; a list of 1,000 entries took seconds to load and froze the page. A When with a long run of spaces no longer freezes the editor; a When of 20 KB took 23 seconds to load.
+- **Paste**: A paste that would look up 30 or more names now asks first, as Look up countries does, and Cancel keeps the rows without coordinates; previously 300 names queued 300 lookups at once. A pasted latitude beyond ±90 is now counted in the paste's note, and a pasted line with every cell empty is skipped.
+
 ## [v3.9.15] - 2026-10-23
 
 ### Changed
@@ -793,6 +804,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.9.16]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.15...v3.9.16
 [v3.9.15]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.14...v3.9.15
 [v3.9.14]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.13...v3.9.14
 [v3.9.13]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.12...v3.9.13
