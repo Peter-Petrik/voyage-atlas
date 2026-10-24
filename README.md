@@ -77,6 +77,8 @@ The atlas shows exactly what is entered and corrects nothing; accuracy of the da
 
 The test suite runs with `node --test test/*.test.js` from the repository root, with nothing to install, on Node.js 24, the version CI runs. It runs on every push and pull request to `main` and before every release.
 
+The wireframes of the [visual guide](docs/voyage-atlas-guide.md) (`docs/images/guide-*.svg`) are drawn by `tools/guide-wireframes.py` from the sample voyage, with Python 3 and nothing to install: `python3 tools/guide-wireframes.py` from the repository root redraws all eight. The tests in `test/docs.test.js` hold the wireframes to the tools, so a change to a screen they show fails there until the script follows and is run again.
+
 ### Documentation
 
 1. [FAQ / Owner's Manual](docs/voyage-atlas-faq.md) — the full reference for both tools (concepts, editor, viewer and design principles), and the place to start.
