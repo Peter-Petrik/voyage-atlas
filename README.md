@@ -80,8 +80,9 @@ The test suite runs with `node --test test/*.test.js` from the repository root, 
 ### Documentation
 
 1. [FAQ / Owner's Manual](docs/voyage-atlas-faq.md) — the full reference for both tools (concepts, editor, viewer and design principles), and the place to start.
-2. [Data schema](docs/voyage-atlas-schema.md) — the voyage file, CSV, KML and GPX format contract, for hand-editing data or for other tools that read or write it.
-3. [Changelog](CHANGELOG.md) — version history.
+2. [Visual guide](docs/voyage-atlas-guide.md) — both tools, their screens and the steps of charting a voyage, drawn figure by figure, each figure linked to the FAQ sections it illustrates.
+3. [Data schema](docs/voyage-atlas-schema.md) — the voyage file, CSV, KML and GPX format contract, for hand-editing data or for other tools that read or write it.
+4. [Changelog](CHANGELOG.md) — version history.
 
 The design rationale (why chapters, the distance model, the self-contained files) is in the FAQ's Concepts and Design principles parts, and the predecessor seam is described at `getPredecessorChapter` in both tools.
 

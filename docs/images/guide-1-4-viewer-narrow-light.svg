@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="t d" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">
+<title id="t">Figure 1.4: The viewer on a narrow screen</title>
+<desc id="d">Two wireframes of the viewer with the sample voyage. Left, 900 px wide or less, with the Voyage Chapters drawer open: Chart your own voyage, the header stats and Load move into the drawer above the chapter rows. Right, a phone 640 px wide or less: Chart &amp; Layers runs across the top, collapsed, and the detail panel for chapter 3 is a sheet along the bottom. Numbered callouts match the list under the figure.</desc>
+<rect width="1000" height="660" fill="#ffffff"/>
+<text x="10" y="18" font-size="9" fill="#6b6355" letter-spacing="0.1em">900 PX WIDE OR LESS — DRAWER OPEN</text>
+<rect x="10" y="28" width="600" height="620" rx="6" fill="#eef0ec" stroke="#cbbfa9" stroke-width="1"/>
+<rect x="10" y="28" width="600" height="50" rx="6" fill="#f4efe4"/>
+<rect x="22" y="39" width="30" height="28" rx="4" fill="#fbf8f1" stroke="#cbbfa9" stroke-width="1"/>
+<text x="37.0" y="58.04" font-size="14" fill="#2a2722" text-anchor="middle">☰</text>
+<text x="64" y="59" font-size="16" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif">Voyage Atlas</text>
+<rect x="568" y="39" width="30" height="28" rx="4" fill="#fbf8f1" stroke="#cbbfa9" stroke-width="1"/>
+<text x="583.0" y="56.96" font-size="11" fill="#2a2722" text-anchor="middle" font-family="'Segoe UI Symbol', 'DejaVu Sans', 'Apple Symbols', sans-serif">◐</text>
+<polyline points="10,78 610,78" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<circle cx="190" cy="53" r="11" fill="#a32e38" stroke="#ffffff" stroke-width="2" opacity="1"/>
+<text x="190" y="57" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">1</text>
+<rect x="414" y="90" width="184" height="190" rx="4" fill="#fbf8f1" stroke="#cbbfa9" stroke-width="1"/>
+<text x="426" y="110" font-size="10" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif" letter-spacing="0.08em">CHART &amp; LAYERS</text>
+<text x="586" y="110" font-size="9" fill="#6b6355" text-anchor="end">▾</text>
+<polyline points="426,118 586,118" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<rect x="426" y="127" width="11" height="11" rx="2" fill="#a32e38" stroke="#cbbfa9" stroke-width="1"/>
+<text x="446" y="136" font-size="10.5" fill="#2a2722">Routes</text>
+<polyline points="448,152 464,152" fill="none" stroke="#2a2722" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<text x="470" y="156" font-size="9" fill="#6b6355">Sailed or under way</text>
+<polyline points="448,167 464,167" fill="none" stroke="#2a2722" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="round" opacity="1" stroke-dasharray="4 3"/>
+<text x="470" y="171" font-size="9" fill="#6b6355">Planned</text>
+<rect x="426" y="181" width="11" height="11" rx="2" fill="#a32e38" stroke="#cbbfa9" stroke-width="1"/>
+<text x="446" y="190" font-size="10.5" fill="#2a2722">Waypoints</text>
+<rect x="426" y="203" width="11" height="11" rx="2" fill="#f4efe4" stroke="#cbbfa9" stroke-width="1"/>
+<text x="446" y="212" font-size="10.5" fill="#2a2722">Avoidance zones</text>
+<rect x="426" y="225" width="11" height="11" rx="2" fill="#f4efe4" stroke="#cbbfa9" stroke-width="1"/>
+<text x="446" y="234" font-size="10.5" fill="#2a2722">Decision points</text>
+<rect x="426" y="247" width="11" height="11" rx="2" fill="#f4efe4" stroke="#cbbfa9" stroke-width="1"/>
+<text x="446" y="256" font-size="10.5" fill="#2a2722">Gateway ports</text>
+<rect x="310" y="78" width="300" height="540" rx="0" fill="#00000026"/>
+<rect x="10" y="78" width="300" height="540" rx="0" fill="#f4efe4" stroke="#cbbfa9" stroke-width="1"/>
+<text x="26" y="106" font-size="15" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif">Voyage Chapters</text>
+<text x="294" y="106" font-size="16" fill="#6b6355" text-anchor="end">×</text>
+<polyline points="10,122 310,122" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<rect x="26" y="134" width="268" height="30" rx="4" fill="#f3dfe0" stroke="#a32e38" stroke-width="1"/>
+<text x="160.0" y="152.96" font-size="11" fill="#a32e38" text-anchor="middle">Chart your own voyage →</text>
+<circle cx="324" cy="149" r="11" fill="#a32e38" stroke="#ffffff" stroke-width="2" opacity="1"/>
+<text x="324" y="153" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">2</text>
+<g data-part="stats">
+<text x="26" y="192" font-size="15" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif">9,070</text>
+<text x="75" y="192" font-size="7.5" fill="#6b6355" letter-spacing="0.1em">NAUTICAL MILES</text>
+<text x="166" y="192" font-size="15" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif">9</text>
+<text x="187" y="192" font-size="7.5" fill="#6b6355" letter-spacing="0.1em">NATIONS</text>
+<text x="26" y="218" font-size="15" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif">3</text>
+<text x="47" y="218" font-size="7.5" fill="#6b6355" letter-spacing="0.1em">TERRITORIES</text>
+<text x="166" y="218" font-size="15" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif">5</text>
+<text x="187" y="218" font-size="7.5" fill="#6b6355" letter-spacing="0.1em">CHAPTERS</text>
+<text x="26" y="244" font-size="15" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif">61</text>
+<text x="54" y="244" font-size="7.5" fill="#6b6355" letter-spacing="0.1em">WAYPOINTS</text>
+</g>
+<circle cx="324" cy="206" r="11" fill="#a32e38" stroke="#ffffff" stroke-width="2" opacity="1"/>
+<text x="324" y="210" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">3</text>
+<polyline points="10,260 310,260" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<rect x="26" y="272" width="268" height="30" rx="4" fill="#fbf8f1" stroke="#cbbfa9" stroke-width="1"/>
+<text x="160.0" y="290.96" font-size="11" fill="#2a2722" text-anchor="middle">Load…</text>
+<circle cx="324" cy="287" r="11" fill="#a32e38" stroke="#ffffff" stroke-width="2" opacity="1"/>
+<text x="324" y="291" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">4</text>
+<polyline points="10,316 310,316" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<rect x="24" y="325" width="5" height="60" rx="2" fill="#8e86c4"/>
+<g data-chapter="1" data-part="drawer">
+<text x="40" y="336" font-size="8.5" fill="#6b6355" letter-spacing="0.04em">Jan 2025 – Apr 2026</text>
+<text x="40" y="354" font-size="13" fill="#6b6355" font-family="Georgia, 'Times New Roman', serif">Turkey</text>
+<text x="40" y="370" font-size="9" fill="#6b6355">Göcek · Kekova · Marmaris · Knidos ·</text>
+<text x="40" y="384" font-size="9" fill="#6b6355">Gökova · Bodrum</text>
+</g>
+<polyline points="10,394 310,394" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<rect x="24" y="403" width="5" height="32" rx="2" fill="#6fb3dc"/>
+<g data-chapter="2" data-part="drawer">
+<text x="40" y="414" font-size="8.5" fill="#6b6355" letter-spacing="0.04em">May 2026 – Jul 2026</text>
+<text x="40" y="432" font-size="13" fill="#2a2722" font-family="Georgia, 'Times New Roman', serif">Aegean Greece</text>
+</g>
+<polyline points="10,444 310,444" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<rect x="24" y="453" width="5" height="32" rx="2" fill="#3f9c8c"/>
+<g data-chapter="3" data-part="drawer">
+<text x="40" y="464" font-size="8.5" fill="#6b6355" letter-spacing="0.04em">Aug 2026 – Nov 2026</text>
+<text x="40" y="482" font-size="13" fill="#2a2722" font-family="Georgia, 'Times New Roman', serif">West through Med to Gibraltar</text>
+</g>
+<polyline points="10,494 310,494" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<rect x="24" y="503" width="5" height="32" rx="2" fill="#1f7a3c"/>
+<g data-chapter="4" data-part="drawer">
+<text x="40" y="514" font-size="8.5" fill="#6b6355" letter-spacing="0.04em">Nov 2026 – Jan 2027</text>
+<text x="40" y="532" font-size="13" fill="#2a2722" font-family="Georgia, 'Times New Roman', serif">Morocco, Canaries, Cape Verde</text>
+</g>
+<polyline points="10,544 310,544" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<rect x="24" y="553" width="5" height="32" rx="2" fill="#9a9a3a"/>
+<g data-chapter="5" data-part="drawer">
+<text x="40" y="564" font-size="8.5" fill="#6b6355" letter-spacing="0.04em">Feb 2027 – Feb 2027</text>
+<text x="40" y="582" font-size="13" fill="#2a2722" font-family="Georgia, 'Times New Roman', serif">Atlantic Crossing</text>
+</g>
+<polyline points="10,594 310,594" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<circle cx="324" cy="358" r="11" fill="#a32e38" stroke="#ffffff" stroke-width="2" opacity="1"/>
+<text x="324" y="362" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">5</text>
+<rect x="10" y="618" width="600" height="30" rx="0" fill="#f4efe4"/>
+<polyline points="10,618 610,618" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<text x="22" y="637" font-size="9" fill="#a32e38">FAQ / Owner's Manual</text>
+<text x="310.0" y="637" font-size="9" fill="#a32e38" text-anchor="middle">A project of Sailing Grace</text>
+<text x="598" y="637" font-size="9" fill="#a32e38" text-anchor="end">Voyage Atlas vX.Y.Z</text>
+<text x="650" y="18" font-size="9" fill="#6b6355" letter-spacing="0.1em">640 PX WIDE OR LESS — A PHONE</text>
+<rect x="650" y="28" width="300" height="620" rx="6" fill="#eef0ec" stroke="#cbbfa9" stroke-width="1"/>
+<rect x="650" y="28" width="300" height="50" rx="6" fill="#f4efe4"/>
+<rect x="662" y="39" width="30" height="28" rx="4" fill="#fbf8f1" stroke="#cbbfa9" stroke-width="1"/>
+<text x="677.0" y="58.04" font-size="14" fill="#2a2722" text-anchor="middle">☰</text>
+<text x="704" y="59" font-size="16" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif">Voyage Atlas</text>
+<rect x="908" y="39" width="30" height="28" rx="4" fill="#fbf8f1" stroke="#cbbfa9" stroke-width="1"/>
+<text x="923.0" y="56.96" font-size="11" fill="#2a2722" text-anchor="middle" font-family="'Segoe UI Symbol', 'DejaVu Sans', 'Apple Symbols', sans-serif">◐</text>
+<polyline points="650,78 950,78" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<rect x="660" y="88" width="26" height="26" rx="4" fill="#fbf8f1" stroke="#cbbfa9" stroke-width="1"/>
+<text x="673.0" y="106.04" font-size="14" fill="#2a2722" text-anchor="middle">+</text>
+<rect x="660" y="114" width="26" height="26" rx="4" fill="#fbf8f1" stroke="#cbbfa9" stroke-width="1"/>
+<text x="673.0" y="132.04" font-size="14" fill="#2a2722" text-anchor="middle">−</text>
+<rect x="658" y="148" width="284" height="30" rx="4" fill="#fbf8f1" stroke="#cbbfa9" stroke-width="1"/>
+<text x="670" y="168" font-size="10" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif" letter-spacing="0.08em">CHART &amp; LAYERS</text>
+<text x="930" y="168" font-size="9" fill="#6b6355" text-anchor="end">▸</text>
+<circle cx="964" cy="163" r="11" fill="#a32e38" stroke="#ffffff" stroke-width="2" opacity="1"/>
+<text x="964" y="167" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">6</text>
+<polyline points="908.8,250.0 920.8,257.2 932.8,250.0 942.4,259.6" fill="none" stroke="#8e86c4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>
+<circle cx="908.8" cy="250.0" r="5" fill="#8e86c4" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="920.8" cy="257.2" r="3.5" fill="#8e86c4" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="932.8" cy="250.0" r="3.5" fill="#8e86c4" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="942.4" cy="259.6" r="5" fill="#8e86c4" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<polyline points="846.4,259.6 860.8,245.2 880.0,254.8 894.4,250.0 908.8,250.0" fill="none" stroke="#6fb3dc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>
+<circle cx="846.4" cy="259.6" r="5" fill="#6fb3dc" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="860.8" cy="245.2" r="3.5" fill="#6fb3dc" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="880.0" cy="254.8" r="3.5" fill="#6fb3dc" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="894.4" cy="250.0" r="3.5" fill="#6fb3dc" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="908.8" cy="250.0" r="5" fill="#6fb3dc" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<polyline points="764.8,288.4 784.0,274.0 808.0,278.8 832.0,264.4 846.4,259.6" fill="none" stroke="#3f9c8c" stroke-width="4" stroke-linecap="butt" stroke-linejoin="round" opacity="1" stroke-dasharray="8 6"/>
+<circle cx="764.8" cy="288.4" r="5" fill="#3f9c8c" stroke="#2a2722" stroke-width="1" opacity="1"/>
+<circle cx="784.0" cy="274.0" r="3.5" fill="#3f9c8c" stroke="#2a2722" stroke-width="1" opacity="1"/>
+<circle cx="808.0" cy="278.8" r="3.5" fill="#3f9c8c" stroke="#2a2722" stroke-width="1" opacity="1"/>
+<circle cx="832.0" cy="264.4" r="3.5" fill="#3f9c8c" stroke="#2a2722" stroke-width="1" opacity="1"/>
+<circle cx="846.4" cy="259.6" r="5" fill="#3f9c8c" stroke="#2a2722" stroke-width="1" opacity="1"/>
+<polyline points="712.0,322.0 731.2,307.6 750.4,300.4 764.8,288.4" fill="none" stroke="#1f7a3c" stroke-width="2.5" stroke-linecap="butt" stroke-linejoin="round" opacity="0.3" stroke-dasharray="8 6"/>
+<circle cx="712.0" cy="322.0" r="5" fill="#1f7a3c" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="731.2" cy="307.6" r="3.5" fill="#1f7a3c" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="750.4" cy="300.4" r="3.5" fill="#1f7a3c" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="764.8" cy="288.4" r="5" fill="#1f7a3c" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<polyline points="649.6,336.4 678.4,331.6 712.0,322.0" fill="none" stroke="#9a9a3a" stroke-width="2.5" stroke-linecap="butt" stroke-linejoin="round" opacity="0.3" stroke-dasharray="8 6"/>
+<circle cx="649.6" cy="336.4" r="5" fill="#9a9a3a" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="678.4" cy="331.6" r="3.5" fill="#9a9a3a" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<circle cx="712.0" cy="322.0" r="5" fill="#9a9a3a" stroke="#2a2722" stroke-width="1" opacity="0.3"/>
+<rect x="650" y="370" width="300" height="214" rx="6" fill="#fbf8f1" stroke="#cbbfa9" stroke-width="1"/>
+<text x="936" y="392" font-size="15" fill="#6b6355" text-anchor="end">×</text>
+<g data-chapter="3" data-part="sheet">
+<text x="666" y="392" font-size="8.5" fill="#6b6355" letter-spacing="0.12em">AUG 2026 – NOV 2026</text>
+<text x="666" y="414" font-size="13.5" fill="#a32e38" font-family="Georgia, 'Times New Roman', serif">West through Med to Gibraltar</text>
+<rect x="666" y="424" width="62" height="17" rx="2" fill="#f3dfe0" stroke="#a32e38" stroke-width="1"/>
+<text x="697" y="436" font-size="9.5" fill="#a32e38" text-anchor="middle">3,059 nm</text>
+<text x="666" y="462" font-size="8.5" fill="#6b6355" letter-spacing="0.1em">NOTES</text>
+<text x="666" y="480" font-size="10.5" fill="#2a2722" font-family="Georgia, 'Times New Roman', serif">Winds and weather will dictate</text>
+<text x="666" y="496" font-size="10.5" fill="#2a2722" font-family="Georgia, 'Times New Roman', serif">exact route, but general goal is</text>
+<text x="666" y="512" font-size="10.5" fill="#2a2722" font-family="Georgia, 'Times New Roman', serif">to be in Gibraltar by November.</text>
+<text x="666" y="542" font-size="8.5" fill="#6b6355" letter-spacing="0.1em">COUNTRIES / TERRITORIES</text>
+<text x="666" y="560" font-size="10" fill="#2a2722">Greece · Malta · Italy · France · Spain</text>
+</g>
+<circle cx="964" cy="400" r="11" fill="#a32e38" stroke="#ffffff" stroke-width="2" opacity="1"/>
+<text x="964" y="404" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">7</text>
+<rect x="650" y="584" width="300" height="64" rx="0" fill="#f4efe4"/>
+<polyline points="650,584 950,584" fill="none" stroke="#cbbfa9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<text x="800.0" y="602" font-size="9" fill="#a32e38" text-anchor="middle">FAQ / Owner's Manual</text>
+<text x="800.0" y="619" font-size="9" fill="#a32e38" text-anchor="middle">A project of Sailing Grace</text>
+<text x="800.0" y="636" font-size="9" fill="#a32e38" text-anchor="middle">Voyage Atlas vX.Y.Z</text>
+<circle cx="964" cy="616" r="11" fill="#a32e38" stroke="#ffffff" stroke-width="2" opacity="1"/>
+<text x="964" y="620" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">8</text>
+</svg>

@@ -9,6 +9,8 @@ This document is the reference manual for both. It has four parts:
 3. **Using the viewer** — exploring and hosting the chart
 4. **Design principles** — why the tool works the way it does
 
+The [visual guide](voyage-atlas-guide.md) draws both tools, their screens and the steps of charting a voyage, figure by figure.
+
 ---
 
 ## Why "Atlas," not "Planner"?
@@ -424,4 +426,4 @@ It's the framework atlas: the charted intentions to navigate by, kept deliberate
 
 ---
 
-*Companion documents: [`voyage-atlas-schema.md`](voyage-atlas-schema.md) (the data format), [`voyage-atlas-enhancements.md`](voyage-atlas-enhancements.md) (closed ideas with the reason for each) and the [changelog](../CHANGELOG.md) (version history).*
+*Companion documents: the [visual guide](voyage-atlas-guide.md) (both tools drawn figure by figure), [`voyage-atlas-schema.md`](voyage-atlas-schema.md) (the data format), [`voyage-atlas-enhancements.md`](voyage-atlas-enhancements.md) (closed ideas with the reason for each) and the [changelog](../CHANGELOG.md) (version history).*
