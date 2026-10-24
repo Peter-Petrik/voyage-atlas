@@ -1,6 +1,6 @@
 # Voyage Atlas — Data Schema (data model 3.0)
 
-This document defines the data contract between the **editor** (`voyage-atlas-editor.html`) and the **viewer** (`voyage-atlas.html`). Any tool that produces data in this schema can feed the viewer; any tool that consumes it can read editor output. The editor is the authoring surface and the source of truth; the **voyage file** (JSON) is the save and interchange format the viewer loads; **CSV** is an import and export convenience for spreadsheets, and **KML** an export for Google Earth. The two tools share their core logic (file reading, dateline handling, country derivation, distance math), so they read and derive identically from the same file.
+This document defines the data contract between the **editor** (`voyage-atlas-editor.html`) and the **viewer** (`voyage-atlas.html`). Any tool that produces data in this schema can feed the viewer; any tool that consumes it can read editor output. The editor is the authoring surface and the source of truth; the **voyage file** (JSON) is the save and interchange format the viewer loads; **CSV** is an import and export convenience for spreadsheets, **KML** an export for Google Earth, and **GPX** an import and export for chartplotters and navigation apps. The two tools share their core logic (file reading, dateline handling, country derivation, distance math), so they read and derive identically from the same file.
 
 ---
 
@@ -74,7 +74,7 @@ The editor writes this on **Save**; the viewer loads it. This is the canonical i
 
 | Field | Type | Written | Description |
 |-------|------|---------|-------------|
-| `title` | string | only when set | The single user voyage title, shown in both tools' headers and page titles, used as the KML document's name and edited in the editor's Voyage Settings (Voyage Title). Read with spaces trimmed from its ends, so a title of only spaces is no title. **Omitted entirely when blank**; no default is written to the file. |
+| `title` | string | only when set | The single user voyage title, shown in both tools' headers and page titles, used as the name of the KML document and of the GPX file and edited in the editor's Voyage Settings (Voyage Title). Read with spaces trimmed from its ends, so a title of only spaces is no title. **Omitted entirely when blank**; no default is written to the file. |
 | `version` | string | always | The data-model version, `"3.0"`. It changes only when the file format changes, not with each release of the tools. |
 | `generatedAt` | ISO 8601 datetime | always | When the file was written. |
 | `settings` | object | always | Override values and the display unit (below). |
@@ -114,7 +114,7 @@ The fields are listed in the order the editor writes them. The editor's chapter 
 | Field | Type | Written | Description |
 |-------|------|---------|-------------|
 | `order` | integer | always | The row's position in the chapter, 1-indexed, written on every save. It is not read back: the array order is the route order. |
-| `name` | string | always | Waypoint name. **Empty, or only spaces = shaping vertex**: route geometry only, with no marker in the viewer or the KML and a small gray dot in the editor's selected chapter; its flags are ignored. |
+| `name` | string | always | Waypoint name. **Empty, or only spaces = shaping vertex**: route geometry only, with no marker in the viewer or the KML (a GPX export writes it as a route point without a name) and a small gray dot in the editor's selected chapter; its flags are ignored. |
 | `lat` | number \| null | always | Latitude, decimal degrees; `null` for a row with no coordinates yet. A value of 0 (the equator) is a real coordinate. |
 | `lon` | number \| null | always | Longitude, decimal degrees; `null` for a row with no coordinates yet. A value of 0 (the prime meridian) is a real coordinate. |
 | `major` | boolean | always | Provisioning hub, spares, repairs or an extended stay. |
@@ -172,7 +172,7 @@ These rules apply to the voyage file and to every import and export.
 
 ### Waypoint rendering rules
 
-1. A `name` that is empty or only spaces → shaping vertex: it contributes to the route line and renders no marker in the viewer or the KML, and its flags are ignored; in the editor's selected chapter it shows as a small gray dot, its drag handle.
+1. A `name` that is empty or only spaces → shaping vertex: it contributes to the route line and renders no marker in the viewer or the KML (a GPX export writes it as a route point without a name), and its flags are ignored; in the editor's selected chapter it shows as a small gray dot, its drag handle.
 2. Any other `name`, on a waypoint with coordinates → a marker is drawn on the chart. A row without coordinates draws nothing.
 3. `major` → a circle, slightly larger and with a heavier stroke.
 4. `gateway` → a star marker.
@@ -266,6 +266,43 @@ The editor exports KML for Google Earth and similar tools, as `voyage-route.kml`
 5. **Coordinates.** Written in plain decimals, up to nine places, never in exponent form.
 6. **Icon priority.** The `styleUrl` is assigned in the order major → gateway → decision, so the **last applicable flag wins: decision, then gateway, then major**, the same priority as the on-chart shape (where Decision wins).
 7. **Contents.** KML carries the voyage title, the chapter and waypoint names, positions, route colors and the flag icon only: no notes, countries, era, When, key destinations, other settings or avoidance zones, so it does not load back as the same voyage.
+
+---
+
+## GPX Export and Import Schema
+
+The editor exports GPX 1.1 for chartplotters and navigation apps, as `voyage-route.gpx` with the date and time in front (`2026-10-23-14-05-voyage-route.gpx`), and imports GPX 1.1 and 1.0.
+
+```xml
+<gpx version="1.1" creator="Voyage Atlas" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata><name>Voyage Title</name><desc>Exported from Voyage Atlas</desc></metadata>
+  <wpt lat="36.9" lon="27.3">                <!-- One per named waypoint with coordinates -->
+    <name>Waypoint Name</name>
+    <desc>Notes</desc>                        <!-- When the waypoint has notes -->
+    <type>Major, Decision, Gateway</type>     <!-- The flags it carries, when any -->
+  </wpt>
+  <rte>                                      <!-- One per chapter with coordinates -->
+    <name>Ch N — Chapter Name</name>
+    <number>N</number>
+    <rtept lat="36.9" lon="27.3"><name>Waypoint Name</name></rtept>
+    <rtept lat="36.95" lon="27.5"/>          <!-- A shaping vertex: no name -->
+  </rte>
+</gpx>
+```
+
+1. **Waypoints.** A `wpt` per named waypoint with coordinates, in chapter order, written once where the same point (name, position, notes and flags) appears more than once in the voyage, as where one chapter hands off to the next.
+2. **Routes.** A `rte` per chapter with at least one point with coordinates, named `Ch N — Chapter Name` and numbered with the chapter number, through every point with coordinates in table order, shaping vertices included as route points without a name. A named route point carries the waypoint's name, notes and flags as its `wpt` does; a shaping vertex carries its notes when it has any.
+3. **Text.** Names and notes are escaped for XML, and characters XML 1.0 forbids are dropped, as in the KML. The title is `meta.title`, or "Voyage Atlas" when blank.
+4. **Coordinates.** Written in plain decimals, up to nine places, with longitudes from -180 up to but not including 180 (a value that rounds to 180 is written as -180, the same meridian).
+5. **Contents.** GPX carries the title, the chapter and waypoint names, every point with coordinates, notes and flags: no countries, era, When, key destinations, chapter notes, settings or avoidance zones, so it does not load back as the same voyage.
+
+**Import.** Elements are read by their local name, so a GPX 1.0 file or one written with a prefix reads the same.
+
+1. **Read.** Every `trk` (its `trkseg` segments joined in order, then any `trkpt` written outside a segment), `rte` (`rtept` points) and `wpt` with a name; space before the XML declaration is ignored. A point needs a `lat` from -90 to 90 and a `lon`, written as numbers; a longitude outside -180 to 180 is brought into it, and any other point is skipped and counted. Coordinates are rounded to five decimal places. A track or route with no usable point is left out.
+2. **Points.** A track point becomes a shaping vertex. A route point and a waypoint keep their `name`, their `desc` (else their `cmt`) as notes and their `type` as flags: the words Major, Decision and Gateway, in any case and order, set the matching flags. Time, elevation and the other GPX fields are not read.
+3. **Thinning.** A track is thinned at the tolerance the import dialog's Track detail sets, from 10 nm (Simple) to 0.01 nm (Detailed): Douglas–Peucker on great-circle legs, so a point within the tolerance of the leg that replaces it is dropped; the first and last points are kept. Routes are not thinned.
+4. **Waypoints along the route.** A waypoint the same as a named point of the chosen tracks and routes, or as an earlier waypoint (the same name in any case, the same notes and flags, within 0.05 nm), is already there and is left out. Otherwise a waypoint within 0.05 nm of a point with the same name adds its flags to the nearest such point, and its notes when the point has none; failing that, one within 0.05 nm of a point with no name gives the nearest such point its name, notes and flags. Any other is placed between the two points of the leg it lies nearest to, or before the first or after the last point, in order along the route. With no track or route chosen, the waypoints make the chapter in file order.
+5. **Chapters.** The chosen tracks and routes are joined in file order into one chapter, or made one chapter each, and are added at the end of the voyage with the defaults of a new chapter, named after the track or route (less a leading `Ch N — `) or after the file's `metadata` name or file name, with its place in the list after it when one without a name is made a chapter of its own; or they replace the selected chapter's rows, keeping its other fields. No country is looked up.
 
 ---
 

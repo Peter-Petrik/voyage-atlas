@@ -381,7 +381,7 @@ test('the chooser reads the same in both tools, and errors, quotes and chapter r
     assert.match(tool.html, /<span class="lb-desc">Open a saved voyage, or one shared by someone else\.<\/span>/);
     assert.ok(!/Voyage Atlas JSON/.test(tool.html), `${tool.name}: errors say "file"`);
   }
-  assert.ok(!/\bCh \$\{/.test(editor.js.replace(/<Folder><name>Ch \$\{ch\.num\}/, '')), 'chapter references say "chapter"');
+  assert.ok(!/\bCh \$\{/.test(editor.js.replace(/<Folder><name>Ch \$\{ch\.num\}/, '').replace(/`Ch \$\{ch\.num\} — \$\{ch\.name\}`/, '')), 'chapter references say "chapter"');
   assert.match(editor.defs.confirmDeleteWaypoint, /`Delete “\$\{name\}” from chapter \$\{chNum\}\? This cannot be undone\.`/);
   assert.match(editor.html, /placeholder="\(defaults to “Voyage Atlas”\)"/);
   assert.match(editor.html, /Optional extra columns, in this order: major, decision, gateway, country, notes \(the table shows Gateway before Decision\)\./);

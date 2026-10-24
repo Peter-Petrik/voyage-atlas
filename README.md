@@ -8,7 +8,7 @@ Stable and actively maintained. Each release is recorded in the [CHANGELOG](CHAN
 
 ## Features
 
-1. **Editor** (`voyage-atlas-editor.html`) — creates and maintains a voyage: chapters, waypoints, route geometry and voyage metadata, with chart and table editing, geocoding and drag-to-reorder, and JSON, CSV and KML export. The published editor is at [sailingamazinggrace.com/resources/voyage-atlas/editor](https://sailingamazinggrace.com/resources/voyage-atlas/editor).
+1. **Editor** (`voyage-atlas-editor.html`) — creates and maintains a voyage: chapters, waypoints, route geometry and voyage metadata, with chart and table editing, geocoding and drag-to-reorder, and JSON, CSV, KML and GPX export. The published editor is at [sailingamazinggrace.com/resources/voyage-atlas/editor](https://sailingamazinggrace.com/resources/voyage-atlas/editor).
 2. **Viewer** (`voyage-atlas.html`) — a read-only interactive chart of a voyage, which is what gets published or shared. A full voyage is charted at [sailingamazinggrace.com/resources/voyage-atlas/viewer](https://sailingamazinggrace.com/resources/voyage-atlas/viewer).
 3. **Single files** — both are single HTML files, with no build step, no framework and no server code. They run from any static host or a local HTTP server; opened straight from disk, each opens to its chooser, where a voyage file is loaded by hand.
 4. **Chapters** group waypoints by region and season. Each is drawn in its own palette color, solid when past or current and dashed when planned, and carries an era (past, current or future), a When (season window), a pad multiplier, an optional blog link, notes, countries and key destinations.
@@ -18,7 +18,7 @@ Stable and actively maintained. Each release is recorded in the [CHANGELOG](CHAN
 8. **Endpoint sync** — chapters connect end to start. Each chapter header shows 🔗 when the chapter begins where the previous one ended, and ⇄ when there is a gap; clicking ⇄ copies the previous chapter's last waypoint in as a new first row.
 9. **Geocoding** via OpenStreetMap's Nominatim, paced to one request a second — a name typed into a row with no coordinates fills them, and countries are looked up from positions.
 10. **Automatic nation and territory classification** against a built-in reference list, with manual overrides.
-11. **Import and export** — JSON (the master file) in both directions; a chapters and waypoints CSV pair in both directions, for spreadsheet editing, without the title, settings or avoidance zones; and KML out, for Google Earth.
+11. **Import and export** — JSON (the master file) in both directions; a chapters and waypoints CSV pair in both directions, for spreadsheet editing, without the title, settings or avoidance zones; KML out, for Google Earth; and GPX in both directions, for chartplotters and navigation apps, with tracks thinned on import.
 12. **Self-hosting** — a published chart needs only `voyage-atlas.html` and its `voyage-data.json` in one directory on any static host; add `voyage-atlas-editor.html` to offer the editor too. The viewer shows its voyage on arrival when served over HTTP, with the source file set by the `URL_VOYAGE_DATA` constant or a `?data=` parameter (a file on the same site).
 13. **Viewer** — a header **Load…** button and a "Chart your own voyage" link to the editor (both fold into the Voyage Chapters drawer on small screens); the chooser can be dismissed by its close button, a tap outside it or Escape when a voyage is already shown; on load the chart frames the whole voyage when it fits, or for a voyage that wraps the globe it opens on the current chapter and the passages ahead; a chapter's detail panel links to the blog posts covering it when a link is set; and `?import=yes` opens the chooser for loading a different voyage file.
 14. **Editor at a glance** — each chapter row opens a metadata form (📋) and a waypoint table (📍); controls above the chapter list open or close every form or table at once and look up the countries of every chapter; the waypoint table adds rows singly, in a batch or by pasting from a spreadsheet; and Rapid click, below the chart, places a waypoint with each click. The [FAQ](docs/voyage-atlas-faq.md) covers each in full.
@@ -80,7 +80,7 @@ The test suite runs with `node --test test/*.test.js` from the repository root, 
 ### Documentation
 
 1. [FAQ / Owner's Manual](docs/voyage-atlas-faq.md) — the full reference for both tools (concepts, editor, viewer and design principles), and the place to start.
-2. [Data schema](docs/voyage-atlas-schema.md) — the voyage file, CSV and KML format contract, for hand-editing data or for other tools that read or write it.
+2. [Data schema](docs/voyage-atlas-schema.md) — the voyage file, CSV, KML and GPX format contract, for hand-editing data or for other tools that read or write it.
 3. [Changelog](CHANGELOG.md) — version history.
 
 The design rationale (why chapters, the distance model, the self-contained files) is in the FAQ's Concepts and Design principles parts, and the predecessor seam is described at `getPredecessorChapter` in both tools.

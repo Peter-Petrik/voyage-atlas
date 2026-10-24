@@ -36,7 +36,7 @@ Thinking in chapters keeps a multi-year, tens-of-thousands-of-mile voyage compre
 Every chapter is a single ordered list of waypoints. Each waypoint is one of two kinds:
 
 1. **A named waypoint** — it has a name. It renders as a marker on the chart once it has coordinates, and counts in the header's Waypoints figure (see "What do the header stats show?").
-2. **A shaping vertex** — it has coordinates but *no name* (the row shows "(shaping vertex)" in the editor). It draws no marker in the viewer or the KML, and in the editor only a small gray dot in the selected chapter, so it can be dragged or deleted; it shapes the route line so the path bends correctly (around a cape, along a coast, through a strait). Its flags are ignored.
+2. **A shaping vertex** — it has coordinates but *no name* (the row shows "(shaping vertex)" in the editor). It draws no marker in the viewer or the KML (a GPX export writes it as a route point without a name), and in the editor only a small gray dot in the selected chapter, so it can be dragged or deleted; it shapes the route line so the path bends correctly (around a cape, along a coast, through a strait). Its flags are ignored.
 
 The route line connects every point in order, named or not. Shaping vertices allow a realistic track without cluttering the chart with markers for every turn. To convert a marker into a shaping vertex, clear its name; to promote a shaping vertex to a marker, give it a name.
 
@@ -131,7 +131,7 @@ The voyage file is resolved from a `URL_VOYAGE_DATA` constant in the configurati
 
 Opened directly from disk (a `file://` address), the editor does not read the voyage file beside it, so the sample option does not appear and the chooser offers only "Start a new voyage" and "Load a voyage file…", with a note saying why. When the file is there but cannot be read, or a `?data=` file is not found, the chooser carries a note saying so.
 
-The same three actions, plus CSV import, are available on demand from the header **Load** menu once a session is underway: "Load a voyage file…", "Import CSVs (chapters + waypoints)…", "New voyage" and "Sample voyage" (the sample item appears only when a file resolves at the configured path). Any of these replaces the current voyage, so when there are unsaved changes each one warns first with a "Discard unsaved changes?" prompt — the safe choice, "Keep editing," takes focus and is what the Enter key triggers, so a mis-click or stray keystroke cannot discard work. Choosing "Discard changes" proceeds. At arrival, where the editor is empty, these actions proceed without a prompt.
+The same three actions, plus CSV and GPX import, are available on demand from the header **Load** menu once a session is underway: "Load a voyage file…", "Import CSVs (chapters + waypoints)…", "Import GPX…", "New voyage" and "Sample voyage" (the sample item appears only when a file resolves at the configured path). Each of these but Import GPX replaces the current voyage, so when there are unsaved changes each one warns first with a "Discard unsaved changes?" prompt — the safe choice, "Keep editing," takes focus and is what the Enter key triggers, so a mis-click or stray keystroke cannot discard work. Choosing "Discard changes" proceeds. At arrival, where the editor is empty, these actions proceed without a prompt.
 
 **Importing CSVs** reads `chapters.csv`, then asks for `waypoints.csv` in an "Import waypoints CSV" dialog. Each file is checked before anything is replaced:
 
@@ -141,6 +141,16 @@ The same three actions, plus CSV import, are available on demand from the header
 4. A row with every cell empty is skipped.
 5. A file saved in the older Windows-1252 code page keeps its accented names.
 6. The status bar lists what was corrected: numbers that could not be read (left unset: an empty coordinate, or a pad multiplier of 1.2); waypoint rows whose chapter is not in the chapters file; repeated chapter numbers (both chapters are kept, and the waypoints with that number join the first); chapter rows whose number cannot be read, which are kept, placed after the chapter before them and counted; and waypoint rows with more cells than the header, which are skipped and counted rather than read into the wrong columns. A chapter row with more cells keeps only its number and name, so its waypoints still load.
+
+**Importing a GPX file** ("Import GPX…") adds the tracks, routes and waypoints of a GPX file (from a chartplotter, a phone app or NoForeignLand, for example) to the voyage, as new chapters or in place of the selected chapter's waypoints; it does not replace the voyage. GPX 1.1 and GPX 1.0 files are read. The dialog shows what the file holds, then, top to bottom:
+
+1. The tracks and routes, each with its point count and a checkbox, all ticked to start. A track's segments are joined in order.
+2. "Track detail" — a slider from Simple to Detailed that thins a track to fewer points: it keeps the first and last, and drops each point that lies within the slider's distance of the line that replaces it (10 nm at Simple, 0.01 nm at Detailed). The line below the choices gives the count kept as it moves. Routes are never thinned. The slider shows only when a track is ticked.
+3. "Include the file's waypoints as named points" — ticked to start. A waypoint the same as a named point of the ticked tracks and routes (the same name, notes and flags, within 0.05 nm), or given twice, comes in once. Otherwise a waypoint within 0.05 nm of a point with the same name adds its flags to that point, and its notes when the point has none; failing that, one within 0.05 nm of a point with no name gives that point its name, notes and flags. Any other goes between the two points of the leg it lies nearest to, or before the first or after the last point when it lies beyond an end, in order along the route. With no track or route ticked, the waypoints alone make the chapter, in file order. A waypoint without a name is left out.
+4. "Import into" — "New at the end of the voyage", with the defaults of + Add chapter (era Future, Pad Multiplier 1.2), named after its track or route or, when several are joined or the track or route has no name, after the file (the name written inside it, else the file name), with its place in the list after it when each comes in as a chapter of its own ("Summer 2027 2"); or "Replace the N rows of Chapter N: Name", for the selected chapter, which keeps the chapter's other fields and asks first (Enter there keeps the rows). Replace is available when a chapter is selected.
+5. "The chosen tracks and routes" — "All in one chapter" or "One chapter each", shown when more than one is ticked for new chapters. Replacing a chapter's rows joins them into that chapter. With one chapter each, every waypoint goes to the track or route it lies nearest.
+
+Track points come in as shaping vertices, a track's segments joined in order (then any points written outside a segment); route points and waypoints keep their names, notes (`desc`, else `cmt`) and flags as a GPX export writes them, and a route named "Ch N — " by that export is named without the prefix. A file over 2 MB shows "Reading trip.gpx…" in the status bar while it is read, and tracks of more than 20,000 points in all show "Reading the tracks…" while they are measured for thinning. Coordinates are rounded to five decimal places. A point without a usable latitude (beyond ±90 or unreadable) or longitude is skipped and counted, and a longitude outside -180 to 180 is brought into that range. Nothing is looked up: countries stay empty, for Look up countries. A file that is not GPX, or holds no point with usable coordinates, changes nothing and says so.
 
 A hand-edited voyage file is corrected as it loads, and the status bar below the chart lists what changed (for example, "Loaded with corrections: chapters renumbered 1–20 — click a chapter to begin"):
 
@@ -152,7 +162,7 @@ A hand-edited voyage file is corrected as it loads, and the status bar below the
 6. A file made with a newer data model than 3.0 loads, and the status bar says so; a field the editor does not know, at any level, is named there, since a save leaves it out.
 7. Avoidance zones (`paz`), which the editor does not edit, are kept and saved back with their names and bounds; a zone without four bounds is left out and counted.
 
-**On load, the chart frames the whole voyage** — it fits to the combined extent of every chapter's waypoints, so an all-Mediterranean voyage opens on the Mediterranean. A voyage that spans the globe opens on as much of it as fits without the world repeating, centered on the middle of its span, so points at its far ends can sit past the sides of the chart. No chapter is selected to start: the status bar below the chart reads "No chapter selected — click a chapter to begin" ("No chapters yet — add a chapter to begin" for a new voyage). Once a chapter is active it shows that chapter, for example "Chapter 3: Aegean Greece · 24 waypoints · 410 nm".
+**On load, the chart frames the whole voyage** — it fits to the combined extent of every chapter's waypoints, so an all-Mediterranean voyage opens on the Mediterranean. A voyage that spans the globe opens on as much of it as fits without the world repeating, centered on the middle of its span, so points at its far ends can sit past the sides of the chart. No chapter is selected to start: the status bar below the chart reads "No chapter selected — click a chapter to begin" ("No chapters yet — add a chapter to begin" for a new voyage). Once a chapter is active it shows that chapter, for example "Chapter 3: Aegean Greece · 24 rows · 410 nm".
 
 ## Chapters
 
@@ -262,7 +272,7 @@ Drag the **≡** handle on a row to reorder waypoints within a chapter.
 
 The ⚙ **Voyage Settings** panel at the top of the chapter panel (a click on its header opens or closes it) holds voyage-level settings, saved in the voyage file and restored when it is loaded; a CSV import starts from the defaults:
 
-1. **Voyage Title** — the title shown in both tools' headers and page titles, saved in the voyage file and used as the KML document's name. Free text: include a vessel, a vehicle or anything else, or leave it blank to fall back to the default "Voyage Atlas".
+1. **Voyage Title** — the title shown in both tools' headers and page titles, saved in the voyage file and used as the name of the KML document and of the GPX file. Free text: include a vessel, a vehicle or anything else, or leave it blank to fall back to the default "Voyage Atlas".
 2. **Distance Units** — the unit for every distance shown, in the editor and in the viewer, which reads it from the voyage file: nautical miles (default), kilometers or miles. Stored distances stay in nautical miles whatever the unit.
 3. **Distance Override** — force the displayed total to a specific number, replacing the computed sum. Entered and shown in the selected unit, stored as nautical miles, so the tile shows the figure as typed. A value of 0 or less, or a blank field, clears it. The header stat tile marks an active override with a ⚙.
 4. **Nations** — force the nations count, replacing the automatic classification. A whole number, and 0 is a valid count; a blank field clears it.
@@ -279,26 +289,28 @@ The footer carries, left to right, a link to this manual, a link to the project 
 ## Saving and exporting
 
 1. **Save** — downloads the voyage file as `voyage-data.json`, the file the viewer loads automatically. Its tooltip reads "Download voyage-data.json".
-2. **▾** beside Save (its tooltip reads "Export as JSON, CSV or KML") opens a menu:
+2. **▾** beside Save (its tooltip reads "Export as JSON, CSV, KML or GPX") opens a menu:
    1. **JSON (timestamped)** — a dated snapshot of the voyage file.
    2. **CSVs (chapters + waypoints)** — the two CSVs together.
    3. **KML** — a Google Earth–compatible file whose document takes the voyage title as its name (waypoints and route lines per chapter, with styled markers for Major, Gateway and Decision), for viewing the voyage in Google Earth Pro.
+   4. **GPX** — a GPX 1.1 file for chartplotters and navigation apps: each named waypoint once as a waypoint, and each chapter as a route of all its points in order, shaping vertices included.
 
-Every file from this menu carries the date and time in its name (`2026-10-23-14-05-voyage-data.json`, `…-chapters.csv`, `…-waypoints.csv`, `…-voyage-route.kml`).
+Every file from this menu carries the date and time in its name (`2026-10-23-14-05-voyage-data.json`, `…-chapters.csv`, `…-waypoints.csv`, `…-voyage-route.kml`, `…-voyage-route.gpx`).
 
 What each format carries:
 
 1. **The voyage file (JSON)** is the complete, authoritative file. It carries the source data — chapters, waypoints, flags, settings and notes — in one structure. It does **not** store the computed figures (totals, per-chapter distances, derived country lists); both tools recompute those on load, so a hand-edited file never carries a stale number. This is what the viewer loads and what serves as the master file (`voyage-data.json`).
 2. **The CSVs** are a convenience for spreadsheet editing: one for chapters, one for waypoints, exported together. Round-trip through a spreadsheet for bulk edits, then re-import. They carry no voyage title, settings or avoidance zones, so an import starts from the defaults. Both files start with a UTF-8 byte-order mark. A text cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return is written with a leading apostrophe, which the import takes off again.
 3. **The KML** carries only the title, the routes and the named waypoints with their flags.
+4. **The GPX** carries the title, every point with coordinates (named waypoints with their notes and flags, and shaping vertices) and the chapters as routes named "Ch N — Chapter Name". Imported back one chapter each, it gives the same chapters, names, points, notes and flags, a place visited twice included, for every chapter with a point with coordinates (a chapter with no name comes back named after the file's title with its place in the file after it, "Voyage Atlas 4"); the other chapter fields, the countries, the settings and the avoidance zones are not carried.
 
 The data schema (field names, types, structure) is documented separately in [`voyage-atlas-schema.md`](voyage-atlas-schema.md) for hand-editing the voyage file.
 
-The **Save** button reads `Save *` (with an "Unsaved changes" tooltip) whenever the voyage holds changes not yet saved — any edit to a chapter, a waypoint or a setting, including a country or coordinates filled in by a lookup. It returns to plain `Save` the moment the voyage is saved as JSON (**Save**, or **JSON (timestamped)** from the ▾ menu) or a different file is loaded. The CSV and KML exports leave it showing, since neither reloads as the same voyage. Every action that would replace the current voyage warns first (see Getting data in). Closing or reloading the page with unsaved changes asks for confirmation first.
+The **Save** button reads `Save *` (with an "Unsaved changes" tooltip) whenever the voyage holds changes not yet saved — any edit to a chapter, a waypoint or a setting, including a country or coordinates filled in by a lookup. It returns to plain `Save` the moment the voyage is saved as JSON (**Save**, or **JSON (timestamped)** from the ▾ menu) or a different file is loaded. The CSV, KML and GPX exports leave it showing, since none of them reloads as the same voyage. Every action that would replace the current voyage warns first (see Getting data in). Closing or reloading the page with unsaved changes asks for confirmation first.
 
 ## Keyboard shortcuts
 
-1. In the + Add N rows, CSV import, delete (waypoint or chapter) and lookup dialogs: **Enter** confirms, **Escape** cancels. Enter on a focused button does what that button says, so a focused Cancel cancels. In "Discard unsaved changes?" Enter always keeps editing, and in the paste dialog Enter inserts a newline (item 2).
+1. In the + Add N rows, CSV import, GPX import, delete (waypoint or chapter) and lookup dialogs: **Enter** confirms, **Escape** cancels. Enter on a focused button does what that button says, so a focused Cancel cancels. In "Discard unsaved changes?" Enter always keeps editing, and in the GPX import's Replace confirmation it keeps the rows, and in the paste dialog Enter inserts a newline (item 2).
 2. In the paste box: **Cmd/Ctrl+Enter** adds the rows, while plain **Enter** inserts a newline (allowing multi-line content to be pasted or typed first). **Escape** closes the dialog.
 3. In the Nominatim search box: **Enter** searches; once results show, **↑/↓** move through them, **Enter** adds the highlighted result (or the top one, when none is highlighted), **Escape** dismisses the results, or the line saying none were found. A **second Escape** (once the results are already dismissed) clears the typed query.
 4. In a Lat or Lon field: **↑/↓** step the value by 0.01°.
@@ -412,4 +424,4 @@ It's the framework atlas: the charted intentions to navigate by, kept deliberate
 
 ---
 
-*Companion documents: [`voyage-atlas-schema.md`](voyage-atlas-schema.md) (the data format), [`voyage-atlas-enhancements.md`](voyage-atlas-enhancements.md) (planned features, and closed ideas with the reason for each) and the [changelog](../CHANGELOG.md) (version history).*
+*Companion documents: [`voyage-atlas-schema.md`](voyage-atlas-schema.md) (the data format), [`voyage-atlas-enhancements.md`](voyage-atlas-enhancements.md) (closed ideas with the reason for each) and the [changelog](../CHANGELOG.md) (version history).*

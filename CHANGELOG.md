@@ -6,6 +6,15 @@ consistency; the rename itself is recorded in the v2.5.2 entry. Format follows
 [Keep a Changelog](https://keepachangelog.com); versioning is SemVer-lite (`vMAJOR.MINOR[.PATCH]`).
 Entries from v3.9.4 on use Title Case bullet labels; earlier entries keep their original form.
 
+## [v3.11.0] - 2026-10-24
+
+### Added
+- **GPX Export**: The editor's ▾ menu beside Save gains GPX, a GPX 1.1 file for chartplotters and navigation apps: each named waypoint once as a waypoint, with its notes and its Major, Decision and Gateway flags, and each chapter as a route of all its points in order, shaping vertices included as route points without a name (#18).
+- **GPX Import**: The Load menu gains Import GPX…, which reads the tracks, routes and waypoints of a GPX 1.1 or 1.0 file (#17). A dialog lists the tracks and routes to choose from, thins a track with a Simple-to-Detailed slider that shows the count kept, offers the file's waypoints as named points placed along the route, and adds the result at the end of the voyage, as one chapter or one chapter each, or in place of the selected chapter's rows after asking. Track points come in as shaping vertices; points without usable coordinates are skipped and counted, and nothing is looked up. A GPX file exported here and imported one chapter each comes back with the same chapters, names, points, notes and flags, a place visited twice included, for every named chapter with a point with coordinates.
+
+### Fixed
+- **The FAQ's Status Line Example**: The FAQ's example of the status line now reads "24 rows", as the status line has since v3.10.0.
+
 ## [v3.10.0] - 2026-10-23
 
 ### Added
@@ -851,6 +860,7 @@ Project-wide rename from "Voyage Planner / Voyage Map" to Voyage Atlas.
 - Adaptive light/dark base maps, chapter legend, slide-out chapter drawer, click-to-focus info panel, and a toggleable permanent-avoidance-zone overlay.
 - Paul Tol "muted" palette assigned across chapters by geographic opposition; padded great-circle distances; hero stats of ~81,051 nm across 39 nations and 15 territories.
 
+[v3.11.0]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.10.0...v3.11.0
 [v3.10.0]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.19...v3.10.0
 [v3.9.19]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.18...v3.9.19
 [v3.9.18]: https://github.com/Peter-Petrik/voyage-atlas/compare/v3.9.17...v3.9.18

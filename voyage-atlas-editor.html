@@ -572,6 +572,23 @@ th .hi { margin-left: 2px; }
 }
 .modal p { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+/* The GPX import dialog: the file's tracks and routes to choose from, the track detail, the waypoints
+   and where the import goes. */
+.gpx-list { max-height: 168px; overflow-y: auto; border: 1px solid var(--border); border-radius: 3px; margin-bottom: 10px; }
+.gpx-list:empty { display: none; }
+.gpx-part { display: flex; align-items: center; gap: 8px; padding: 5px 8px; font-size: 11px; color: var(--ink); cursor: pointer; }
+.gpx-part + .gpx-part { border-top: 1px solid var(--border); }
+.gpx-part bdi { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gpx-meta { color: var(--muted); font-size: 10px; white-space: nowrap; }
+.gpx-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink); margin-bottom: 10px; }
+.gpx-row input[type=range] { flex: 1; min-width: 60px; accent-color: var(--accent); }
+.gpx-end { color: var(--muted); font-size: 10px; }
+.gpx-check { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink); margin-bottom: 10px; cursor: pointer; }
+.gpx-choice { border: none; padding: 0; margin: 0 0 10px; display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--ink); }
+.gpx-choice legend { padding: 0; margin-bottom: 4px; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.gpx-choice label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.gpx-choice input:disabled + span { color: var(--muted); }
+.modal p.gpx-result { color: var(--ink); margin-bottom: 0; }
 
 /* ═══════════ RESPONSIVE ═══════════ */
 /* Layout breakpoint: below 768 px the chapter panel and the chart stack, and the divider between
@@ -679,17 +696,19 @@ th .hi { margin-left: 2px; }
       <div id="import-menu" class="dropdown-menu">
         <button onclick="importJSON()">Load a voyage file…</button>
         <button onclick="importCSV()">Import CSVs (chapters + waypoints)…</button>
+        <button onclick="importGPX()">Import GPX…</button>
         <button id="menu-new" onclick="newVoyageFromMenu()">New voyage</button>
         <button id="menu-sample" onclick="loadSampleFromChooser()" style="display:none;">Sample voyage</button>
       </div>
     </div>
     <div class="dropdown" style="display:flex;">
       <button class="head-btn btn-accent" id="save-btn" onclick="saveDefault()" title="Download voyage-data.json" style="border-radius:4px 0 0 4px;border-right:none;">Save</button>
-      <button class="head-btn btn-accent" onclick="toggleDropdown('export-menu')" title="Export as JSON, CSV or KML" style="border-radius:0 4px 4px 0;padding:5px 6px;">▾</button>
+      <button class="head-btn btn-accent" onclick="toggleDropdown('export-menu')" title="Export as JSON, CSV, KML or GPX" style="border-radius:0 4px 4px 0;padding:5px 6px;">▾</button>
       <div id="export-menu" class="dropdown-menu">
         <button onclick="exportJSON()">JSON (timestamped)</button>
         <button onclick="exportCSVs()">CSVs (chapters + waypoints)</button>
         <button onclick="exportKML()">KML</button>
+        <button onclick="exportGPX()">GPX</button>
       </div>
     </div>
     <button id="theme-btn" class="theme-btn" onclick="toggleTheme()" title="Toggle light/dark theme">◐</button>
@@ -772,13 +791,14 @@ th .hi { margin-left: 2px; }
 <div id="footer">
   <span class="footer-left"><a href="https://github.com/Peter-Petrik/voyage-atlas/blob/main/docs/voyage-atlas-faq.md" target="_blank" rel="noopener">FAQ / Owner's Manual</a></span>
   <span class="footer-credit"><a href="https://sailingamazinggrace.com/resources/voyage-atlas" target="_blank" rel="noopener">A project of Sailing Grace</a></span>
-  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas/releases/tag/v3.10.0" target="_blank" rel="noopener">Voyage Atlas Editor v3.10.0</a></span>
+  <span class="footer-ver"><a href="https://github.com/Peter-Petrik/voyage-atlas/releases/tag/v3.11.0" target="_blank" rel="noopener">Voyage Atlas Editor v3.11.0</a></span>
 </div>
 
 <!-- Hidden file inputs -->
 <input type="file" id="file-json" accept=".json" style="display:none" onchange="handleJSONFile(event)">
 <input type="file" id="file-csv-chapters" accept=".csv" style="display:none" onchange="handleCSVChaptersFile(event)">
 <input type="file" id="file-csv-waypoints" accept=".csv" style="display:none" onchange="handleCSVWaypointsFile(event)">
+<input type="file" id="file-gpx" accept=".gpx,application/gpx+xml,application/xml,text/xml" style="display:none" onchange="handleGPXFile(event)">
 
 <!-- Chooser modal (v3.9 unified) — shown on arrival; sample option appears only when the configured file resolves. -->
 <div id="landing" class="hidden">
@@ -860,6 +880,37 @@ th .hi { margin-left: 2px; }
     <div class="modal-actions">
       <button class="btn" onclick="closeDeleteWptModal()">Cancel</button>
       <button class="btn btn-danger" id="delete-wpt-ok" onclick="doDeleteWpt()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- GPX import modal: before the confirmation modal, so its Replace confirmation shows on top -->
+<div class="modal-overlay" id="gpx-modal">
+  <div class="modal">
+    <h2>Import GPX</h2>
+    <p id="gpx-summary"></p>
+    <div id="gpx-list" class="gpx-list"></div>
+    <div class="gpx-row" id="gpx-detail-row">
+      <label for="gpx-detail">Track detail</label>
+      <span class="gpx-end">Simple</span>
+      <input type="range" id="gpx-detail" min="0" max="100" value="50" oninput="gpxRefresh()">
+      <span class="gpx-end">Detailed</span>
+    </div>
+    <label class="gpx-check" id="gpx-marks-row" for="gpx-marks"><input type="checkbox" id="gpx-marks" checked onchange="gpxRefresh()"><span id="gpx-marks-text">Include the file's waypoints as named points</span></label>
+    <fieldset class="gpx-choice">
+      <legend>Import into</legend>
+      <label for="gpx-into-new"><input type="radio" id="gpx-into-new" name="gpx-into" value="new" checked onchange="gpxRefresh()"><span>New at the end of the voyage</span></label>
+      <label for="gpx-into-replace"><input type="radio" id="gpx-into-replace" name="gpx-into" value="replace" onchange="gpxRefresh()"><span id="gpx-replace-text">Replace the waypoints of the selected chapter</span></label>
+    </fieldset>
+    <fieldset class="gpx-choice" id="gpx-split">
+      <legend>The chosen tracks and routes</legend>
+      <label for="gpx-split-one"><input type="radio" id="gpx-split-one" name="gpx-split" value="one" checked onchange="gpxRefresh()"><span>All in one chapter</span></label>
+      <label for="gpx-split-each"><input type="radio" id="gpx-split-each" name="gpx-split" value="each" onchange="gpxRefresh()"><span>One chapter each</span></label>
+    </fieldset>
+    <p id="gpx-result" class="gpx-result"></p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeGPXModal()">Cancel</button>
+      <button class="btn btn-accent" id="gpx-ok" onclick="doGPXImport()">Import</button>
     </div>
   </div>
 </div>
@@ -1137,7 +1188,7 @@ function defaultSettings() {
 let STATE = { chapters: [], settings: defaultSettings(), metaTitle: '', paz: [] };
 
 // Distance display units. The one distance a voyage file stores, the Distance Override, is in nautical
-// miles (the CSV and KML carry none); the selected unit changes what both tools show and the value in
+// miles (the CSV, KML and GPX carry none); the selected unit changes what both tools show and the value in
 // the Distance Override field.
 const NM_TO = { nm: 1, km: 1.852, mi: 1.150779 }; // 1 nm = 1.852 km = 1.150779 mi
 const UNIT_LABEL = { nm: 'Nautical Miles', km: 'Kilometers', mi: 'Miles' };
@@ -3513,6 +3564,8 @@ function closeConfirmModal() {
   document.getElementById('confirm-modal').classList.remove('open');
   pendingConfirmAction = null;
   confirmSafeDefault = false;
+  // A confirmation over the GPX import dialog (Replace) hands the keyboard back to it.
+  if (document.getElementById('gpx-modal').classList.contains('open')) document.getElementById('gpx-ok').focus();
 }
 function proceedConfirmModal() {
   const action = pendingConfirmAction;
@@ -4479,6 +4532,437 @@ function exportKML() {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   GPX — export and import
+   ═══════════════════════════════════════════════════════════════ */
+// A waypoint's flags as a GPX <type> ("Major, Gateway"), and read back from one, so a file written
+// here brings its flags back in.
+const GPX_FLAGS = [['major', 'Major'], ['decision', 'Decision'], ['gateway', 'Gateway']];
+function gpxType(w) {
+  return GPX_FLAGS.filter(([key]) => w[key]).map(([, label]) => label).join(', ');
+}
+function gpxFlags(type) {
+  const words = String(type || '').toLowerCase().split(/[^a-z]+/);
+  const flags = {};
+  GPX_FLAGS.forEach(([key, label]) => { flags[key] = words.includes(label.toLowerCase()); });
+  return flags;
+}
+
+// A point as a GPX element (wpt or rtept): its position and, for a named point, its name, notes and
+// flags. A shaping vertex is written with its position, and its notes when it has any.
+function gpxPoint(tag, w) {
+  // GPX takes a longitude from -180 up to but not including 180, so a value that rounds to 180 is
+  // written as -180, the same meridian.
+  const lon = kmlNum(normLon(w.lon));
+  const at = `lat="${kmlNum(w.lat)}" lon="${lon === '180' ? '-180' : lon}"`;
+  const name = (w.name || '').trim();
+  const notes = (w.notes || '').trim();
+  if (!name) return notes ? `<${tag} ${at}><desc>${escXml(notes)}</desc></${tag}>` : `<${tag} ${at}/>`;
+  const type = gpxType(w);
+  return `<${tag} ${at}><name>${escXml(name)}</name>` +
+    (notes ? `<desc>${escXml(notes)}</desc>` : '') + (type ? `<type>${escXml(type)}</type>` : '') + `</${tag}>`;
+}
+
+// The voyage as a GPX 1.1 file: every named waypoint with coordinates as a waypoint (a mark on a
+// chartplotter), written once where the same point (name, position, notes and flags) comes up more
+// than once, as where one chapter hands off to the next, then each chapter as a route of all its
+// points with coordinates, in order, shaping vertices included. The title, the chapters' other fields,
+// countries and settings are not carried, so the file does not load back as the same voyage.
+function gpxText() {
+  const out = ['<?xml version="1.0" encoding="UTF-8"?>',
+    '<gpx version="1.1" creator="Voyage Atlas" xmlns="http://www.topografix.com/GPX/1/1">',
+    `<metadata><name>${escXml(STATE.metaTitle || 'Voyage Atlas')}</name><desc>Exported from Voyage Atlas</desc></metadata>`];
+  const written = new Set();
+  STATE.chapters.forEach(ch => ch.waypoints.forEach(w => {
+    if (!hasCoord(w) || !(w.name && w.name.trim())) return;
+    const point = gpxPoint('wpt', w);
+    if (written.has(point)) return;
+    written.add(point);
+    out.push(point);
+  }));
+  STATE.chapters.forEach(ch => {
+    const pts = ch.waypoints.filter(hasCoord);
+    if (!pts.length) return;
+    out.push(`<rte><name>${escXml(`Ch ${ch.num} — ${ch.name}`)}</name><number>${ch.num}</number>`);
+    pts.forEach(w => out.push(gpxPoint('rtept', w)));
+    out.push('</rte>');
+  });
+  out.push('</gpx>');
+  return out.join('\n') + '\n';
+}
+function exportGPX() {
+  closeDropdowns();
+  announce('export', 'gpx');
+  downloadFile('voyage-route.gpx', gpxText(), 'application/gpx+xml');
+}
+
+// The parts of a GPX file, read with the browser's XML reader by local name, so a GPX 1.0 file or one
+// written with a prefix reads the same: its tracks and routes in file order, each a list of points (a
+// track's segments joined in order, then any track points written outside a segment), and its named
+// waypoints. A point needs a latitude from -90 to 90 and a longitude, which is brought into -180 to
+// 180; any other is skipped and counted. Track points come in unnamed, as shaping vertices; route
+// points and waypoints keep their names, notes (<desc>, else <cmt>) and flags (<type>). A track or route
+// left with no points, and a waypoint without a name, are left out. Returns null when the text is not
+// GPX.
+function readGPX(text) {
+  let doc;
+  // Space before the XML declaration, which some programs write, would make the file unreadable.
+  try { doc = new DOMParser().parseFromString(String(text).replace(/^\s+/, ''), 'application/xml'); } catch (err) { return null; }
+  const root = doc && doc.documentElement;
+  if (!root || doc.getElementsByTagName('parsererror').length || root.localName !== 'gpx') return null;
+  const kids = (el, name) => Array.from(el.children).filter(c => c.localName === name);
+  const textOf = (el, name) => { const c = kids(el, name)[0]; return c ? c.textContent.trim() : ''; };
+  let skipped = 0;
+  const point = (el, named) => {
+    const lat = toCoord(el.getAttribute('lat')), lon = toCoord(el.getAttribute('lon'));
+    if (lat === null || lon === null || Math.abs(lat) > 90) { skipped++; return null; }
+    const w = Object.assign(makeWaypoint(), { lat: round5(lat), lon: round5(normLon(lon)) });
+    if (named) Object.assign(w, { name: textOf(el, 'name'), notes: textOf(el, 'desc') || textOf(el, 'cmt') }, gpxFlags(textOf(el, 'type')));
+    return w;
+  };
+  const parts = [];
+  Array.from(root.children).forEach(el => {
+    if (el.localName === 'rte') parts.push({ kind: 'route', name: textOf(el, 'name'), points: kids(el, 'rtept').map(p => point(p, true)).filter(Boolean) });
+    if (el.localName === 'trk') parts.push({ kind: 'track', name: textOf(el, 'name'),
+      points: kids(el, 'trkseg').flatMap(s => kids(s, 'trkpt')).concat(kids(el, 'trkpt')).map(p => point(p, false)).filter(Boolean) });
+  });
+  const marks = kids(root, 'wpt').map(p => point(p, true)).filter(w => w && w.name.trim());
+  const meta = kids(root, 'metadata')[0];
+  return { parts: parts.filter(p => p.points.length), marks, skipped, name: meta ? textOf(meta, 'name') : '' };
+}
+
+// Distance in nautical miles from point p to the great-circle leg a-b: the cross-track distance where
+// p lies alongside the leg, otherwise the distance to the nearer end. `along` is how far along the leg
+// p lies, as a fraction of its length (below 0 before a, above 1 beyond b).
+function gpxLegDistance(p, a, b) {
+  const R = 3440.065, toRad = d => d * Math.PI / 180;
+  const bearing = (x, y) => {
+    const f1 = toRad(x.lat), f2 = toRad(y.lat), dl = toRad(y.lon - x.lon);
+    return Math.atan2(Math.sin(dl) * Math.cos(f2), Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl));
+  };
+  const dAP = haversineNm(a.lat, a.lon, p.lat, p.lon), dAB = haversineNm(a.lat, a.lon, b.lat, b.lon);
+  if (dAB === 0) return { nm: dAP, along: 0 };
+  const xt = Math.asin(Math.max(-1, Math.min(1, Math.sin(dAP / R) * Math.sin(bearing(a, p) - bearing(a, b)))));
+  const at = Math.acos(Math.max(-1, Math.min(1, Math.cos(dAP / R) / Math.cos(xt)))) * R;
+  const along = (Math.cos(bearing(a, p) - bearing(a, b)) < 0 ? -at : at) / dAB;
+  if (along < 0) return { nm: dAP, along };
+  if (along > 1) return { nm: haversineNm(b.lat, b.lon, p.lat, p.lon), along };
+  return { nm: Math.abs(xt) * R, along };
+}
+
+// How far each point of a track may be thinned: Douglas-Peucker on great-circle legs, so it holds
+// across the dateline and at any latitude, run once to the end. A point is the farthest from the leg
+// between the two points kept before it; its figure is that distance, capped by the figures of the
+// points that made that leg, so a tolerance keeps exactly the points whose figure is above it. The
+// first and last points are never dropped. Kept per list of points, so the slider only filters. A
+// tolerance below 0.01 nm is finer than the slider goes and keeps more points than it asks for.
+const trackSignificance = new WeakMap();
+function significanceOf(points) {
+  if (trackSignificance.has(points)) return trackSignificance.get(points);
+  const n = points.length, sig = new Float64Array(n);
+  sig[0] = sig[n - 1] = Infinity;
+  const stack = [[0, n - 1, Infinity]];
+  // A track whose farthest point keeps falling near one end of its leg (a zigzag growing along the
+  // way, say) would take a scan of the rest per point. Past this much work a long leg is split at its
+  // middle instead, its figure still the farthest point's distance, so every tolerance still drops
+  // only points within it of the leg that replaces them; the work stays near n log n.
+  const budget = 40 * n + 100000;
+  let work = 0;
+  while (stack.length) {
+    const [i, j, cap] = stack.pop();
+    let worst = -1, at = -1;
+    for (let k = i + 1; k < j; k++) {
+      const d = gpxLegDistance(points[k], points[i], points[j]).nm;
+      if (d > worst) { worst = d; at = k; }
+    }
+    work += j - i - 1;
+    if (at < 0) continue;
+    // Points this close to their leg go at any tolerance the slider sets (0.01 nm at least), so the
+    // run stops splitting there; a straight run of points would otherwise take a split per point.
+    if (worst < 0.01) { for (let k = i + 1; k < j; k++) sig[k] = Math.min(worst, cap); continue; }
+    if (work > budget && j - i > 64) at = (i + j) >> 1;
+    sig[at] = Math.min(worst, cap);
+    stack.push([i, at, sig[at]], [at, j, sig[at]]);
+  }
+  trackSignificance.set(points, sig);
+  return sig;
+}
+// A track's points kept at a tolerance in nautical miles: a point is dropped when it lies within the
+// tolerance of the leg that replaces it. The first and last points are always kept.
+function thinTrack(points, tolNm) {
+  if (points.length <= 2 || !(tolNm > 0)) return points.slice();
+  const sig = significanceOf(points);
+  return points.filter((p, k) => sig[k] > tolNm);
+}
+
+// The track tolerance for the dialog's Simple-to-Detailed slider (0 to 100): 10 nm at Simple down to
+// 0.01 nm at Detailed, evenly on a log scale.
+function gpxTolerance(detail) {
+  return Math.pow(10, 1 - 3 * Math.min(100, Math.max(0, Number(detail) || 0)) / 100);
+}
+
+// How near a waypoint has to be to a point to be the same place: 0.05 nm, about 90 m.
+const GPX_NEAR_NM = 0.05;
+// Two named points the same: the same name in any case, the same notes and flags, and within 0.05 nm.
+function gpxSamePoint(a, b) {
+  return a.name.trim().toLowerCase() === b.name.trim().toLowerCase() && a.notes.trim() === b.notes.trim() &&
+    GPX_FLAGS.every(([key]) => !!a[key] === !!b[key]) && haversineNm(a.lat, a.lon, b.lat, b.lon) < GPX_NEAR_NM;
+}
+
+// The file's waypoints placed in a list of points. A waypoint within 0.05 nm of a point with the same
+// name fills in that point's notes when it has none and adds its flags; failing that, one within
+// 0.05 nm of a point with no name gives that point its name, notes and flags (the nearest such point
+// in each case). Any other goes between the two points of the leg it lies nearest to, or before the
+// first or after the last point when it lies beyond an end, in order along the route.
+function placeMarks(points, marks) {
+  const pts = points.slice();
+  const inserts = [];
+  marks.forEach(m => {
+    const name = m.name.trim().toLowerCase();
+    let host = null, hostNm = Infinity, hostSame = false;
+    pts.forEach(p => {
+      const d = haversineNm(p.lat, p.lon, m.lat, m.lon);
+      const same = p.name.trim().toLowerCase() === name;
+      if (d >= GPX_NEAR_NM || (!same && p.name.trim())) return;
+      if ((same && !hostSame) || (same === hostSame && d < hostNm)) { host = p; hostNm = d; hostSame = same; }
+    });
+    if (host) {
+      if (!host.name.trim()) host.name = m.name;
+      if (!host.notes.trim()) host.notes = m.notes;
+      GPX_FLAGS.forEach(([key]) => { host[key] = host[key] || m[key]; });
+      return;
+    }
+    if (pts.length < 2) {
+      inserts.push({ at: 0.5, along: pts.length ? haversineNm(pts[0].lat, pts[0].lon, m.lat, m.lon) : 0, m });
+      return;
+    }
+    let best = null;
+    for (let k = 0; k < pts.length - 1; k++) {
+      const leg = gpxLegDistance(m, pts[k], pts[k + 1]);
+      if (!best || leg.nm < best.nm) best = { nm: leg.nm, k, along: leg.along };
+    }
+    // A place beyond the end comes out at the last point, and so goes after it.
+    let at = best.k + Math.min(1, Math.max(0, best.along));
+    if (best.k === 0 && best.along < 0) at = -1;
+    // Waypoints at the same place in the order are put in order along the route: before the start the
+    // farthest first, beyond the end or past a turn the nearest first.
+    inserts.push({ at, along: best.k + best.along, m });
+  });
+  inserts.sort((x, y) => (x.at - y.at) || (x.along - y.along));
+  const out = [];
+  let i = 0;
+  while (i < inserts.length && inserts[i].at < 0) out.push(inserts[i++].m);
+  pts.forEach((p, k) => {
+    out.push(p);
+    while (i < inserts.length && (inserts[i].at < k + 1 || k === pts.length - 1)) out.push(inserts[i++].m);
+  });
+  while (i < inserts.length) out.push(inserts[i++].m);
+  return out;
+}
+
+// The chapters an import makes from a read GPX file: the chosen tracks and routes (tracks thinned at
+// the tolerance, routes kept whole), joined into one list or one list each, with the file's waypoints
+// placed in the list they lie nearest to when they are included. With no track or route chosen, the
+// waypoints alone make one chapter, in file order. A waypoint the same as a named point of the chosen
+// tracks and routes (gpxSamePoint), or as an earlier waypoint, is already there and is left out, so a
+// file written here, which holds each named point as both a route point and a waypoint, comes back
+// without doubles, a place visited twice keeping each visit's notes and flags. A chapter is named after
+// its track or route (less the "Ch N — " this export writes), else after the file.
+function gpxChapters(gpx, opts) {
+  const chosen = gpx.parts.filter((p, k) => opts.selected.includes(k));
+  const fileName = gpx.name || opts.fileName || 'GPX import';
+  const nameOf = p => (p.name || '').replace(/^Ch \d+ —\s*/, '').trim();
+  const pointsOf = p => (p.kind === 'track' ? thinTrack(p.points, opts.tolerance) : p.points).map(w => Object.assign({}, w));
+  let groups;
+  if (!chosen.length) groups = [{ name: fileName, points: [] }];
+  else if (opts.each && chosen.length > 1) groups = chosen.map((p, k) => ({ name: nameOf(p) || `${fileName} ${k + 1}`, points: pointsOf(p) }));
+  else groups = [{ name: (chosen.length === 1 && nameOf(chosen[0])) || fileName, points: [].concat(...chosen.map(pointsOf)) }];
+  const present = [].concat(...groups.map(g => g.points)).filter(p => p.name.trim());
+  const marks = [];
+  if (opts.marks) gpx.marks.forEach(w => {
+    if (!present.some(p => gpxSamePoint(p, w)) && !marks.some(m => gpxSamePoint(m, w))) marks.push(Object.assign({}, w));
+  });
+  if (marks.length) {
+    if (groups.length === 1) groups[0].points = groups[0].points.length ? placeMarks(groups[0].points, marks) : marks;
+    else {
+      const byGroup = groups.map(() => []);
+      marks.forEach(m => {
+        let best = 0, bestNm = Infinity;
+        groups.forEach((g, gi) => g.points.forEach((p, k) => {
+          const d = k < g.points.length - 1 ? gpxLegDistance(m, p, g.points[k + 1]).nm : haversineNm(p.lat, p.lon, m.lat, m.lon);
+          if (d < bestNm) { bestNm = d; best = gi; }
+        }));
+        byGroup[best].push(m);
+      });
+      groups.forEach((g, gi) => { if (byGroup[gi].length) g.points = placeMarks(g.points, byGroup[gi]); });
+    }
+  }
+  return groups.filter(g => g.points.length);
+}
+
+let gpxImport = null; // the file being imported: { fileName, gpx }
+
+// A count with its noun: "1 point", "1,204 points".
+function gpxCount(n, one, many) {
+  return `${n.toLocaleString()} ${n === 1 ? one : many}`;
+}
+
+// A GPX file larger than this (about 20,000 track points) shows a message while it is read.
+const GPX_LARGE_BYTES = 2000000;
+function importGPX() {
+  closeDropdowns();
+  document.getElementById('file-gpx').click();
+}
+function handleGPXFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  const read = buffer => {
+    const gpx = readGPX(decodeText(buffer).text);
+    if (!gpx) { alert("Couldn't read this file as GPX. Nothing was changed."); return; }
+    if (!gpx.parts.length && !gpx.marks.length) {
+      alert('This GPX file has no tracks, routes or waypoints with usable coordinates. Nothing was changed.');
+      return;
+    }
+    openGPXModal(file.name.replace(/\.gpx$/i, ''), gpx);
+  };
+  reader.onload = function(ev) {
+    // A large file takes a moment to read: the status line says so first, unless it is showing a
+    // lookup's progress, and is put back after.
+    if (!(file.size > GPX_LARGE_BYTES)) { read(ev.target.result); return; }
+    if (geoPending() === 0) document.getElementById('status-text').textContent = `Reading ${file.name}…`;
+    setTimeout(() => { renderStatus(); read(ev.target.result); }, 30);
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+}
+
+function openGPXModal(fileName, gpx) {
+  gpxImport = { fileName, gpx };
+  const tracks = gpx.parts.filter(p => p.kind === 'track').length, routes = gpx.parts.length - tracks;
+  const found = [];
+  if (tracks) found.push(gpxCount(tracks, 'track', 'tracks'));
+  if (routes) found.push(gpxCount(routes, 'route', 'routes'));
+  if (gpx.marks.length) found.push(gpxCount(gpx.marks.length, 'waypoint', 'waypoints'));
+  document.getElementById('gpx-summary').textContent = `${fileName}.gpx holds ${found.join(', ')}.` +
+    (gpx.skipped ? ` ${gpxCount(gpx.skipped, 'point', 'points')} without usable coordinates will be skipped.` : '');
+  document.getElementById('gpx-list').innerHTML = gpx.parts.map((p, k) =>
+    `<label class="gpx-part" for="gpx-pick-${k}"><input type="checkbox" class="gpx-pick" id="gpx-pick-${k}" data-k="${k}" checked onchange="gpxRefresh()">` +
+    `<bdi>${esc(p.name || (p.kind === 'track' ? 'Unnamed track' : 'Unnamed route'))}</bdi>` +
+    `<span class="gpx-meta">${p.kind === 'track' ? 'Track' : 'Route'} · ${gpxCount(p.points.length, 'point', 'points')}</span></label>`).join('');
+  document.getElementById('gpx-marks-text').textContent = gpx.marks.length === 1
+    ? "Include the file's 1 waypoint as a named point" : `Include the file's ${gpxCount(gpx.marks.length, 'waypoint', 'waypoints')} as named points`;
+  document.getElementById('gpx-marks-row').style.display = gpx.marks.length ? '' : 'none';
+  document.getElementById('gpx-marks').checked = true;
+  document.getElementById('gpx-detail').value = 50;
+  document.getElementById('gpx-into-new').checked = true;
+  document.getElementById('gpx-split-one').checked = true;
+  const ch = activeChapterNum !== null ? getChapter(activeChapterNum) : null;
+  document.getElementById('gpx-into-replace').disabled = !ch;
+  document.getElementById('gpx-replace-text').textContent = ch
+    ? `Replace the ${gpxCount(ch.waypoints.length, 'row', 'rows')} of Chapter ${ch.num}: ${ch.name}`
+    : 'Replace the waypoints of the selected chapter (no chapter is selected)';
+  document.getElementById('gpx-modal').classList.add('open');
+  // Tracks of more than 20,000 points in all take a moment to measure for thinning: the dialog says
+  // so first.
+  const trackPoints = gpx.parts.reduce((n, p) => n + (p.kind === 'track' ? p.points.length : 0), 0);
+  if (trackPoints > 20000) {
+    document.getElementById('gpx-result').textContent = 'Reading the tracks…';
+    document.getElementById('gpx-ok').disabled = true;
+    setTimeout(gpxRefresh, 30);
+  } else gpxRefresh();
+  // Focus goes in once Import is enabled or not, since a disabled button cannot take it.
+  document.getElementById(gpx.parts.length ? 'gpx-pick-0' : 'gpx-ok').focus();
+}
+function closeGPXModal() {
+  document.getElementById('gpx-modal').classList.remove('open');
+  gpxImport = null;
+}
+
+// The dialog's choices as gpxChapters reads them.
+function gpxOptions() {
+  return {
+    selected: Array.from(document.querySelectorAll('#gpx-list .gpx-pick')).filter(c => c.checked).map(c => Number(c.dataset.k)),
+    tolerance: gpxTolerance(document.getElementById('gpx-detail').value),
+    marks: document.getElementById('gpx-marks').checked,
+    each: document.getElementById('gpx-split-each').checked && !document.getElementById('gpx-into-replace').checked,
+    replace: document.getElementById('gpx-into-replace').checked,
+    fileName: gpxImport ? gpxImport.fileName : '',
+  };
+}
+
+// The dialog redrawn for its choices: the detail slider shows only for a chosen track, the choice of
+// one chapter or one each only for a new chapter with more than one track or route chosen, and the
+// result line says what Import will do.
+function gpxRefresh() {
+  if (!gpxImport) return;
+  const gpx = gpxImport.gpx, opts = gpxOptions();
+  document.getElementById('gpx-detail-row').style.display =
+    opts.selected.some(k => gpx.parts[k].kind === 'track') ? '' : 'none';
+  document.getElementById('gpx-split').style.display = !opts.replace && opts.selected.length > 1 ? '' : 'none';
+  const tol = opts.tolerance;
+  document.getElementById('gpx-detail').setAttribute('aria-valuetext', `${tol < 0.1 ? tol.toFixed(2) : tol < 1 ? tol.toFixed(1) : Math.round(tol)} nm`);
+  const groups = gpxChapters(gpx, opts);
+  const total = groups.reduce((s, g) => s + g.points.length, 0);
+  const tracked = opts.selected.filter(k => gpx.parts[k].kind === 'track');
+  const before = tracked.reduce((s, k) => s + gpx.parts[k].points.length, 0);
+  const thinned = tracked.length ? ` Tracks: ${before.toLocaleString()} points, kept ${thinTrackCount(gpx, tracked, opts.tolerance).toLocaleString()}.` : '';
+  let result;
+  if (!total) result = 'Nothing to import: choose a track or route, or include the waypoints.';
+  else if (opts.replace) result = `Import ${gpxCount(total, 'point', 'points')}, replacing the selected chapter's waypoints.`;
+  else if (groups.length > 1) result = `Import ${gpxCount(total, 'point', 'points')} as ${groups.length} new chapters.`;
+  else result = `Import ${gpxCount(total, 'point', 'points')} as a new chapter, "${groups[0].name}".`;
+  document.getElementById('gpx-result').textContent = result + thinned;
+  document.getElementById('gpx-ok').disabled = !total;
+}
+function thinTrackCount(gpx, tracked, tolerance) {
+  return tracked.reduce((s, k) => s + thinTrack(gpx.parts[k].points, tolerance).length, 0);
+}
+
+// Import: replacing the selected chapter's waypoints asks first; a new chapter or chapters are added
+// at the end of the voyage, each with the defaults of + Add chapter. Nothing is looked up: countries
+// stay empty for Look up countries.
+function doGPXImport() {
+  if (!gpxImport) return;
+  const opts = gpxOptions();
+  const groups = gpxChapters(gpxImport.gpx, opts);
+  const total = groups.reduce((s, g) => s + g.points.length, 0);
+  if (!total) return;
+  const fileName = gpxImport.fileName, skipped = gpxImport.gpx.skipped;
+  const finish = (chNum, where) => {
+    closeGPXModal();
+    setDirty(true);
+    noteFirstEdit();
+    announce('import', 'gpx');
+    renderAllChapters();
+    selectChapter(chNum);
+    document.getElementById('status-text').textContent =
+      `Imported ${gpxCount(total, 'point', 'points')} from ${fileName}.gpx ${where}` +
+      (skipped ? `; ${skipped.toLocaleString()} without usable coordinates skipped` : '');
+  };
+  if (opts.replace) {
+    const ch = activeChapterNum !== null ? getChapter(activeChapterNum) : null;
+    if (!ch) return;
+    const points = [].concat(...groups.map(g => g.points));
+    confirmModal('Replace waypoints',
+      `Replace the ${gpxCount(ch.waypoints.length, 'row', 'rows')} of Chapter ${ch.num}: ${ch.name} with ${gpxCount(points.length, 'point', 'points')} from ${fileName}.gpx?`,
+      () => {
+        ch.waypoints = points;
+        selectedChapterNum = null;
+        selectedWpt = null;
+        finish(ch.num, `into Chapter ${ch.num}`);
+      }, 'Replace', 'Keep them', true);
+    return;
+  }
+  let first = null;
+  groups.forEach(g => {
+    const num = STATE.chapters.reduce((m, c) => Math.max(m, c.num), 0) + 1;
+    STATE.chapters.push(Object.assign(makeChapter(num), { name: g.name, waypoints: g.points }));
+    if (first === null) first = num;
+  });
+  finish(first, groups.length > 1 ? `as ${groups.length} new chapters` : `as Chapter ${first}`);
+}
+
+/* ═══════════════════════════════════════════════════════════════
    UTILITIES
    ═══════════════════════════════════════════════════════════════ */
 // Escape text for insertion into HTML (element content or a double-quoted attribute), so names and
@@ -4489,7 +4973,7 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// Escape text for a KML document. Control characters that XML 1.0 forbids even when escaped (such as
+// Escape text for a KML or GPX document. Control characters that XML 1.0 forbids even when escaped (such as
 // the vertical tab a spreadsheet uses for a line break inside a cell) and unpaired surrogates are
 // dropped, so a name pasted from another program cannot make the file unreadable.
 function escXml(s) {
@@ -4638,7 +5122,11 @@ document.addEventListener('keydown', function(e) {
       document.getElementById('csv-step2-modal').classList.contains('open') ||
       document.getElementById('delete-wpt-modal').classList.contains('open') ||
       document.getElementById('confirm-modal').classList.contains('open') ||
-      document.getElementById('lookup-confirm-modal').classList.contains('open');
+      document.getElementById('lookup-confirm-modal').classList.contains('open') ||
+      document.getElementById('gpx-modal').classList.contains('open');
+    // With the Replace confirmation open over the GPX dialog, Escape closes the confirmation alone.
+    if (document.getElementById('gpx-modal').classList.contains('open') &&
+        !document.getElementById('confirm-modal').classList.contains('open')) closeGPXModal();
     if (document.getElementById('bulk-modal').classList.contains('open')) closeBulkModal();
     if (document.getElementById('paste-modal').classList.contains('open')) closePasteModal();
     if (document.getElementById('csv-step2-modal').classList.contains('open')) closeCSVStep2();
@@ -4657,6 +5145,9 @@ document.addEventListener('keydown', function(e) {
     // reflexive Enter can never discard work.
     const isOpen = id => document.getElementById(id).classList.contains('open');
     const onButtonOf = id => !!(e.target && e.target.closest && e.target.closest('#' + id + ' button'));
+    // Read before the confirmation is handled, so the Enter that answers a Replace confirmation does
+    // not start the import again.
+    const gpxAlone = isOpen('gpx-modal') && !isOpen('confirm-modal') && !onButtonOf('gpx-modal');
     if (isOpen('bulk-modal') && !onButtonOf('bulk-modal')) { e.preventDefault(); doBulkAdd(); }
     if (isOpen('csv-step2-modal') && !onButtonOf('csv-step2-modal')) { e.preventDefault(); document.getElementById('file-csv-waypoints').click(); }
     if (isOpen('delete-wpt-modal') && !onButtonOf('delete-wpt-modal')) { e.preventDefault(); doDeleteWpt(); }
@@ -4665,6 +5156,7 @@ document.addEventListener('keydown', function(e) {
       else if (!onButtonOf('confirm-modal')) { e.preventDefault(); proceedConfirmModal(); }
     }
     if (isOpen('lookup-confirm-modal') && !onButtonOf('lookup-confirm-modal')) { e.preventDefault(); proceedLookupConfirm(); }
+    if (gpxAlone) { e.preventDefault(); doGPXImport(); }
   }
 });
 

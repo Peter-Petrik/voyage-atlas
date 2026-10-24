@@ -193,13 +193,13 @@ test(`${EDITOR}: the status line counts the chapter's rows`, () => {
   assert.ok(!/'waypoints'/.test(editor.defs.renderStatus));
 });
 
-test('the backlog keeps GPX import and export open, and every closed item gives its reason', () => {
+test('the backlog has no open item, and every closed item gives its reason', () => {
   const backlog = require('./support.js').readRepoFile('docs/voyage-atlas-enhancements.md');
   const section = title => backlog.split(/^## /m).find(s => s.startsWith(title));
   const nums = text => [...text.matchAll(/^### (\d+)\. /gm)].map(m => +m[1]);
-  assert.deepEqual(nums(section('Open')), [17, 18]);
+  assert.deepEqual(nums(section('Open')), []);
   const closed = section('Closed');
   assert.equal(nums(closed).length, 31);
   for (const item of closed.split(/^### /m).slice(1)) assert.match(item, /\n\n\*\*Closed:\*\* \S/, `#${item.split('.')[0]} gives its reason`);
-  for (const n of [48, 72, 75]) assert.ok(!new RegExp(`^### ${n}\\. `, 'm').test(backlog), `#${n} shipped and is not listed`);
+  for (const n of [17, 18, 48, 72, 75]) assert.ok(!new RegExp(`^### ${n}\\. `, 'm').test(backlog), `#${n} shipped and is not listed`);
 });
