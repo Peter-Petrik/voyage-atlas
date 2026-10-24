@@ -65,6 +65,8 @@ So: **chapter nm = (within-chapter base × pad) + approach leg.** The voyage tot
 
 Distances are always computed in nautical miles, and the one distance a voyage file holds, the Distance Override, is stored in nautical miles too. The unit chosen in Voyage Settings (nautical miles, kilometers or miles) is saved with the voyage and sets how both tools show every distance; it changes no stored figure.
 
+The chart draws each leg as a straight line on its Mercator projection, a rhumb line at a constant compass bearing, while the distance is measured along the great circle, the shortest way between the two points. On most legs the two hardly differ (0.2% from Gibraltar to Valletta); on a long east-west passage the great circle is the shorter: 4,477 nm from Yokohama to San Francisco, against 4,722 nm along the line drawn. The chart reaches about 85° north and south; a waypoint nearer a pole is kept and measured, but drawn at the chart's top or bottom edge, so no view frames it.
+
 When two chapters share an endpoint (the common case; see "How do chapters connect?" below), the approach leg is zero, so it adds nothing. It only contributes when there's a genuine gap between chapters.
 
 ## Why does the approach leg count toward the destination chapter?
@@ -241,7 +243,7 @@ While any lookup is in flight, both the per-chapter **Look up countries** and th
 
 A name or country lookup that answers while an entry is being typed into that row's latitude, longitude or country field leaves the field as it is being typed, and a country lookup answered while a coordinate is being typed is dropped, since it is for the old position; a field the cursor has only moved into still takes the answer.
 
-**Rate limit:** Nominatim's usage policy allows one request per second. The editor sends every geocoding request (searches, name lookups and country lookups) through one queue that spaces them accordingly, so a paste of many named rows fills in gradually rather than all at once. A search goes to the front of that queue, so even while a long country lookup runs it is sent next, usually within about a second.
+**Rate limit:** Nominatim's usage policy allows one request per second. The editor sends every geocoding request (searches, name lookups and country lookups) through one queue that spaces them accordingly, so a paste of many named rows fills in gradually rather than all at once. A search goes to the front of that queue, so even while a long country lookup runs it is sent next, usually within about a second. The queue belongs to one page: two editor tabs looking things up at the same time each keep that pace, and together they can send more than one request a second, so long lookups belong in one tab at a time.
 
 **Caching:** answers are kept in memory for the session, including "nothing found" answers, as the usage policy requires. Repeating a lookup (running **Look up countries** again over points in open water, say) is answered from memory without a new request. Reloading the page clears the cache.
 
